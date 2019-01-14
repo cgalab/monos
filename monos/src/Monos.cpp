@@ -44,14 +44,14 @@ Monos::Monos(std::list<std::string>& args):config(args),wf(data),s(data,wf) {
 
 Monos::~Monos() {}
 
-
-void Monos::start() {
-	if(!config.isValid()) {return;}
+bool Monos::init() {
+	if(!config.isValid()) {return false;}
 
 	/* verfify monotonicity -- if required, rotate to assure
 	 * that P is x-monotone */
 	if(!data.ensureMonotonicity()) {
 		LOG(WARNING) << "polygon is not monotone!";
+		return false;
 	}
 
 	/* compute BBox and min/max monotonicity vertices */
@@ -60,6 +60,13 @@ void Monos::start() {
 	/** input must be x-monotone */
 	wf.ChainDecomposition();
 	LOG(INFO) << "chain decomposition done";
+
+	return true;
+}
+
+
+void Monos::start() {
+	if(!init()) {return;}
 
 	if(!wf.ComputeSkeleton(true)) {return;}
 	LOG(INFO) << "lower skeleton done";

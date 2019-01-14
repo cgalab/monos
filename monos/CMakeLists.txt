@@ -1,4 +1,4 @@
-project (surf VERSION "1.99" DESCRIPTION "offsetlib")
+project (surf VERSION "1.99" DESCRIPTION "monoslib")
 
 set_source_files_properties(easyloggingpp/src/easylogging++.cc PROPERTIES COMPILE_FLAGS "-Wno-float-equal -Wno-missing-noreturn")
 
@@ -37,7 +37,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 # cause easylogging to pretty please don't print to stdout.
 
-add_library(offsetlib
+add_library(monoslib
   src/cgTypes.cpp
   src/gml/GMLGraph.cpp
   src/gml/BasicInput.cpp
@@ -49,17 +49,17 @@ add_library(offsetlib
   src/Monos.cpp
   easyloggingpp/src/easylogging++.cc
   )
-set_target_properties(offsetlib PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(monoslib PROPERTIES VERSION ${PROJECT_VERSION})
 
-target_link_libraries(offsetlib ${Boost_LIBRARIES})
-target_link_libraries(offsetlib ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+target_link_libraries(monoslib ${Boost_LIBRARIES})
+target_link_libraries(monoslib ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 
-set_target_properties(offsetlib PROPERTIES PUBLIC_HEADER inc/tools.h)
+set_target_properties(monoslib PROPERTIES PUBLIC_HEADER inc/tools.h)
 
-target_compile_definitions(offsetlib PRIVATE ELPP_CUSTOM_COUT=std::cerr)
+target_compile_definitions(monoslib PRIVATE ELPP_CUSTOM_COUT=std::cerr)
 
-target_include_directories(offsetlib PRIVATE inc)
-target_include_directories(offsetlib PRIVATE src)
+target_include_directories(monoslib PRIVATE inc)
+target_include_directories(monoslib PRIVATE src)
 
 include(GNUInstallDirs)
 

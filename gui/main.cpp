@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "Config.h"
-#include "Offsetter.h"
+#include "Monos.h"
 
 int main(int argc, char *argv[]) {
 
@@ -17,17 +17,16 @@ int main(int argc, char *argv[]) {
 	static std::list<std::string> args;
 	for(auto i = 1; i < argc; ++i) { args.push_back(std::string(argv[i])); }
 
-	Config config(args);
-	Offsetter offset(config);
+	Monos monos(args);
 
 #ifdef CMAKE_BUILD_TYPE
-	"OffsetGUI (" CMAKE_BUILD_TYPE ")";
+	"MonosGUI (" CMAKE_BUILD_TYPE ")";
 #else
-	"OffsetGUI";
+	"MonosGUI";
 #endif
 
-	std::string title = "Offsetter";
-	MainWindow w(title, offset);
+	std::string title = "Monos";
+	MainWindow w(title, monos);
 	w.show();
 
 	return a.exec();

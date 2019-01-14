@@ -24,7 +24,7 @@
 #include <vector>
 #include <assert.h>
 
-#include "easyloggingpp/src/easylogging++.h"
+#include "../easyloggingpp/src/easylogging++.h"
 
 
 #define NIL    -1

@@ -1,6 +1,8 @@
 
 #include "tools.h"
 
+INITIALIZE_EASYLOGGINGPP
+
 bool fileExists(const std::string& fileName) {
   struct stat buffer;
   return (stat (fileName.c_str(), &buffer) == 0);
@@ -35,15 +37,18 @@ void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double&
 }
 
 
-void setupEasylogging(el::Configurations *defaultConf) {
-	defaultConf->setToDefault();
+void setupEasylogging(int argc, char** argv) {
+	START_EASYLOGGINGPP(argc, argv);
+
+	el::Configurations defaultConf;
+	defaultConf.setToDefault();
 	//defaultConf.setGlobally(el::ConfigurationType::Format, "%datetime{H:%m:%s.%g} %level %func: %msg");
-	defaultConf->setGlobally(el::ConfigurationType::Format, "%msg");
+	defaultConf.setGlobally(el::ConfigurationType::Format, "%msg");
 	el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
 	el::Loggers::setLoggingLevel(el::Level::Global);
 	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
-	el::Loggers::reconfigureAllLoggers(*defaultConf);
-	el::Loggers::reconfigureLogger("default", *defaultConf);
+	el::Loggers::reconfigureAllLoggers(defaultConf);
+	el::Loggers::reconfigureLogger("default", defaultConf);
 }
 
 

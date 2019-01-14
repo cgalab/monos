@@ -84,6 +84,7 @@ bool Wavefront::ComputeSkeleton(bool lower) {
 			/* remove this edge from the chain (wavefront) */
 			chain.erase(event->chainEdge);
 			disableEdge(event->mainEdge());
+
 		}
 	}
 

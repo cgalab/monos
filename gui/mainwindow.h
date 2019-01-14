@@ -8,7 +8,7 @@
 
 #include "InputGraphicsItem.h"
 #include "Config.h"
-#include "Offsetter.h"
+#include "Monos.h"
 
 
 namespace Ui {
@@ -19,9 +19,8 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     Q_OBJECT
 
   public:
-    explicit MainWindow(const std::string& title, const Offsetter& offset);
+    explicit MainWindow(const std::string& title, Monos& monos);
     ~MainWindow();
-
   private:
     bool first_show_event = true;
     bool did_finish = false;

@@ -5,7 +5,7 @@
 
 #include <QInputDialog>
 
-MainWindow::MainWindow(const std::string& title, const Offsetter& offset) :
+MainWindow::MainWindow(const std::string& title, Monos& monos) :
   CGAL::Qt::DemosMainWindow(),
   title(title),
   ui(new Ui::MainWindow) {
@@ -28,7 +28,7 @@ MainWindow::MainWindow(const std::string& title, const Offsetter& offset) :
                    xycoord, SLOT(setText(QString)));
   this->view = ui->gV;
 
-
+  monos.init();
 
 //  GMLGraph graph;
 //  graph = GMLGraph::create_from_graphml(is);
@@ -163,6 +163,7 @@ MainWindow::on_actionTimeForward_triggered() {
 void
 MainWindow::on_actionTimeForwardNext_triggered() {
 //  s.wp.advance_time_next(); // , - Move forward in time to the next event but do not handle it yet
+
   time_changed();
 }
 

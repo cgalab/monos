@@ -21,7 +21,7 @@
 #define MONOS_H_
 
 #include <list>
-
+#include <functional>
 
 #include "Config.h"
 #include "Data.h"
@@ -36,13 +36,19 @@ public:
 	Monos(std::list<std::string>& args);
 	virtual ~Monos();
 
+	bool init();
 	void start();
+
+	void setGuiSpy(std::function<void(void)>& spy) {guiSpy = spy;}
 
 private:
 	Config 			config;
 	Data			data;
 	Wavefront 		wf;
 	Skeleton		s;
+
+	/* gui hack */
+	std::function<void(void)> guiSpy;
 };
 
 #endif /* MONOS_H_ */

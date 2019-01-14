@@ -8,7 +8,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = surfgui
+TARGET = monosgui
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -30,4 +30,4 @@ HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui
 
-INCLUDEPATH += ../surf/include ../surf/src
+INCLUDEPATH += ../monos/include ../monos/src

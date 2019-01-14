@@ -1,4 +1,4 @@
-project (offsetfrontend VERSION "1.99" DESCRIPTION "offsetlib")
+project (monosfrontend VERSION "1.99" DESCRIPTION "monoslib")
 
 find_package(Qt5Widgets)
 find_package(CGAL COMPONENTS Qt5 Core Debug REQUIRED)
@@ -9,21 +9,21 @@ find_package(Qt5Widgets REQUIRED)
 ADD_EXECUTABLE( dummy
                 src/dummy.cpp )
 TARGET_LINK_LIBRARIES( dummy
-                       offsetlib )
-target_include_directories(dummy PRIVATE ../offsetter/inc)
-target_include_directories(dummy PRIVATE ../offsetter/src)
+                       monoslib )
+target_include_directories(dummy PRIVATE ../monos/inc)
+target_include_directories(dummy PRIVATE ../monos/src)
 
 ################################
-ADD_EXECUTABLE( offset
+ADD_EXECUTABLE( monostool
                 src/main.cpp )
 
-TARGET_LINK_LIBRARIES( offset
-                       offsetlib )
-target_include_directories(offset PRIVATE ../monos/inc)
-target_include_directories(offset PRIVATE ../monos/src)
+TARGET_LINK_LIBRARIES( monostool
+                       monoslib )
+target_include_directories(monostool PRIVATE ../monos/inc)
+target_include_directories(monostool PRIVATE ../monos/src)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
-qt5_use_modules(offset Widgets)
+qt5_use_modules(monostool Widgets)
