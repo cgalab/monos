@@ -1,0 +1,18 @@
+#pragma once
+
+/** comparisons, when both arguments are actually equal, are often expensive.
+ * This enables or disables the more expensive asserts of this kind.
+ */
+#cmakedefine DEBUG_EXPENSIVE_PREDICATES
+
+/** do or do not compile with debug output.
+ */
+#cmakedefine DEBUG_OUTPUT
+
+/** include filename and line numbers in log output.
+ */
+#cmakedefine DEBUG_OUTPUT_WITH_FILES
+
+/** The cmake build type, if we have it.
+ */
+#cmakedefine CMAKE_BUILD_TYPE "@UPPERCASE_CMAKE_BUILD_TYPE@"
