@@ -103,33 +103,25 @@ bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
 }
 
 bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
-	LOG(INFO) << "a";
 	auto etIt  = eventTimes.begin();
 	auto event = &events[etIt->edgeIdx];
 	auto eventTime = etIt->time;
 	eventTimes.erase(etIt);
-	//std::cout << events[etIt->edgeIdx] << std::endl;
-	std::cout << *event << std::endl;
 
-		LOG(INFO) << "b";
 	if(currentTime <= eventTime) {
 		currentTime = eventTime;
 
-		LOG(INFO) << "c";
 		/* build skeleton from event */
 		addNewNodefromEvent(*event,skeleton);
 
-		LOG(INFO) << "d";
 		/* check neighbors for new events, and back into the queue */
 		/* edges B,C are the two edges left, right of the event edge,
 		 * A,D their respective neighbors */
 		updateNeighborEdgeEvents(*event,chain);
-		LOG(INFO) << "e";
 
 		/* remove this edge from the chain (wavefront) */
 		chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge());
-		LOG(INFO) << "one event done!";
 		return true;
 	}
 	return false;
@@ -172,35 +164,28 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 	uint edgeA, edgeB, edgeC, edgeD;
 	edgeB = event.leftEdge();
 	edgeC = event.rightEdge();
-		LOG(INFO) << "d1";
 	std::cout << event;
 	ChainRef it(event.chainEdge);
 	--it;
-		LOG(INFO) << "d2";
 
 	if(*it == edgeB && edgeB != chain.front()) {
 		--it;		edgeA = *it;
-		LOG(INFO) << "d3";
 
 		it = ChainRef(event.chainEdge); --it;
 		auto neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
 		updateInsertEvent(neighborEvent);
 	}
-		LOG(INFO) << "d4";
 
 	it = ChainRef(event.chainEdge);
 	++it;
 
-		LOG(INFO) << "d5";
 	if(*it == edgeC && edgeC != chain.back()) {
 		++it;		edgeD = *it;
 
-		LOG(INFO) << "d6";
 		it = ChainRef(event.chainEdge); ++it;
 		auto neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
 		updateInsertEvent(neighborEvent);
 	}
-		LOG(INFO) << "d7";
 }
 
 void Wavefront::updateInsertEvent(const Event& event) {

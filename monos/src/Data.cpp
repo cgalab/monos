@@ -160,8 +160,8 @@ bool Data::parsePOLY(const std::vector<std::string>& lines) {
 
 
 bool Data::parseGML(std::istream &istream) {
-	auto gml = GMLGraph::create_from_graphml(istream);
-	auto basicInput = BasicInput();
+	gml = GMLGraph::create_from_graphml(istream);
+	basicInput = BasicInput();
 	basicInput.add_graph(gml);
 
 	InputPoints 	points;

@@ -52,9 +52,9 @@ public:
 	bool computeSingleSkeletonEvent(bool lower) {return wf.ComputeSingleSkeletonEvent(lower);}
 	bool finishSkeleton(bool lower)    {return wf.FinishSkeleton(lower);   }
 
+	Data			data;
 private:
 	Config 			config;
-	Data			data;
 	Wavefront 		wf;
 	Skeleton		s;
 };

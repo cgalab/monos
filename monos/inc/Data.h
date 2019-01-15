@@ -99,6 +99,9 @@ public:
 	bool ensureMonotonicity();
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 
+	const GMLGraph& getGMLGraph() const {return gml;}
+	const BasicInput& getBasicInput() const {return basicInput;}
+
 private:
 	bool loadFile(const std::string& fileName);
 
@@ -114,6 +117,9 @@ private:
 	InputWeights	edgeWeights;
 
 	Line			monotonicityLine;
+
+	GMLGraph		gml;
+	BasicInput		basicInput;
 };
 
 #endif /* DATA_H_ */

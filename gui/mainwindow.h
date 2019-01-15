@@ -24,6 +24,10 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
   private:
     bool first_show_event = true;
     bool did_finish = false;
+
+    bool onLowerChain = true;
+    bool lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
+
   private slots:
     void showEvent(QShowEvent *);
     void mousePressEvent(QMouseEvent *event);
@@ -55,9 +59,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     QGraphicsScene scene;
     QLabel* time_label;
     NT drawing_time_offset_increment;
-
-    bool onLowerChain;
-    bool lowerChainDone, upperChainDone;
 
     Monos& monos;
 //    SkeletonStructure s;
