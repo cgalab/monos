@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 	/* start */
 	Monos monos(args);
 
-	monos.start();
+	monos.run();
 
 	return 0;
 }

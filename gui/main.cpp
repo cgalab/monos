@@ -19,13 +19,14 @@ int main(int argc, char *argv[]) {
 
 	Monos monos(args);
 
+	std::string title =
 #ifdef CMAKE_BUILD_TYPE
-	"MonosGUI (" CMAKE_BUILD_TYPE ")";
+	"Monos GUI (" CMAKE_BUILD_TYPE ")"
 #else
-	"MonosGUI";
+	"Monos GUI"
 #endif
+	;
 
-	std::string title = "Monos";
 	MainWindow w(title, monos);
 	w.show();
 

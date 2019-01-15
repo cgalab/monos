@@ -18,18 +18,13 @@ void Wavefront::InitializeNodes() {
 	}
 }
 
-bool Wavefront::ComputeSkeleton(bool lower) {
-	auto chain     = (lower) ? getLowerChain()	: getUpperChain();
-	auto skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
+bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 	/** compute all finite edge events
 	 *  iterate along lower chain and find event time for each edge
 	 **/
-	if(chain.size() < 2) {
-		return true;
-	}
+	if(chain.size() < 2) {return true;}
 
 	auto chainIterator = chain.begin();
-
 	/* first edge defines an unbounded face in the skeleton induced graph */
 	uint aEdgeIdx = *chainIterator;
 	++chainIterator;
@@ -44,12 +39,12 @@ bool Wavefront::ComputeSkeleton(bool lower) {
 	do {
 		cEdgeIdx = *chainIterator;
 		/* create Event and add it to the queue */
-		auto event = getEdgeEvent(aEdgeIdx,bEdgeIdx,cEdgeIdx);
+		auto event = getEdgeEvent(aEdgeIdx,bEdgeIdx,cEdgeIdx,it);
 		if(event.isEvent()) {
-			event.chainEdge = ChainRef(it);
 			events[event.mainEdge()] = event;
 			auto te = TimeEdge(event.eventTime,event.mainEdge());
 			eventTimes.insert(te);
+			std::cout << event << std::endl;
 		}
 
 		/* iterate over the chainIterator */
@@ -59,35 +54,95 @@ bool Wavefront::ComputeSkeleton(bool lower) {
 		bEdgeIdx = cEdgeIdx;
 	} while(chainIterator != chain.end());
 
+	currentTime = 0;
+
+	return true;
+}
+
+bool Wavefront::ComputeSkeleton(bool lower) {
+	auto chain     = (lower) ? getLowerChain()	: getUpperChain();
+	auto skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
+	/** compute all finite edge events
+	 *  iterate along lower chain and find event time for each edge
+	 **/
+	if(chain.size() < 2) {return true;}
+
+	/************************************/
+	/* 	filling the priority queue 		*/
+	/************************************/
+	if(!InitSkeletonQueue(chain,skeleton)) {return false;}
+
 	/*********************************************/
 	/* compute skeleton by working through queue */
 	/*********************************************/
-
 	currentTime = 0;
 	while(!eventTimes.empty()) {
-		auto etIt  = eventTimes.begin();
-		auto event = &events[etIt->edgeIdx];
-		auto eventTime = etIt->time;
-		eventTimes.erase(etIt);
-
-		if(currentTime <= eventTime) {
-			currentTime = eventTime;
-
-			/* build skeleton from event */
-			addNewNodefromEvent(*event,skeleton);
-
-			/* check neighbors for new events, and back into the queue */
-			/* edges B,C are the two edges left, right of the event edge,
-			 * A,D their respective neighbors */
-			updateNeighborEdgeEvents(*event,chain);
-
-			/* remove this edge from the chain (wavefront) */
-			chain.erase(event->chainEdge);
-			disableEdge(event->mainEdge());
-
-		}
+		SingleDequeue(chain,skeleton);
 	}
 
+	/***********************************************************************/
+	/* construct rays from remaining edges in chain, i.e,. unbounded faces */
+	/***********************************************************************/
+	if(!FinishSkeleton(chain,skeleton)) {return false;}
+
+	return true;
+}
+
+
+/**
+ * computes a single skeleton event from the queue,
+ * returns false if queue is empty
+ * */
+bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
+	auto chain     = (lower) ? getLowerChain()	: getUpperChain();
+	auto skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
+
+	while(!eventTimes.empty() && !SingleDequeue(chain,skeleton));
+
+	return !eventTimes.empty();
+}
+
+bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
+	LOG(INFO) << "a";
+	auto etIt  = eventTimes.begin();
+	auto event = &events[etIt->edgeIdx];
+	auto eventTime = etIt->time;
+	eventTimes.erase(etIt);
+	//std::cout << events[etIt->edgeIdx] << std::endl;
+	std::cout << *event << std::endl;
+
+		LOG(INFO) << "b";
+	if(currentTime <= eventTime) {
+		currentTime = eventTime;
+
+		LOG(INFO) << "c";
+		/* build skeleton from event */
+		addNewNodefromEvent(*event,skeleton);
+
+		LOG(INFO) << "d";
+		/* check neighbors for new events, and back into the queue */
+		/* edges B,C are the two edges left, right of the event edge,
+		 * A,D their respective neighbors */
+		updateNeighborEdgeEvents(*event,chain);
+		LOG(INFO) << "e";
+
+		/* remove this edge from the chain (wavefront) */
+		chain.erase(event->chainEdge);
+		disableEdge(event->mainEdge());
+		LOG(INFO) << "one event done!";
+		return true;
+	}
+	return false;
+}
+
+bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
+	/** compute all finite edge events
+	 *  iterate along lower chain and find event time for each edge
+	 **/
+	if(chain.size() < 2) {return true;}
+
+	uint aEdgeIdx, bEdgeIdx;
+	auto chainIterator = chain.begin();
 	/***********************************************************************/
 	/* construct rays from remaining edges in chain, i.e,. unbounded faces */
 	/***********************************************************************/
@@ -117,30 +172,35 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 	uint edgeA, edgeB, edgeC, edgeD;
 	edgeB = event.leftEdge();
 	edgeC = event.rightEdge();
-
+		LOG(INFO) << "d1";
+	std::cout << event;
 	ChainRef it(event.chainEdge);
 	--it;
+		LOG(INFO) << "d2";
 
 	if(*it == edgeB && edgeB != chain.front()) {
 		--it;		edgeA = *it;
+		LOG(INFO) << "d3";
 
-		auto neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC);
-		it = ChainRef(event.chainEdge);
-		neighborEvent.chainEdge = --it;
+		it = ChainRef(event.chainEdge); --it;
+		auto neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
 		updateInsertEvent(neighborEvent);
 	}
+		LOG(INFO) << "d4";
 
 	it = ChainRef(event.chainEdge);
 	++it;
 
+		LOG(INFO) << "d5";
 	if(*it == edgeC && edgeC != chain.back()) {
 		++it;		edgeD = *it;
 
-		auto neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD);
-		it = ChainRef(event.chainEdge);
-		neighborEvent.chainEdge = ++it;
+		LOG(INFO) << "d6";
+		it = ChainRef(event.chainEdge); ++it;
+		auto neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
 		updateInsertEvent(neighborEvent);
 	}
+		LOG(INFO) << "d7";
 }
 
 void Wavefront::updateInsertEvent(const Event& event) {
@@ -164,7 +224,7 @@ void Wavefront::updateInsertEvent(const Event& event) {
 }
 
 
-Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx) const {
+Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx, const ChainRef& it) const {
 	Event e;
 
 	/* compute bisector from edges */
@@ -184,9 +244,9 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 		/* does collapse so we create an event
 		 * and add it to the queue
 		 **/
-		e = Event(distance,intersection,aIdx,bIdx,cIdx);
+		e = Event(distance,intersection,aIdx,bIdx,cIdx,it);
 	} else {
-		e = Event(0,INFPOINT,aIdx,bIdx,cIdx);
+		e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
 	}
 	return e;
 }

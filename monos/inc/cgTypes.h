@@ -55,7 +55,7 @@ using InputWeights  	= std::vector<Exact>;
 using IndexEdge 		= std::array<uint,2>;
 using Polygon   		= std::vector<IndexEdge>;
 using Chain 			= std::list<uint>;
-using ChainRef			= Chain::const_iterator;
+using ChainRef			= Chain::iterator;
 using PartialSkeleton 	= std::list<uint>;
 using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 

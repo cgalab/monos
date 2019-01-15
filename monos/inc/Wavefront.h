@@ -14,13 +14,19 @@ public:
 		startUpperEdgeIdx(0),endUpperEdgeIdx(0),
 		data(dat) {}
 
+	bool InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton);
+	bool SingleDequeue(Chain& chain, PartialSkeleton& skeleton);
+	bool FinishSkeleton(Chain& chain, PartialSkeleton& skeleton);
+
+	bool ComputeSingleSkeletonEvent(bool lower);
+
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
 
 	void ChainDecomposition();
 	bool ComputeSkeleton(bool lower);
 
-	Event getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx) const;
+	Event getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx, const ChainRef& it) const;
 	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
 	void updateInsertEvent(const Event& event);
 
@@ -31,6 +37,22 @@ public:
 	Ray constructBisector(const uint& aIdx, const uint& bIdx) const;
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
 
+	/* call simplification from monos class */
+	bool InitSkeletonQueue(bool lower) {
+		Chain* chain     		   = (lower) ? &getLowerChain()	: &getUpperChain();
+		PartialSkeleton* skeleton  = (lower) ? &lowerSkeleton 	: &upperSkeleton;
+		return InitSkeletonQueue(*chain,*skeleton);
+	}
+	bool SingleDequeue(bool lower) {
+		Chain* chain   			   = (lower) ? &getLowerChain()	: &getUpperChain();
+		PartialSkeleton* skeleton  = (lower) ? &lowerSkeleton 	: &upperSkeleton;
+		return SingleDequeue(*chain,*skeleton);
+	}
+	bool FinishSkeleton(bool lower) {
+		Chain* chain     		   = (lower) ? &getLowerChain()	: &getUpperChain();
+		PartialSkeleton* skeleton  = (lower) ? &lowerSkeleton 	: &upperSkeleton;
+		return FinishSkeleton(*chain,*skeleton);
+	}
 
 	/* construct skeletal structure using nodes and arcs */
 	uint addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray);

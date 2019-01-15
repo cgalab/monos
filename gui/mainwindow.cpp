@@ -5,10 +5,14 @@
 
 #include <QInputDialog>
 
-MainWindow::MainWindow(const std::string& title, Monos& monos) :
+MainWindow::MainWindow(const std::string& title, Monos& _monos) :
   CGAL::Qt::DemosMainWindow(),
   title(title),
-  ui(new Ui::MainWindow) {
+  ui(new Ui::MainWindow),
+  onLowerChain(true),
+  lowerChainDone(false),
+  upperChainDone(false),
+  monos(_monos) {
 
   ui->setupUi(this);
   setWindowTitle(QString::fromStdString(title));
@@ -28,7 +32,15 @@ MainWindow::MainWindow(const std::string& title, Monos& monos) :
                    xycoord, SLOT(setText(QString)));
   this->view = ui->gV;
 
+  /* general init */
   monos.init();
+
+	LOG(INFO) << "test a";
+  /* start with lower chain */
+  if(!monos.initSkeletonQueue(onLowerChain)) {
+	  LOG(WARNING) << "Error Init SkeletonQueue!";
+  }
+
 
 //  GMLGraph graph;
 //  graph = GMLGraph::create_from_graphml(is);
@@ -151,12 +163,41 @@ MainWindow::on_actionTimeBackward_triggered() {
 void
 MainWindow::on_actionTimeForwardThrough_triggered() {
 //  s.wp.advance_time_ignore_event(); // M - Move forward in time, but ignore any event that may have happened
-  time_changed();
+	time_changed();
 }
 
 void
 MainWindow::on_actionTimeForward_triggered() {
 //  s.wp.advance_time(); // N - Move forward in time by the increment, or until the next event and handle it
+	LOG(INFO) << "test";
+	if(onLowerChain) {
+		LOG(INFO) << "lower";
+	} else {
+		LOG(INFO) << "upper";
+	}
+	if(!upperChainDone || !lowerChainDone) {
+		LOG(INFO) << "go skel";
+		if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
+			LOG(INFO) << "one chain done";
+			if(onLowerChain) {
+				lowerChainDone = true;
+			} else {
+				upperChainDone = true;
+			}
+
+			if(lowerChainDone && !upperChainDone) {
+				monos.finishSkeleton(onLowerChain);
+				onLowerChain = false;
+				monos.initSkeletonQueue(onLowerChain);
+			}
+		}
+	}
+
+	if(lowerChainDone && upperChainDone) {
+		LOG(INFO) << "both done! TODO: finish 2nd skel end";
+		// go on to compute merge
+	}
+
   time_changed();
 }
 

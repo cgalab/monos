@@ -19,7 +19,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     Q_OBJECT
 
   public:
-    explicit MainWindow(const std::string& title, Monos& monos);
+    explicit MainWindow(const std::string& title, Monos& _monos);
     ~MainWindow();
   private:
     bool first_show_event = true;
@@ -56,6 +56,10 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     QLabel* time_label;
     NT drawing_time_offset_increment;
 
+    bool onLowerChain;
+    bool lowerChainDone, upperChainDone;
+
+    Monos& monos;
 //    SkeletonStructure s;
 
     std::shared_ptr<InputGraphicsItem> input_gi;

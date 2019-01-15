@@ -21,7 +21,6 @@
 #define MONOS_H_
 
 #include <list>
-#include <functional>
 
 #include "Config.h"
 #include "Data.h"
@@ -36,19 +35,28 @@ public:
 	Monos(std::list<std::string>& args);
 	virtual ~Monos();
 
-	bool init();
-	void start();
+	/**
+	 * a full run of monos
+	 *  */
+	void run();
 
-	void setGuiSpy(std::function<void(void)>& spy) {guiSpy = spy;}
+	/**
+	 * verify valid config, initialize BBox, chain decomp.
+	 * */
+	bool init();
+
+	/**
+	 * enable stepping trough the computation
+	 * */
+	bool initSkeletonQueue(bool lower) {return wf.InitSkeletonQueue(lower);}
+	bool computeSingleSkeletonEvent(bool lower) {return wf.ComputeSingleSkeletonEvent(lower);}
+	bool finishSkeleton(bool lower)    {return wf.FinishSkeleton(lower);   }
 
 private:
 	Config 			config;
 	Data			data;
 	Wavefront 		wf;
 	Skeleton		s;
-
-	/* gui hack */
-	std::function<void(void)> guiSpy;
 };
 
 #endif /* MONOS_H_ */
