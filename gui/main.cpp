@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 	static std::list<std::string> args;
 	for(auto i = 1; i < argc; ++i) { args.push_back(std::string(argv[i])); }
 
-	Monos monos(args);
+	Monos monos(args,true);
 
 	std::string title =
 #ifdef CMAKE_BUILD_TYPE

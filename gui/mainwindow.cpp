@@ -45,6 +45,10 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	input_gi = std::make_shared<InputGraphicsItem>(&monos.data.getBasicInput());
 	scene.addItem(input_gi.get());
 
+	skeleton_gi = std::make_shared<InputGraphicsItem>(&monos.wf.getBasicInput());
+	scene.addItem(skeleton_gi.get());
+
+
 	auto input_size = input_gi->boundingRect().size();
 	auto size_avg = (input_size.width() + input_size.height() ) /2.0;
 	//  s.wp.set_increment(size_avg/5000.);
@@ -137,6 +141,7 @@ update_time_label() {
 void
 MainWindow::
 time_changed() {
+	skeleton_gi->modelChanged();
 	//  if (s.wp.simulation_is_finished()) {
 	//    simulation_has_finished();
 	//  }
@@ -164,31 +169,6 @@ MainWindow::on_actionTimeForwardThrough_triggered() {
 void
 MainWindow::on_actionTimeForward_triggered() {
 	//  s.wp.advance_time(); // N - Move forward in time by the increment, or until the next event and handle it
-	if(!upperChainDone || !lowerChainDone) {
-		if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
-			if(onLowerChain) {
-				lowerChainDone = true;
-			} else {
-				upperChainDone = true;
-			}
-
-			if(lowerChainDone && !upperChainDone) {
-				monos.finishSkeleton(onLowerChain);
-				onLowerChain = false;
-				monos.initSkeletonQueue(onLowerChain);
-			}
-		}
-	}
-
-	if(lowerChainDone && upperChainDone && !bothChainsDone) {
-		LOG(INFO) << "both done! TODO: finish 2nd skel end + merge";
-		monos.finishSkeleton(onLowerChain);
-	}
-
-	if(bothChainsDone) {
-		LOG(INFO) << "merge start!";
-	}
-
 	time_changed();
 }
 
@@ -208,6 +188,36 @@ MainWindow::on_actionTimeReset_triggered() {
 void
 MainWindow::on_actionEventStep_triggered() {
 	//  s.wp.advance_step(); // n - Move forward in time to the next event and handle it
+	if(!upperChainDone || !lowerChainDone) {
+		if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
+			if(onLowerChain) {
+				lowerChainDone = true;
+			} else {
+				upperChainDone = true;
+			}
+
+			if(lowerChainDone && !upperChainDone) {
+				monos.finishSkeleton(onLowerChain);
+				onLowerChain = false;
+				monos.initSkeletonQueue(onLowerChain);
+			}
+		}
+	}
+
+	if(lowerChainDone && upperChainDone && !bothChainsDone) {
+		LOG(INFO) << "both done! TODO: finish 2nd skel end + merge";
+		monos.finishSkeleton(onLowerChain);
+		bothChainsDone = true;
+		monos.s.initMerge();
+	}
+
+	if(bothChainsDone && !mergeDone) {
+		LOG(INFO) << "merge start!";
+		if(!monos.s.SingleMergeStep()) {
+			mergeDone = true;
+		}
+	}
+
 	time_changed();
 }
 

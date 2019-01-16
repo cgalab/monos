@@ -25,10 +25,12 @@
 #include "Data.h"
 
 
-Monos::Monos(std::list<std::string>& args):config(args),wf(data),s(data,wf) {
+Monos::Monos(std::list<std::string>& args, bool gui):
+config(args,gui),wf(data),s(data,wf) {
 	/* evaluate arguments */
 	if(!config.isValid()) {return;}
 
+	data.setGui(gui);
 	/* load data: input and bbox */
 	data.initialize(config);
 	LOG(INFO) << "input loaded";

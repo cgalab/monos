@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>418</width>
-    <height>342</height>
+    <width>823</width>
+    <height>577</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -27,23 +27,18 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>0</number>
     </property>
     <property name="spacing">
      <number>0</number>
     </property>
     <item row="0" column="0">
-     <widget class="MyQGraphicsView" name="gV"/>
+     <widget class="MyQGraphicsView" name="gV">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(255, 255, 255);</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -321,7 +316,6 @@
     <string>=</string>
    </property>
   </action>
-
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>

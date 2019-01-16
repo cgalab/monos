@@ -32,7 +32,7 @@
 
 class Monos {
 public:
-	Monos(std::list<std::string>& args);
+	Monos(std::list<std::string>& args, bool gui = false);
 	virtual ~Monos();
 
 	/**
@@ -53,7 +53,6 @@ public:
 	bool finishSkeleton(bool lower)    {return wf.FinishSkeleton(lower);   }
 
 	Data			data;
-private:
 	Config 			config;
 	Wavefront 		wf;
 	Skeleton		s;

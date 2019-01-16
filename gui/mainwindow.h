@@ -27,6 +27,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
 
     bool onLowerChain = true;
     bool lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
+    bool mergeDone = false;
 
   private slots:
     void showEvent(QShowEvent *);
@@ -64,7 +65,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
 //    SkeletonStructure s;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
-//    std::shared_ptr<KineticTriangulationGraphicsItem> kinetic_triangulation_gi;
+    std::shared_ptr<InputGraphicsItem> skeleton_gi;
 
     void updateVisibilities();
     void update_time_label();

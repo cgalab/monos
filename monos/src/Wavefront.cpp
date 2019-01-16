@@ -15,6 +15,7 @@ void Wavefront::InitializeNodes() {
 	for(auto v : data.getVertices()) {
 		Node n(NodeType::TERMINAL, v);
 		nodes.push_back(n);
+		skeleton_gi.add_vertex(BasicVertex(v,1,nodes.size()-1));
 	}
 }
 
@@ -132,6 +133,10 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 	 *  iterate along lower chain and find event time for each edge
 	 **/
 	if(chain.size() < 2) {return true;}
+
+	while(!eventTimes.empty()) {
+		SingleDequeue(chain,skeleton);
+	}
 
 	uint aEdgeIdx, bEdgeIdx;
 	auto chainIterator = chain.begin();
@@ -360,6 +365,10 @@ uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& e
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
 	nodeB->arcs.push_back(arcIdx);
+
+	/* add to basicInput for GUI representation */
+	skeleton_gi.add_edge(arc.firstNodeIdx,arc.secondNodeIdx);
+
 	return arcIdx;
 }
 
@@ -384,6 +393,7 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	} else {
 		/* a classical event to be handled */
 		nodes.push_back(*node);
+		skeleton_gi.add_vertex(BasicVertex(node->point,3,nodes.size()-1));
 		skeleton.push_back(nodeIdx);
 
 		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());

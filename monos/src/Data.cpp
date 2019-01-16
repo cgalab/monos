@@ -52,7 +52,7 @@ bool Data::loadFile(const std::string& fileName) {
 		std::string extension = (fileName.find(".")  != std::string::npos) ? fileName.substr(fileName.find_last_of(".")+1) : "";
 		transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
-		if( extension == "gml" ) {
+		if( extension == "gml" || extension == "graphml" ) {
 			std::cout << "parsing gml" << std::endl;
 			if(!parseGML(in)) {return false;}
 		} else {
@@ -150,6 +150,10 @@ bool Data::parseOBJ(const std::vector<std::string>& lines) {
 	polygon 		= poly;
 	edgeWeights 	= weights;
 
+	/* construct BasicInput for GUI */
+	if(gui)  {
+		basicInput.add_list(inputVertices,polygon);
+	}
 	return !inputVertices.empty() && !polygon.empty();
 }
 
@@ -165,8 +169,6 @@ bool Data::parseGML(std::istream &istream) {
 	basicInput.add_graph(gml);
 
 	InputPoints 	points;
-	Polygon			poly;
-	InputWeights 	weights;
 
 	for(auto v : basicInput.vertices()) {
 		points.push_back(v.p);
@@ -175,33 +177,27 @@ bool Data::parseGML(std::istream &istream) {
 	/* iterate over edges to construct polygon */
 	auto edges = basicInput.edges();
 
-	std::vector<uint> vertexEdgeMap(edges.size());
+	Polygon			poly(edges.size());
+	InputWeights 	weights(edges.size());
+
 	for(uint i=0; i < edges.size(); ++i) {
 		auto edge = edges[i];
-		std::cout << " " << i << "," << edge.u; fflush(stdout);
-		vertexEdgeMap[edge.u] = i;
+		auto min = std::min(edge.u,edge.v);
+		auto max = std::max(edge.u,edge.v);
+		assert(min != max);
+
+		if(min != 0 || (min == 0 && max == 1) ) {
+			poly[min] = {{edge.u, edge.v}};
+			weights[min] = edge.weight;
+		} else {
+			poly[max] = {{edge.v, edge.u}};
+			weights[max] = edge.weight;
+		}
 	}
 
-	std::cout << std::endl;
-
-	auto eIdxStart = 0;
-	auto eIt = eIdxStart;
-	do {
-		auto e = edges[eIt];
-		std::cout << " " << e.u << "," << e.v; fflush(stdout);
-		poly.push_back({{e.u-1, e.v-1}});
-		weights.push_back(e.weight);
-		eIt = vertexEdgeMap[e.v];
-	} while(eIt != eIdxStart);
-
-	uint lastEdgeA = poly.back()[1];
-	uint lastEdgeB = poly.front()[0];
-
-	if(!basicInput.has_edge(lastEdgeB,lastEdgeA)) {
-		poly.push_back({{lastEdgeA, lastEdgeB }});
-		weights.push_back(CORE_ONE);
-		LOG(INFO) << "last edge missing! weight set to 1. ";
-	}
+//	for(auto edge : poly) {
+//		std::cout << edge[0] << "-" << edge[1] << "  ";
+//	}
 
 	/* initialize const input variables */
 	inputVertices 	= points;

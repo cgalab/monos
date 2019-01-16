@@ -25,7 +25,12 @@ public:
 	}
 	~Skeleton() {}
 
+	/* running the merge by one call */
 	void MergeUpperLowerSkeleton();
+
+	void initMerge();
+	bool SingleMergeStep();
+	void finishMerge();
 
 	void printSkeleton() const;
 	void writeOBJ(const Config& cfg) const;
@@ -34,7 +39,6 @@ private:
 	bool findRayFaceIntersection(const uint& edgeIdx, const Ray& ray, const bool upperChain, uint& arcIdx, Point& intersection);
 	bool nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const;
 
-	uint addNode(const Point& intersection);
 	uint handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis);
 	void updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
@@ -43,18 +47,21 @@ private:
 
 	uint mergeStartNodeIdx() const {return data.e(wf.startLowerEdgeIdx)[0];}
 	uint mergeEndNodeIdx() const {return data.e(wf.endLowerEdgeIdx)[1];}
-	bool isMergeStartEndNodeIdx(const uint& idx) const {return idx == mergeStartNodeIdx() || idx == mergeEndNodeIdx();}
+	inline bool isMergeStartEndNodeIdx(const uint& idx) const {return idx == mergeStartNodeIdx() || idx == mergeEndNodeIdx();}
 
 	Point& getSourceNodePoint() const { return wf.nodes[sourceNodeIdx].point; }
-	Point intersectArcRay(const Arc& arc, const Ray& ray) const {
+	inline Point intersectArcRay(const Arc& arc, const Ray& ray) const {
 		return (arc.type == ArcType::NORMAL) ? intersectElements(ray, arc.edge) : intersectElements(ray, arc.ray);
 	}
 
 	const Data& data;
-	Wavefront& wf;
+	Wavefront& 	wf;
 
-	uint sourceNodeIdx;
-	uint startIdxMergeNodes;
+	Node* sourceNode = nullptr;
+	uint sourceNodeIdx = 0, newNodeIdx = 0;
+	uint startIdxMergeNodes = 0;
+
+	uint upperChainIndex = 0, lowerChainIndex = 0;
 };
 
 #endif /* SKELETON_H_ */

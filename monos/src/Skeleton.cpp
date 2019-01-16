@@ -83,20 +83,30 @@ uint Skeleton::nextLowerChainIndex(const uint& idx) const {
 	return (idx+1 < data.getPolygon().size()) ? idx + 1 : 0;
 }
 
+void Skeleton::initMerge() {
+	upperChainIndex    	= wf.endUpperEdgeIdx;
+	lowerChainIndex    	= wf.startLowerEdgeIdx;
+	startIdxMergeNodes 	= wf.nodes.size();
+	sourceNodeIdx 	   	= wf.pathFinder[lowerChainIndex][0];
+	sourceNode    		= &wf.nodes[sourceNodeIdx];
+	newNodeIdx    		= sourceNodeIdx;
+}
+
+/* add last are, connect to end node! */
+void Skeleton::finishMerge() {
+	wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex);
+}
+
 void Skeleton::MergeUpperLowerSkeleton() {
-	auto polygon = data.getPolygon();
-	auto upperChainIndex = wf.endUpperEdgeIdx;
-	auto lowerChainIndex = wf.startLowerEdgeIdx;
-	startIdxMergeNodes = wf.nodes.size();
-
-	bool upperChainsTurn = true;
-
-	sourceNodeIdx 	   = wf.pathFinder[lowerChainIndex][0];
-	auto sourceNode    = &wf.nodes[sourceNodeIdx];
-	auto newNodeIdx    = sourceNodeIdx;
+	initMerge();
 
 	/* iterate over upper and lower chain with while loop */
-	do {
+	while(SingleMergeStep());
+
+	finishMerge();
+}
+
+bool Skeleton::SingleMergeStep() {
 //		/* DEBUG */
 //		auto upperNodeIdx = data.e(upperChainIndex)[0];
 //		auto lowerNodeIdx = data.e(lowerChainIndex)[1];
@@ -105,90 +115,86 @@ void Skeleton::MergeUpperLowerSkeleton() {
 //		std::cout << " upper: " << upperNode->arcs.size() << ", lower: " << lowerNode->arcs.size() << std::endl;;
 //		/* END DEBUG */
 
-		auto bis = wf.constructBisector(upperChainIndex,lowerChainIndex);
-		/* we can not yet restrict the bisector since due to the merge it might be directed
-		 * towards the node we start from */
-		std::cout << " bis: " << bis;
+	auto bis = wf.constructBisector(upperChainIndex,lowerChainIndex);
+	/* we can not yet restrict the bisector since due to the merge it might be directed
+	 * towards the node we start from */
+	std::cout << " bis: " << bis;
 
-		/* print a b c */
-		Edge eA = data.getEdge(upperChainIndex);
-		Edge eB = data.getEdge(lowerChainIndex);
-		std::cout << " Points: " << eA.source() << "," << eA.target();
-		std::cout << " / " << eB.source() << "," << eB.target() << std::endl;
+	/* print a b c */
+	Edge eA = data.getEdge(upperChainIndex);
+	Edge eB = data.getEdge(lowerChainIndex);
+	std::cout << " Points: " << eA.source() << "," << eA.target();
+	std::cout << " / " << eB.source() << "," << eB.target() << std::endl;
 
-		/* identify arcs and intersection points */
-		uint  upperArcIdx, lowerArcIdx;
-		Point pU=INFPOINT, pL=INFPOINT;
+	/* identify arcs and intersection points */
+	uint  upperArcIdx, lowerArcIdx;
+	Point pU=INFPOINT, pL=INFPOINT;
 
-		std::cout << std::endl << "UPPER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
-		while(upperChainIndex+1 != wf.startUpperEdgeIdx
-				&& !findRayFaceIntersection(upperChainIndex,bis,true, upperArcIdx, pU)) {
+	std::cout << std::endl << "UPPER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
+	while(upperChainIndex+1 != wf.startUpperEdgeIdx
+			&& !findRayFaceIntersection(upperChainIndex,bis,true, upperArcIdx, pU)) {
+		upperChainIndex = nextUpperChainIndex(upperChainIndex);
+		std::cout << std::endl << "uc:" << upperChainIndex << " "; fflush(stdout);
+	}
+
+	std::cout << std::endl << "LOWER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
+	while(lowerChainIndex != wf.endLowerEdgeIdx+1
+			&& !findRayFaceIntersection(lowerChainIndex,bis,false, lowerArcIdx, pL)) {
+		lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
+		std::cout << " lc:" << lowerChainIndex << " "; fflush(stdout);
+	}
+
+	std::cout << "." << upperChainIndex << " " << lowerChainIndex
+			  << " pU: " << pU << " pL: " << pL; fflush(stdout);
+
+	if( (upperChainIndex+1 != wf.startUpperEdgeIdx || lowerChainIndex != wf.endLowerEdgeIdx+1) ) {
+		auto distNodePU = CGAL::squared_distance(sourceNode->point, pU);
+		auto distNodePL = CGAL::squared_distance(sourceNode->point, pL);
+
+		if( distNodePU < distNodePL || pL == INFPOINT) {
+			/* upper chain intersection is closer */
+			std::cout << " -u- (" << upperArcIdx << ") "; fflush(stdout);
+			std::vector<uint> arcInices{upperArcIdx};
+			newNodeIdx = handleMerge(arcInices,upperChainIndex,lowerChainIndex,pU,bis);
+
+			auto upperArc = &wf.arcList[upperArcIdx];
+			upperChainIndex = upperArc->leftEdgeIdx;
+		} else if (distNodePU > distNodePL || pU == INFPOINT) {
+			/* lower chain is closer */
+			std::cout << " -l- (" << lowerArcIdx << ") "; fflush(stdout);
+			std::vector<uint> arcInices{lowerArcIdx};
+			newNodeIdx = handleMerge(arcInices,upperChainIndex,lowerChainIndex,pL,bis);
+
+			auto lowerArc = &wf.arcList[lowerArcIdx];
+			lowerChainIndex = lowerArc->rightEdgeIdx;
+		} else if (pU == pL){
+			/* multi event */
+			std::cout << " -m(TODO arcs)- "; fflush(stdout);
+			std::vector<uint> arcInices{upperArcIdx,lowerArcIdx};
+			newNodeIdx = handleMerge(arcInices,upperChainIndex,lowerChainIndex,pU,bis);
+
 			upperChainIndex = nextUpperChainIndex(upperChainIndex);
-			std::cout << std::endl << "uc:" << upperChainIndex << " "; fflush(stdout);
-		}
-
-		std::cout << std::endl << "LOWER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
-		while(lowerChainIndex != wf.endLowerEdgeIdx+1
-				&& !findRayFaceIntersection(lowerChainIndex,bis,false, lowerArcIdx, pL)) {
 			lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-			std::cout << " lc:" << lowerChainIndex << " "; fflush(stdout);
 		}
 
-		std::cout << "." << upperChainIndex << " " << lowerChainIndex
-				  << " pU: " << pU << " pL: " << pL; fflush(stdout);
+		/* TODO: node is sorted exept for new arc, add it on the right place! */
+		//sourceNode->sort(wf.arcList);
 
-		if( (upperChainIndex+1 != wf.startUpperEdgeIdx || lowerChainIndex != wf.endLowerEdgeIdx+1) ) {
-			auto distNodePU = CGAL::squared_distance(sourceNode->point, pU);
-			auto distNodePL = CGAL::squared_distance(sourceNode->point, pL);
+		sourceNodeIdx = newNodeIdx;;
+		sourceNode    = &wf.nodes[sourceNodeIdx];
+	}
+	if(upperChainIndex+1 == wf.startUpperEdgeIdx && lowerChainIndex != wf.endLowerEdgeIdx+1) {
+		--upperChainIndex;
+	}
+	if(upperChainIndex+1 != wf.startUpperEdgeIdx && lowerChainIndex == wf.endLowerEdgeIdx+1) {
+		--lowerChainIndex;
+	}
 
-			if( distNodePU < distNodePL || pL == INFPOINT) {
-				/* upper chain intersection is closer */
-				std::cout << " -u- (" << upperArcIdx << ") "; fflush(stdout);
-				std::vector<uint> arcInices{upperArcIdx};
-				newNodeIdx = handleMerge(arcInices,upperChainIndex,lowerChainIndex,pU,bis);
-
-				auto upperArc = &wf.arcList[upperArcIdx];
-				upperChainIndex = upperArc->leftEdgeIdx;
-			} else if (distNodePU > distNodePL || pU == INFPOINT) {
-				/* lower chain is closer */
-				std::cout << " -l- (" << lowerArcIdx << ") "; fflush(stdout);
-				std::vector<uint> arcInices{lowerArcIdx};
-				newNodeIdx = handleMerge(arcInices,upperChainIndex,lowerChainIndex,pL,bis);
-
-				auto lowerArc = &wf.arcList[lowerArcIdx];
-				lowerChainIndex = lowerArc->rightEdgeIdx;
-			} else if (pU == pL){
-				/* multi event */
-				std::cout << " -m(TODO arcs)- "; fflush(stdout);
-				std::vector<uint> arcInices{upperArcIdx,lowerArcIdx};
-				newNodeIdx = handleMerge(arcInices,upperChainIndex,lowerChainIndex,pU,bis);
-
-				upperChainIndex = nextUpperChainIndex(upperChainIndex);
-				lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-			}
-
-			/* TODO: node is sorted exept for new arc, add it on the right place! */
-			//sourceNode->sort(wf.arcList);
-
-			sourceNodeIdx = newNodeIdx;;
-			sourceNode    = &wf.nodes[sourceNodeIdx];
-		}
-		if(upperChainIndex+1 == wf.startUpperEdgeIdx && lowerChainIndex != wf.endLowerEdgeIdx+1) {
-			--upperChainIndex;
-		}
-		if(upperChainIndex+1 != wf.startUpperEdgeIdx && lowerChainIndex == wf.endLowerEdgeIdx+1) {
-			--lowerChainIndex;
-		}
-	} while(upperChainIndex != wf.startUpperEdgeIdx || lowerChainIndex != wf.endLowerEdgeIdx);
-
-
-	/* add last are, connect to end node! */
-	auto lastArcIdx = wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex);
+	return upperChainIndex != wf.startUpperEdgeIdx || lowerChainIndex != wf.endLowerEdgeIdx;
 }
 
-
 uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis) {
-	auto newNodeIdx = addNode(p);
+	auto newNodeIdx = wf.addNode(p);
 	auto sourceNode = &wf.nodes[sourceNodeIdx];
 	auto newNode    = &wf.nodes[newNodeIdx];
 
@@ -229,14 +235,10 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, con
 	}
 	arc->secondNodeIdx = secondNodeIdx;
 	newNode->arcs.push_back(arcIdx);
-}
 
-uint Skeleton::addNode(const Point& intersection) {
-	Node node(NodeType::NORMAL,intersection);
-	wf.nodes.push_back(node);
-	return wf.nodes.size() - 1;
+	/* update edge of gui DS */
+	wf.update_edge(arcIdx,arc->firstNodeIdx,arc->secondNodeIdx);
 }
-
 
 bool Skeleton::nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const {
 	auto arc  = &wf.arcList[arcIdx];

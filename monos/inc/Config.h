@@ -8,15 +8,15 @@
 
 class Config {
 public:
-	Config():
-		fileName(""),verbose(false),silent(false),
+	Config(bool _gui = false):
+		fileName(""),verbose(false),silent(false),gui(_gui),
 		outputType(OutputType::NONE),outputFileName(""),validConfig(false) {
 
 		printOptions = "[-h] [-v|-s] ";
 		printOptions += "[-poly|-obj <filename>] <filename>";
 	}
 
-	Config(std::list<std::string> args):Config() {
+	Config(std::list<std::string> args, bool _gui = false):Config() {
 		validConfig = evaluateArguments(args);
 	}
 
@@ -39,6 +39,7 @@ public:
 
 	bool 			verbose;
 	bool			silent;
+	bool 			gui;
 
 	OutputType  	outputType;
 	std::string	outputFileName;

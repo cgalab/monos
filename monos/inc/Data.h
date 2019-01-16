@@ -99,8 +99,9 @@ public:
 	bool ensureMonotonicity();
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 
-	const GMLGraph& getGMLGraph() const {return gml;}
 	const BasicInput& getBasicInput() const {return basicInput;}
+
+	void setGui(const bool _gui) { gui = _gui; }
 
 private:
 	bool loadFile(const std::string& fileName);
@@ -120,6 +121,8 @@ private:
 
 	GMLGraph		gml;
 	BasicInput		basicInput;
+
+	bool 			gui = false;
 };
 
 #endif /* DATA_H_ */
