@@ -15,7 +15,10 @@ void Wavefront::InitializeNodes() {
 	for(auto v : data.getVertices()) {
 		Node n(NodeType::TERMINAL, v);
 		nodes.push_back(n);
-		skeleton_gi.add_vertex(BasicVertex(v,1,nodes.size()-1));
+
+		if(data.gui) {
+			skeleton_gi.add_vertex(BasicVertex(v,1,nodes.size()-1));
+		}
 	}
 }
 
@@ -356,8 +359,9 @@ uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint
 	nodeA->arcs.push_back(arcIdx);
 
 	/* add to basicInput for GUI representation */
-	skeleton_gi.add_edge(nodeAIdx,0);
-
+	if(data.gui) {
+		skeleton_gi.add_edge(nodeAIdx,pathFinder[edgeLeft][0]);
+	}
 	return arcIdx;
 }
 
@@ -371,7 +375,9 @@ uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& e
 	nodeB->arcs.push_back(arcIdx);
 
 	/* add to basicInput for GUI representation */
-	skeleton_gi.add_edge(arc.firstNodeIdx,arc.secondNodeIdx);
+	if(data.gui) {
+		skeleton_gi.add_edge(nodeAIdx,nodeBIdx);
+	}
 
 	return arcIdx;
 }

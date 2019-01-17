@@ -126,7 +126,7 @@ bool Skeleton::SingleMergeStep() {
 	}
 
 	std::cout << " bis: u/l " << upperChainIndex << "/" << lowerChainIndex << " - " << bis;
-
+	fflush(stdout);
 	Edge eA = data.getEdge(upperChainIndex);
 	Edge eB = data.getEdge(lowerChainIndex);
 
@@ -252,7 +252,9 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, con
 	newNode->arcs.push_back(arcIdx);
 
 	/* update edge of gui DS */
-	wf.update_edge(arcIdx,arc->firstNodeIdx,arc->secondNodeIdx);
+	if(data.gui) {
+		wf.update_edge(arcIdx,arc->firstNodeIdx,arc->secondNodeIdx);
+	}
 }
 
 bool Skeleton::nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const {
