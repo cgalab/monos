@@ -72,6 +72,7 @@ public:
 
 	BasicInput& getBasicInput() {return skeleton_gi;}
 	void update_edge(unsigned idx, unsigned u, unsigned v) {skeleton_gi.update_edge(idx,u,v);}
+	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 
 	Nodes				nodes;
 	ArcList				arcList;

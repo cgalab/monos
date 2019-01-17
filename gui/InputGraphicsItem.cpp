@@ -34,7 +34,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 
   painter->setPen(segmentsPen());
   for (const auto& e : input->edges()) {
-    painterostream << input->get_segment(e);
+	painterostream << input->get_segment(e);
   }
 
   painter->setPen(verticesPen());

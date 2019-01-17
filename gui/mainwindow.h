@@ -45,7 +45,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionTimeBackward_triggered();
     void on_actionTimeForward_triggered();
     void on_actionTimeForwardThrough_triggered();
-    void on_actionTimeForwardNext_triggered();
+    void on_actionTimeForwardAfterChains_triggered();
     void on_actionTimeReset_triggered();
     void on_actionEventStep_triggered();
     void on_actionEventStepEnd_triggered();

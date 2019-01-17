@@ -12,7 +12,8 @@ bool Skeleton::findRayFaceIntersection(const uint& edgeIdx, const Ray& ray, cons
 	uint pathCount = 2;
 	Node* node;
 
-	/* as the merge starts from the relative 'leftmost' part we use the path closest to that side first */
+	/* as the merge s
+	 * starts from the relative 'leftmost' part we use the path closest to that side first */
 	/* we have to consider that we might end up following the 'leftmost' vertex, i.e., merge vertex */
 	if(upperChain) {
 		if(!isMergeStartEndNodeIdx(edge[1])) {
@@ -95,6 +96,7 @@ void Skeleton::initMerge() {
 /* add last are, connect to end node! */
 void Skeleton::finishMerge() {
 	wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex);
+	LOG(INFO) << "Merge Finished!";
 }
 
 void Skeleton::MergeUpperLowerSkeleton() {
@@ -106,31 +108,37 @@ void Skeleton::MergeUpperLowerSkeleton() {
 	finishMerge();
 }
 
+
+/**
+ * Executes a single merge step along the merge line, return false if merge is finished
+ * */
 bool Skeleton::SingleMergeStep() {
-//		/* DEBUG */
-//		auto upperNodeIdx = data.e(upperChainIndex)[0];
-//		auto lowerNodeIdx = data.e(lowerChainIndex)[1];
-//		auto upperNode = &wf.nodes[upperNodeIdx];
-//		auto lowerNode = &wf.nodes[lowerNodeIdx];
-//		std::cout << " upper: " << upperNode->arcs.size() << ", lower: " << lowerNode->arcs.size() << std::endl;;
-//		/* END DEBUG */
 
+	/* we start the bisector from the source node to the left since the merge line is 'x'-monotone */
 	auto bis = wf.constructBisector(upperChainIndex,lowerChainIndex);
-	/* we can not yet restrict the bisector since due to the merge it might be directed
-	 * towards the node we start from */
-	std::cout << " bis: " << bis;
+	if( wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL && !CGAL::parallel( bis.supporting_line() , data.monotonicityLine.perpendicular(data.monotonicityLine.point()) ) ) {
+		auto lastArcNodeIdx = (wf.getLastArc()->firstNodeIdx != sourceNodeIdx) ? wf.getLastArc()->firstNodeIdx : wf.getLastArc()->secondNodeIdx;
+		auto pointOnLastArc = wf.nodes[lastArcNodeIdx].point;
+		auto pointOnLastArcProjected = bis.supporting_line().projection(pointOnLastArc);
+		bis = Ray(sourceNode->point, sourceNode->point - pointOnLastArcProjected);
+	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL){
+		LOG(WARNING) << "bisector is vertical NOT IMPLEMENTED YET! Ray->Line? in general?";
+	}
 
-	/* print a b c */
+	std::cout << " bis: u/l " << upperChainIndex << "/" << lowerChainIndex << " - " << bis;
+
 	Edge eA = data.getEdge(upperChainIndex);
 	Edge eB = data.getEdge(lowerChainIndex);
+
 	std::cout << " Points: " << eA.source() << "," << eA.target();
 	std::cout << " / " << eB.source() << "," << eB.target() << std::endl;
 
 	/* identify arcs and intersection points */
 	uint  upperArcIdx, lowerArcIdx;
-	Point pU=INFPOINT, pL=INFPOINT;
+	Point pU = INFPOINT, pL = INFPOINT;
 
 	std::cout << std::endl << "UPPER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
+
 	while(upperChainIndex+1 != wf.startUpperEdgeIdx
 			&& !findRayFaceIntersection(upperChainIndex,bis,true, upperArcIdx, pU)) {
 		upperChainIndex = nextUpperChainIndex(upperChainIndex);
@@ -138,6 +146,7 @@ bool Skeleton::SingleMergeStep() {
 	}
 
 	std::cout << std::endl << "LOWER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
+
 	while(lowerChainIndex != wf.endLowerEdgeIdx+1
 			&& !findRayFaceIntersection(lowerChainIndex,bis,false, lowerArcIdx, pL)) {
 		lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
@@ -167,7 +176,9 @@ bool Skeleton::SingleMergeStep() {
 
 			auto lowerArc = &wf.arcList[lowerArcIdx];
 			lowerChainIndex = lowerArc->rightEdgeIdx;
-		} else if (pU == pL){
+		} else {
+			assert(pU == pL);
+
 			/* multi event */
 			std::cout << " -m(TODO arcs)- "; fflush(stdout);
 			std::vector<uint> arcInices{upperArcIdx,lowerArcIdx};
@@ -233,6 +244,10 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, con
 	} else {
 		arc->edge = Edge(arc->edge.source(),edgeEndPoint);
 	}
+
+	std::cout << " arc: " << arc->firstNodeIdx << "->" << arc->secondNodeIdx << " (" << secondNodeIdx << ") ";
+	fflush(stdout);
+
 	arc->secondNodeIdx = secondNodeIdx;
 	newNode->arcs.push_back(arcIdx);
 

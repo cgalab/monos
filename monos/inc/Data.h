@@ -65,8 +65,6 @@ public:
 	Data()  {}
 	~Data() {}
 
-	BBox bbox;
-
 	void initialize(const Config& cfg);
 	BBox computeBoundingBox() const;
 
@@ -103,6 +101,10 @@ public:
 
 	void setGui(const bool _gui) { gui = _gui; }
 
+	BBox 			bbox;
+	Line			monotonicityLine;
+	bool 			gui = false;
+
 private:
 	bool loadFile(const std::string& fileName);
 
@@ -117,12 +119,9 @@ private:
 	/* for every edge in polygon we store a strictly positive edge weight */
 	InputWeights	edgeWeights;
 
-	Line			monotonicityLine;
 
 	GMLGraph		gml;
 	BasicInput		basicInput;
-
-	bool 			gui = false;
 };
 
 #endif /* DATA_H_ */

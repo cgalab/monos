@@ -354,6 +354,10 @@ uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint
 	auto arcIdx = arcList.size();
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
+
+	/* add to basicInput for GUI representation */
+	skeleton_gi.add_edge(nodeAIdx,0);
+
 	return arcIdx;
 }
 

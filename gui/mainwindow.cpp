@@ -78,6 +78,13 @@ void
 MainWindow::updateVisibilities() {
 	input_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
 	input_gi->setVisible(ui->actionVisToggleInput->isChecked());
+
+	scene.removeItem(skeleton_gi.get());
+	scene.addItem(skeleton_gi.get());
+	skeleton_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
+	skeleton_gi->setVisible(ui->actionVisToggleInput->isChecked());
+
+
 	/*
   triangulation_gi->setVisible(ui->actionVisToggleTriangulation->isChecked());
 	 */
@@ -88,16 +95,16 @@ MainWindow::updateVisibilities() {
 	//  kinetic_triangulation_gi->setVisibleConstraints(ui->actionVisToggleWavefront->isChecked());
 	//  kinetic_triangulation_gi->setVisibleLabels(ui->actionVisToggleKineticTriangulationLabels->isChecked());
 	//  kinetic_triangulation_gi->setVisibleArcs(ui->actionVisToggleArcs->isChecked());
-	/*
-  skeleton_gi->setVisible(ui->actionVisToggleSkeleton->isChecked());
-  offset_gi->setVisible(ui->actionVisToggleOffset->isChecked());
+
+  skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
+  /*offset_gi->setVisible(ui->actionVisToggleOffset->isChecked());
 	 */
 }
 
 void
 MainWindow::on_actionResize_triggered() {
 	auto br = input_gi->boundingRect();
-	//  br |= kinetic_triangulation_gi->boundingRect();
+	//br |= skeleton_gi->boundingRect();
 	/*
   if (instance_triangulation_gi) {
     br |= instance_triangulation_gi->boundingRect();
@@ -129,6 +136,8 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
 void
 MainWindow::
 update_time_label() {
+	scene.update(scene.sceneRect());
+	skeleton_gi->update(scene.sceneRect());
 	//  auto t = CGAL::to_double( s.wp.get_time() );
 	//  time_label->setText(QString("e#%1; t: %2 (%3 %4); ").
 	//    arg(s.wp.event_ctr()).
@@ -173,8 +182,35 @@ MainWindow::on_actionTimeForward_triggered() {
 }
 
 void
-MainWindow::on_actionTimeForwardNext_triggered() {
-	//  s.wp.advance_time_next(); // , - Move forward in time to the next event but do not handle it yet
+MainWindow::on_actionTimeForwardAfterChains_triggered() {
+
+	if(!bothChainsDone) {
+		do {
+			if(!upperChainDone || !lowerChainDone) {
+				if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
+					if(onLowerChain) {
+						lowerChainDone = true;
+					} else {
+						upperChainDone = true;
+					}
+
+					if(lowerChainDone && !upperChainDone) {
+						monos.finishSkeleton(onLowerChain);
+						onLowerChain = false;
+						monos.initSkeletonQueue(onLowerChain);
+					}
+				}
+			}
+		} while(!upperChainDone);
+
+		if(lowerChainDone && upperChainDone && !bothChainsDone) {
+			LOG(INFO) << "both done! TODO: finish 2nd skel end + merge";
+			monos.finishSkeleton(onLowerChain);
+			bothChainsDone = true;
+			monos.s.initMerge();
+		}
+
+	}
 
 	time_changed();
 }
@@ -212,9 +248,9 @@ MainWindow::on_actionEventStep_triggered() {
 	}
 
 	if(bothChainsDone && !mergeDone) {
-		LOG(INFO) << "merge start!";
 		if(!monos.s.SingleMergeStep()) {
 			mergeDone = true;
+			monos.s.finishMerge();
 		}
 	}
 

@@ -61,14 +61,10 @@
    <addaction name="actionQuit"/>
    <addaction name="actionResize"/>
    <addaction name="separator"/>
-   <addaction name="actionVisToggleInput"/>
    <addaction name="actionVisToggleInputLabels"/>
-   <addaction name="actionVisToggleWavefront"/>
    <addaction name="actionVisToggleArcs"/>
-   <addaction name="actionVisToggleKineticTriangulation"/>
-   <addaction name="actionVisToggleKineticTriangulationLabels"/>
    <addaction name="separator"/>
-   <addaction name="actionTimeForwardNext"/>
+   <addaction name="actionTimeForwardAfterChains"/>
    <addaction name="actionTimeReset"/>
    <addaction name="separator"/>
    <addaction name="actionTimeBackward"/>
@@ -206,15 +202,15 @@
     <string>Alt+Shift+T</string>
    </property>
   </action>
-  <action name="actionTimeForwardNext">
+  <action name="actionTimeForwardAfterChains">
    <property name="text">
-    <string>,</string>
+    <string>C</string>
    </property>
    <property name="toolTip">
-    <string>time to next event (,)</string>
+    <string>finsh computing both chains.</string>
    </property>
    <property name="shortcut">
-    <string>,</string>
+    <string>C</string>
    </property>
   </action>
   <action name="actionTimeReset">
