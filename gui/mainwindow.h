@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <QLabel>
 
+#include "ArcGraphicsItem.h"
 #include "InputGraphicsItem.h"
 #include "Config.h"
 #include "Monos.h"
@@ -65,7 +66,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
 //    SkeletonStructure s;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
-    std::shared_ptr<InputGraphicsItem> skeleton_gi;
+    std::shared_ptr<ArcGraphicsItem> skeleton_gi;
 
     void updateVisibilities();
     void update_time_label();
