@@ -101,6 +101,16 @@ MainWindow::updateVisibilities() {
 }
 
 void
+MainWindow::on_actionToggleFullscreen_triggered() {
+	if (this->isFullScreen()) {
+		this->showNormal();
+	} else {
+		this->showFullScreen();
+	}
+	on_actionResize_triggered();
+}
+
+void
 MainWindow::on_actionResize_triggered() {
 	auto br = input_gi->boundingRect();
 	//br |= skeleton_gi->boundingRect();
