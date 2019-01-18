@@ -28,6 +28,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    weightDialog.ui
 
 INCLUDEPATH += ../monos/include ../monos/src

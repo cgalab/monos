@@ -127,12 +127,13 @@ MainWindow::on_actionResize_triggered() {
 }
 
 void
+MainWindow::on_actionDefineWeight() {
+	// TODO: popup ask for edge and weight!
+}
+
+void
 MainWindow::
 showEvent(QShowEvent *) {
-	//  if (first_show_event) {
-	//    on_actionResize_triggered();
-	////    first_show_event = false;
-	//  }
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event) {

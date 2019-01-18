@@ -40,6 +40,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionVisToggleArcs_triggered() { updateVisibilities(); };
     void on_actionResize_triggered();
     void on_actionToggleFullscreen_triggered();
+    void on_actionDefineWeight();
 
     void on_actionEventStep_triggered();
     void on_actionTimeForwardAfterChains_triggered();
@@ -54,7 +55,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     NT drawing_time_offset_increment;
 
     Monos& monos;
-//    SkeletonStructure s;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
     std::shared_ptr<ArcGraphicsItem> skeleton_gi;

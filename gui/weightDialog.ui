@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>823</width>
-    <height>577</height>
-   </rect>
-  </property>
+ <class>WeightDialog</class>
+ <widget class="QMainWindow" name="WeightDialog">
   <property name="sizePolicy">
    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
     <horstretch>0</horstretch>
@@ -27,50 +19,62 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <property name="margin">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
      <number>0</number>
     </property>
     <property name="spacing">
      <number>0</number>
     </property>
-    <item row="0" column="0">
-     <widget class="MyQGraphicsView" name="gV">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(255, 255, 255);</string>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="weightInput"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Weight: </string>
       </property>
      </widget>
     </item>
+    <item row="0" column="1">
+     <widget class="QSpinBox" name="edgeSelect"/>
+    </item>
+    <item row="3" column="1">
+     <widget class="QPushButton" name="pushButtonOK">
+      <property name="text">
+       <string>OK</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Edge: </string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
    </layout>
-  </widget>
-  <widget class="QToolBar" name="mainToolBar">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionQuit"/>
-   <addaction name="actionResize"/>
-   <addaction name="actionToggleFullscreen"/>
-   <addaction name="separator"/>
-   <addaction name="actionVisToggleInput"/>
-   <addaction name="actionVisToggleInputLabels"/>
-   <addaction name="actionVisToggleArcs"/>
-   <addaction name="separator"/>
-   <addaction name="actionEventStep"/>
-   <addaction name="actionTimeForwardAfterChains"/>
-   <addaction name="actionFinishComputation"/>
-   <addaction name="separator"/>
-   <addaction name="actionDefineWeight"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionQuit">
@@ -209,13 +213,6 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>MyQGraphicsView</class>
-   <extends>QGraphicsView</extends>
-   <header location="global">MyQtThings.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
