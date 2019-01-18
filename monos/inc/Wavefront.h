@@ -58,20 +58,19 @@ public:
 	uint addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray);
 	uint addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight);
 	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
-	inline uint addNode(const Point& intersection) {
-		Node node(NodeType::NORMAL,intersection);
+	inline uint addNode(const Point& intersection, const Exact& time) {
+		Node node(NodeType::NORMAL,intersection,time);
 		nodes.push_back(node);
-		skeleton_gi.add_vertex(BasicVertex(intersection,3,nodes.size()-1));
 		return nodes.size() - 1;
 	}
 
 	bool isArcInSkeleton(const uint& arcIdx) const;
 
+	Exact getTime() const {return currentTime;}
+
 	Node& getTerminalNodeForVertex(const uint& vertexIdx)  {return nodes[vertexIdx];}
 	void SortArcsOnNodes();
 
-	BasicInput& getBasicInput() {return skeleton_gi;}
-	void update_edge(unsigned idx, unsigned u, unsigned v) {skeleton_gi.update_edge(idx,u,v);}
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 
 	Nodes				nodes;
@@ -97,7 +96,6 @@ private:
 	 * for that edge at position idx as well */
 
 	const Data&     data;
-	BasicInput 		skeleton_gi;
 };
 
 #endif /* WAVEFRONT_H_ */

@@ -35,7 +35,9 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 
   painter->setPen(segmentsPen());
   for (const auto& e : *arcs) {
-	painterostream << e.edge;
+	  if(e.type != ArcType::DISABLED) {
+		  painterostream << e.edge;
+	  }
   }
 
   painter->setPen(verticesPen());

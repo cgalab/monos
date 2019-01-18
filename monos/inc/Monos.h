@@ -44,6 +44,7 @@ public:
 	 * verify valid config, initialize BBox, chain decomp.
 	 * */
 	bool init();
+	void write();
 
 	/**
 	 * enable stepping trough the computation

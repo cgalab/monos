@@ -98,8 +98,8 @@ public:
 	uint leftEdge()  const { return edges[0]; }
 	uint rightEdge() const { return edges[2]; }
 
-	Exact           eventTime;
-	Point  		    eventPoint;
+	Exact         	eventTime;
+	Point  			eventPoint;
 	EventEdges		edges;
 
 	ChainRef 		chainEdge;
@@ -122,13 +122,15 @@ struct TimeEdgeCmp {
 class Arc {
 public:
 	Arc(ArcType t, uint firstNode, uint leftEdge, uint rightEdge, Ray r):
-		type(t), firstNodeIdx(firstNode), secondNodeIdx(0),
+		type(t), firstNodeIdx(firstNode), secondNodeIdx(MAX),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
 		edge(Edge()),ray(r) {}
 	Arc(ArcType t, uint firstNode, uint secondNode, uint leftEdge, uint rightEdge, Edge e):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(secondNode),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
 		edge(e),ray(Ray()) {}
+
+	void disable() {type=ArcType::DISABLED;}
 
 	ArcType type;
 	uint firstNodeIdx, secondNodeIdx;
@@ -154,14 +156,17 @@ struct ArcCmp {
 
 
 struct Node {
-	Node(const NodeType t, const Point p): type(t), point(p) {}
+	Node(const NodeType t, const Point p, Exact time): type(t), point(p), time(time) {}
 
 	NodeType 		type;
 	Point			point;
+	Exact			time;
 
 	/* all incident arcs, i.e., the indices to them */
 	std::vector<uint> 	arcs;
 	// TODO: test  boost::container::small_vector instead of vector?
+
+	void disable() {type = NodeType::DISABLED;}
 
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));

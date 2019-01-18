@@ -83,7 +83,7 @@ MainWindow::updateVisibilities() {
 	scene.addItem(skeleton_gi.get());
 	skeleton_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
 	skeleton_gi->setVisible(ui->actionVisToggleInput->isChecked());
-
+    skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
 
 	/*
   triangulation_gi->setVisible(ui->actionVisToggleTriangulation->isChecked());
@@ -96,7 +96,6 @@ MainWindow::updateVisibilities() {
 	//  kinetic_triangulation_gi->setVisibleLabels(ui->actionVisToggleKineticTriangulationLabels->isChecked());
 	//  kinetic_triangulation_gi->setVisibleArcs(ui->actionVisToggleArcs->isChecked());
 
-  skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
   /*offset_gi->setVisible(ui->actionVisToggleOffset->isChecked());
 	 */
 }
@@ -138,13 +137,19 @@ MainWindow::
 update_time_label() {
 	scene.update(scene.sceneRect());
 	skeleton_gi->update(scene.sceneRect());
-	//  auto t = CGAL::to_double( s.wp.get_time() );
-	//  time_label->setText(QString("e#%1; t: %2 (%3 %4); ").
-	//    arg(s.wp.event_ctr()).
-	//    arg(t , 9, 'f', 5).
-	////    arg((kinetic_triangulation_gi->drawing_time_offset() < 0) ? "-" : "+" ).
-	////    arg(abs(CGAL::to_double(kinetic_triangulation_gi->drawing_time_offset())), 9, 'f', 5)
-	//    );
+	if(bothChainsDone && !mergeDone) {
+		time_label->setText(QString(" -merging- "));
+	} else if(mergeDone) {
+		time_label->setText(QString(" -finished- "));
+	} else {
+	  auto t = CGAL::to_double( monos.wf.getTime() );
+	  time_label->setText(QString("t: %1 ").
+	    arg(t)
+    //arg(s.wp.event_ctr()).
+	//    arg((kinetic_triangulation_gi->drawing_time_offset() < 0) ? "-" : "+" ).
+	//    arg(abs(CGAL::to_double(kinetic_triangulation_gi->drawing_time_offset())), 9, 'f', 5)
+	    );
+	}
 }
 
 void
@@ -163,23 +168,6 @@ time_changed() {
 	//  }
 }
 
-void
-MainWindow::on_actionTimeBackward_triggered() {
-	//  s.wp.reverse_time(); // b - move back in time
-	time_changed();
-}
-
-void
-MainWindow::on_actionTimeForwardThrough_triggered() {
-	//  s.wp.advance_time_ignore_event(); // M - Move forward in time, but ignore any event that may have happened
-	time_changed();
-}
-
-void
-MainWindow::on_actionTimeForward_triggered() {
-	//  s.wp.advance_time(); // N - Move forward in time by the increment, or until the next event and handle it
-	time_changed();
-}
 
 void
 MainWindow::on_actionTimeForwardAfterChains_triggered() {
@@ -213,12 +201,22 @@ MainWindow::on_actionTimeForwardAfterChains_triggered() {
 	}
 
 	time_changed();
+	on_actionResize_triggered();
 }
 
 void
-MainWindow::on_actionTimeReset_triggered() {
+MainWindow::on_actionFinishComputation_triggered() {
 	//  s.wp.reset_time_to_last_event(); // backspace -- reset to last event time
+
+	on_actionTimeForwardAfterChains_triggered();
+
+	while(monos.s.SingleMergeStep());
+
+	mergeDone = true;
+	monos.s.finishMerge();
+
 	time_changed();
+	on_actionResize_triggered();
 }
 
 void
@@ -257,32 +255,6 @@ MainWindow::on_actionEventStep_triggered() {
 	time_changed();
 }
 
-void
-MainWindow::on_actionEventStepEnd_triggered() {
-	//  s.wp.advance_to_end();
-
-	//  auto size = kinetic_triangulation_gi->boundingRect().size();
-	//  auto size_avg = (size.width() + size.height() ) /2.0;
-	//  s.wp.advance_time_ignore_event(s.wp.get_time() + size_avg/5.);
-
-	time_changed();
-}
-
-void
-MainWindow::on_actionTimeOffsetMinus_triggered() {
-	//  kinetic_triangulation_gi->setDrawingOffset(kinetic_triangulation_gi->drawing_time_offset() - drawing_time_offset_increment);
-	time_changed();
-}
-void
-MainWindow::on_actionTimeOffsetPlus_triggered() {
-	//  kinetic_triangulation_gi->setDrawingOffset(kinetic_triangulation_gi->drawing_time_offset() + drawing_time_offset_increment);
-	time_changed();
-}
-void
-MainWindow::on_actionTimeOffsetReset_triggered() {
-	//  kinetic_triangulation_gi->setDrawingOffset(CORE_ZERO);
-	time_changed();
-}
 
 void
 MainWindow::simulation_has_finished() {

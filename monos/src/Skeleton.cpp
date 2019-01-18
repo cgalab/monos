@@ -43,7 +43,7 @@ bool Skeleton::findRayFaceIntersection(const uint& edgeIdx, const Ray& ray, cons
 				std::cout << " " << arc->firstNodeIdx << "->" << arc->secondNodeIdx << " ";fflush(stdout);
 
 				/* check that we do not find our source node as a new intersection  */
-				if(arc->secondNodeIdx < startIdxMergeNodes) {
+				if(arc->secondNodeIdx < startIdxMergeNodes || arc->secondNodeIdx == MAX) {
 //				if(arc->firstNodeIdx < startIdxMergeNodes) {
 //				if(arc->secondNodeIdx < sourceNodeIdx) {
 					/* find an intersection */
@@ -120,9 +120,24 @@ bool Skeleton::SingleMergeStep() {
 		auto lastArcNodeIdx = (wf.getLastArc()->firstNodeIdx != sourceNodeIdx) ? wf.getLastArc()->firstNodeIdx : wf.getLastArc()->secondNodeIdx;
 		auto pointOnLastArc = wf.nodes[lastArcNodeIdx].point;
 		auto pointOnLastArcProjected = bis.supporting_line().projection(pointOnLastArc);
+
 		bis = Ray(sourceNode->point, sourceNode->point - pointOnLastArcProjected);
-	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL){
-		LOG(WARNING) << "bisector is vertical NOT IMPLEMENTED YET! Ray->Line? in general?";
+
+	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL) {
+		/* bisector is vertical in respect to monotonicity line */
+		Point P = intersectElements(bis,data.bbox.bottom);
+		if (P == INFPOINT) {
+			P = intersectElements(bis,data.bbox.right);
+		}
+		if (P == INFPOINT) {
+			P = intersectElements(bis,data.bbox.top);
+		}
+		if (P == INFPOINT) {
+			P = intersectElements(bis,data.bbox.left);
+		}
+		bis = Ray(P,-bis.direction());
+
+		LOG(INFO) << "bisector is vertical!";
 	}
 
 	std::cout << " bis: u/l " << upperChainIndex << "/" << lowerChainIndex << " - " << bis;
@@ -205,12 +220,13 @@ bool Skeleton::SingleMergeStep() {
 }
 
 uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis) {
-	auto newNodeIdx = wf.addNode(p);
 	auto sourceNode = &wf.nodes[sourceNodeIdx];
-	auto newNode    = &wf.nodes[newNodeIdx];
 
 	auto distA = data.normalDistance(edgeIdxA,sourceNode->point);
 	auto distB = data.normalDistance(edgeIdxA,p);
+
+	auto newNodeIdx = wf.addNode(p,distB);
+	auto newNode    = &wf.nodes[newNodeIdx];
 
 	/* distinguish in which direction the ray points and add the arc accordingly */
 	uint newArcIdx = 0;
@@ -222,6 +238,7 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 
 	/* update the targets of the relevant arcs */
 	for(auto arcIdx : arcIndices) {
+		/* TODO: parallel-bisectors, direction unclear */
 		updateArcTarget(arcIdx,newNodeIdx,p);
 	}
 	return newNodeIdx;
@@ -233,8 +250,22 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, con
 	auto arc = &wf.arcList[arcIdx];
 
 	/* remove or disable rest of path that we broke? */
-	auto oldNode = &wf.nodes[arc->secondNodeIdx];
-	oldNode->arcs.clear();
+	if(arc->type == ArcType::NORMAL) {
+		auto oldNode = &wf.nodes[arc->secondNodeIdx];
+		uint nextArcIdx = arcIdx;
+		while(nextArcOnPath(nextArcIdx, arc->leftEdgeIdx, nextArcIdx)) {
+			if(nextArcIdx != arcIdx) {
+				wf.arcList[nextArcIdx].disable();
+			}
+		}
+		nextArcIdx = arcIdx;
+		while(nextArcOnPath(nextArcIdx, arc->rightEdgeIdx, nextArcIdx)) {
+			if(nextArcIdx != arcIdx) {
+				wf.arcList[nextArcIdx].disable();
+			}
+		}
+		oldNode->disable(); //arcs.clear();
+	}
 
 	auto newNode = &wf.nodes[secondNodeIdx];
 	if(arc->type == ArcType::RAY) {
@@ -248,21 +279,26 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, con
 	std::cout << " arc: " << arc->firstNodeIdx << "->" << arc->secondNodeIdx << " (" << secondNodeIdx << ") ";
 	fflush(stdout);
 
+
 	arc->secondNodeIdx = secondNodeIdx;
 	newNode->arcs.push_back(arcIdx);
-
-	/* update edge of gui DS */
-	if(data.gui) {
-		wf.update_edge(arcIdx,arc->firstNodeIdx,arc->secondNodeIdx);
-	}
 }
 
 bool Skeleton::nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const {
 	auto arc  = &wf.arcList[arcIdx];
 
-	if(arc->type == ArcType::RAY) {return false;}
+//	if(arc->type == ArcType::RAY || arc->type == ArcType::DISABLED) {return false;}
+	if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {return false;}
 
-	std::cout << " arc-endpoint:" << arc->secondNodeIdx << " "; fflush(stdout);
+	std::cout << " type: ";
+	switch(arc->type) {
+	case ArcType::RAY: std::cout << " RAY "; break;
+	case ArcType::NORMAL: std::cout << " NORMAL "; break;
+	case ArcType::DISABLED: std::cout << " DISAB "; break;
+	}
+
+	std::cout << " arc-start: " << arc->firstNodeIdx << " "; fflush(stdout);
+	std::cout << " arc-endpoint: " << arc->secondNodeIdx << " "; fflush(stdout);
 
 
 	auto arcs = &wf.nodes[arc->secondNodeIdx].arcs;
@@ -274,8 +310,13 @@ bool Skeleton::nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& next
 		for(auto a : *arcs) {
 			if(a != arcIdx) {
 				auto nextArc = &wf.arcList[a];
-				if( (arc->secondNodeIdx == nextArc->firstNodeIdx &&
-					(nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx ))
+//				auto nextArcNodeA = &wf.nodes[nextArc->firstNodeIdx];
+//				auto nextArcNodeB = &wf.nodes[nextArc->secondNodeIdx];
+
+				if( arc->type != ArcType::RAY
+					&&  arc->secondNodeIdx == nextArc->firstNodeIdx
+					&& (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
+//					&&	nextArcNodeA->time <= nextArcNodeB->time
 				) {
 					/* set 'return' value */
 					nextArcIdx = a;
@@ -347,6 +388,11 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 			/* +1 is the standard OBJ offset for references */
 			if(a->type == ArcType::NORMAL && wf.isArcInSkeleton(i)) {
 				outfile << "l " << a->firstNodeIdx+1 << " " << a->secondNodeIdx+1 << std::endl;
+			} else {
+				auto nodeA = wf.nodes[a->firstNodeIdx];
+				auto nodeB = wf.nodes[a->secondNodeIdx];
+				nodeA.arcs.clear();
+				nodeB.arcs.clear();
 			}
 		}
 

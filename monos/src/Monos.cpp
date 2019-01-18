@@ -62,6 +62,10 @@ void Monos::run() {
 	s.MergeUpperLowerSkeleton();
 	LOG(INFO) << "merging upper and lower skeleton done";
 
+	write();
+}
+
+void Monos::write() {
 	if(config.outputType != OutputType::NONE) {
 		s.writeOBJ(config);
 		data.addPolyToOBJ(config);

@@ -32,6 +32,7 @@
 #define ZSCALE 0.5
 #define OBJSCALE 5
 
+
 /*
  * OBJ files index starting at one, we read the input
  * and store the vertices starting at 0, thus we change
@@ -44,9 +45,10 @@
 #define INFPOINT Point(std::numeric_limits<double>::max(),std::numeric_limits<double>::max())
 
 enum class OutputType : uint {OBJ=0,NONE};
-enum class NodeType   : uint {TERMINAL=0,NORMAL};
-enum class ArcType    : uint {NORMAL=0,RAY};
+enum class NodeType   : uint {TERMINAL=0,NORMAL,DISABLED};
+enum class ArcType    : uint {NORMAL=0,RAY,DISABLED};
 
 using uint = uint;
+#define MAX std::numeric_limits<uint>::max()
 
 #endif

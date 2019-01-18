@@ -13,12 +13,8 @@ void Wavefront::InitializeEventsAndPathsPerEdge() {
 void Wavefront::InitializeNodes() {
 	/* create all terminal nodes of skeleton (vertices of input) */
 	for(auto v : data.getVertices()) {
-		Node n(NodeType::TERMINAL, v);
+		Node n(NodeType::TERMINAL, v, 0);
 		nodes.push_back(n);
-
-		if(data.gui) {
-			skeleton_gi.add_vertex(BasicVertex(v,1,nodes.size()-1));
-		}
 	}
 }
 
@@ -248,27 +244,40 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 	Line a(data.getEdge(aIdx).supporting_line());
 	Line b(data.getEdge(bIdx).supporting_line());
 
-	assert(!isLinesParallel(a,b));
-
 	Point intersectionA = intersectElements(a, b);
 
+	/* classical bisector (unweighted) */
 	if( data.w(aIdx) == 1 && data.w(bIdx) == 1) {
-		Point aP, bP, cP;
-		aP = data.eA(aIdx);
-		bP = intersectionA;
-		cP = data.eB(bIdx);
+		if(intersectionA != INFPOINT) {
+			Point aP, bP, cP;
+			aP = data.eA(aIdx);
+			bP = intersectionA;
+			cP = data.eB(bIdx);
 
-		Line bisLine = CGAL::bisector(a,b.opposite());
-		Point pBis = bisLine.point();
-		Ray bis(intersectionA,pBis);
+			Line bisLine = CGAL::bisector(a,b.opposite());
+			Point pBis = bisLine.point();
+			Ray bis(intersectionA,pBis);
 
-		if( !a.has_on_positive_side(pBis) ||
-		    !b.has_on_positive_side(pBis) ) {
-			bis = bis.opposite();
+			if( !a.has_on_positive_side(pBis) ||
+					!b.has_on_positive_side(pBis) ) {
+				bis = bis.opposite();
+			}
+			return bis;
+		} else {
+			Line bisLine = CGAL::bisector(a,b.opposite());
+			Point P = intersectElements(bisLine,data.bbox.left);
+			if(P == INFPOINT) {
+				P = intersectElements(bisLine,data.bbox.top);
+			}
+			Ray bis(P,bisLine.direction());
+			if(data.bbox.outside(P + bisLine.to_vector())) {
+				bis = Ray(P,-bisLine.direction());
+			}
+			return bis;
 		}
-		return bis;
 	} else {
-		LOG(WARNING) << "weighted bisectors not implemented!";
+	/* weighted bisector */
+		LOG(INFO) << "weighted bisector!";
 		auto aOffsetLine = getWeightedOffsetLine(aIdx);
 		auto bOffsetLine = getWeightedOffsetLine(bIdx);
 		Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
@@ -276,7 +285,6 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 		return Ray(intersectionA,intersectionB);
 	}
 }
-
 
 
 void Wavefront::ChainDecomposition() {
@@ -358,10 +366,6 @@ uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
 
-	/* add to basicInput for GUI representation */
-	if(data.gui) {
-		skeleton_gi.add_edge(nodeAIdx,pathFinder[edgeLeft][0]);
-	}
 	return arcIdx;
 }
 
@@ -374,16 +378,11 @@ uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& e
 	nodeA->arcs.push_back(arcIdx);
 	nodeB->arcs.push_back(arcIdx);
 
-	/* add to basicInput for GUI representation */
-	if(data.gui) {
-		skeleton_gi.add_edge(nodeAIdx,nodeBIdx);
-	}
-
 	return arcIdx;
 }
 
 void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleton) {
-	Node* node = new Node(NodeType::NORMAL,event.eventPoint);
+	Node* node = new Node(NodeType::NORMAL,event.eventPoint,event.eventTime);
 	uint nodeIdx = nodes.size();
 	auto paths 	 = pathFinder[event.mainEdge()];
 
@@ -403,7 +402,6 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	} else {
 		/* a classical event to be handled */
 		nodes.push_back(*node);
-		skeleton_gi.add_vertex(BasicVertex(node->point,3,nodes.size()-1));
 		skeleton.push_back(nodeIdx);
 
 		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());
@@ -419,8 +417,7 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 //Transformation rational_rotate(CGAL::ROTATION,Direction(1,1), 1, 100);
 Line Wavefront::getWeightedOffsetLine(const uint& i) const {
 	auto line = data.getEdge(i).supporting_line();
-	auto lineVector = line.to_vector();
-	auto lineVectorPer = Vector(-lineVector.y(),lineVector.x());
+	auto lineVectorPer = line.perpendicular(data.getEdge(i).source()).to_vector();
 
 	auto vectorLen = lineVectorPer.squared_length();
 	auto lineVectPerNorm = lineVectorPer/vectorLen;
@@ -431,20 +428,20 @@ Line Wavefront::getWeightedOffsetLine(const uint& i) const {
 }
 
 
-/* used for the output, a arc may loses its index in its firstNode when the merge is done */
+/* used for the output, an arc loses its index in its firstNode when the merge is done */
 bool Wavefront::isArcInSkeleton(const uint& arcIdx) const {
 	auto arc = &arcList[arcIdx];
 	auto node = &nodes[arc->firstNodeIdx];
-	uint appearancCnt = 0;
+	uint appearenceCnt = 0;
 	for(uint i = 0; i < 2; ++i) {
 		for(auto idx : node->arcs) {
 			if(idx == arcIdx) {
-				++appearancCnt;
+				++appearenceCnt;
 			}
 		}
 		node = &nodes[arc->secondNodeIdx];
 	}
-	return appearancCnt == 2;
+	return appearenceCnt == 2;
 }
 
 void Wavefront::SortArcsOnNodes() {

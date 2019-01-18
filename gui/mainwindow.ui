@@ -64,18 +64,9 @@
    <addaction name="actionVisToggleInputLabels"/>
    <addaction name="actionVisToggleArcs"/>
    <addaction name="separator"/>
-   <addaction name="actionTimeForwardAfterChains"/>
-   <addaction name="actionTimeReset"/>
-   <addaction name="separator"/>
-   <addaction name="actionTimeBackward"/>
-   <addaction name="actionTimeForward"/>
-   <addaction name="actionTimeForwardThrough"/>
    <addaction name="actionEventStep"/>
-   <addaction name="actionEventStepEnd"/>
-   <addaction name="separator"/>
-   <addaction name="actionTimeOffsetMinus"/>
-   <addaction name="actionTimeOffsetPlus"/>
-   <addaction name="actionTimeOffsetReset"/>
+   <addaction name="actionTimeForwardAfterChains"/>
+   <addaction name="actionFinishComputation"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionQuit">
@@ -103,13 +94,13 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>i</string>
+    <string>L</string>
    </property>
    <property name="toolTip">
-    <string>Toggle Input Visibility (Alt+I)</string>
+    <string>Toggle Visibility Labels (L)</string>
    </property>
    <property name="shortcut">
-    <string>Alt+I</string>
+    <string>L</string>
    </property>
   </action>
   <action name="actionResize">
@@ -117,7 +108,10 @@
     <string>resize</string>
    </property>
    <property name="toolTip">
-    <string>reset Zoom</string>
+    <string>reset Zoom (R)</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
   </action>
   <action name="actionVisToggleInputLabels">
@@ -213,48 +207,15 @@
     <string>C</string>
    </property>
   </action>
-  <action name="actionTimeReset">
+  <action name="actionFinishComputation">
    <property name="text">
-    <string>BS</string>
+    <string>⏎</string>
    </property>
    <property name="toolTip">
     <string>reset time to last event (Backspace)</string>
    </property>
    <property name="shortcut">
-    <string>Backspace</string>
-   </property>
-  </action>
-  <action name="actionTimeBackward">
-   <property name="text">
-    <string>b</string>
-   </property>
-   <property name="toolTip">
-    <string>reverse time (B)</string>
-   </property>
-   <property name="shortcut">
-    <string>B</string>
-   </property>
-  </action>
-  <action name="actionTimeForward">
-   <property name="text">
-    <string>N</string>
-   </property>
-   <property name="toolTip">
-    <string>advance time (Shift+N)</string>
-   </property>
-   <property name="shortcut">
-    <string>Shift+N</string>
-   </property>
-  </action>
-  <action name="actionTimeForwardThrough">
-   <property name="text">
-    <string>M</string>
-   </property>
-   <property name="toolTip">
-    <string>advance time ignoring event (Shift+M)</string>
-   </property>
-   <property name="shortcut">
-    <string>Shift+M</string>
+    <string>Return</string>
    </property>
   </action>
   <action name="actionEventStep">
@@ -266,50 +227,6 @@
    </property>
    <property name="shortcut">
     <string>N</string>
-   </property>
-  </action>
-  <action name="actionEventStepEnd">
-   <property name="text">
-    <string>⏎</string>
-   </property>
-   <property name="toolTip">
-    <string>Run until end of wavefront propagation (Enter)</string>
-   </property>
-   <property name="shortcut">
-    <string>Return</string>
-   </property>
-  </action>
-  <action name="actionTimeOffsetMinus">
-   <property name="text">
-    <string>-</string>
-   </property>
-   <property name="toolTip">
-    <string>Decrease drawing offset (draw things earlier than current time)</string>
-   </property>
-   <property name="shortcut">
-    <string>-</string>
-   </property>
-  </action>
-  <action name="actionTimeOffsetPlus">
-   <property name="text">
-    <string>+</string>
-   </property>
-   <property name="toolTip">
-    <string>Increase drawing offset (draw things later than current time)</string>
-   </property>
-   <property name="shortcut">
-    <string>+</string>
-   </property>
-  </action>
-  <action name="actionTimeOffsetReset">
-   <property name="text">
-    <string>=</string>
-   </property>
-   <property name="toolTip">
-    <string>Reset drawing offset to zero.</string>
-   </property>
-   <property name="shortcut">
-    <string>=</string>
    </property>
   </action>
  </widget>

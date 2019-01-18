@@ -34,26 +34,16 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void showEvent(QShowEvent *);
     void mousePressEvent(QMouseEvent *event);
 
-    void on_actionQuit_triggered() { close(); };
+    void on_actionQuit_triggered() { monos.write(); close(); };
     void on_actionVisToggleInput_triggered() { updateVisibilities(); };
     void on_actionVisToggleInputLabels_triggered() { updateVisibilities(); };
-    void on_actionVisToggleWavefront_triggered() { updateVisibilities(); };
-    void on_actionVisToggleKineticTriangulation_triggered() { updateVisibilities(); };
-    void on_actionVisToggleKineticTriangulationLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleArcs_triggered() { updateVisibilities(); };
     void on_actionResize_triggered();
 
-    void on_actionTimeBackward_triggered();
-    void on_actionTimeForward_triggered();
-    void on_actionTimeForwardThrough_triggered();
-    void on_actionTimeForwardAfterChains_triggered();
-    void on_actionTimeReset_triggered();
     void on_actionEventStep_triggered();
-    void on_actionEventStepEnd_triggered();
+    void on_actionTimeForwardAfterChains_triggered();
+    void on_actionFinishComputation_triggered();
 
-    void on_actionTimeOffsetMinus_triggered();
-    void on_actionTimeOffsetPlus_triggered();
-    void on_actionTimeOffsetReset_triggered();
 
   private:
     std::string title;
