@@ -16,7 +16,7 @@ public:
 		printOptions += "[-poly|-obj <filename>] <filename>";
 	}
 
-	Config(std::list<std::string> args, bool _gui = false):Config() {
+	Config(std::list<std::string> args, bool gui = false):Config(gui) {
 		validConfig = evaluateArguments(args);
 	}
 

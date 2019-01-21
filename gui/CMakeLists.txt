@@ -12,6 +12,7 @@ set(CMAKE_AUTOUIC ON)
 add_executable(monosgui
                        main.cpp
                        mainwindow.cpp
+                       weightdialog.cpp
                        InputGraphicsItem.cpp
                        ArcGraphicsItem.cpp
                        )

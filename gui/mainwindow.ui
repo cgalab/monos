@@ -27,7 +27,16 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <property name="margin">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
      <number>0</number>
     </property>
     <property name="spacing">
@@ -71,6 +80,7 @@
    <addaction name="actionFinishComputation"/>
    <addaction name="separator"/>
    <addaction name="actionDefineWeight"/>
+   <addaction name="actionResetAll"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionQuit">
@@ -81,10 +91,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Quit</string>
+    <string>❌</string>
    </property>
    <property name="toolTip">
-    <string>Exit application (Q)</string>
+    <string>Exit Application (Q)</string>
    </property>
    <property name="shortcut">
     <string>Q</string>
@@ -109,21 +119,21 @@
   </action>
   <action name="actionResize">
    <property name="text">
-    <string>resize</string>
+    <string>◰</string>
    </property>
    <property name="toolTip">
-    <string>reset Zoom (R)</string>
+    <string>Zoom to fit (Z)</string>
    </property>
    <property name="shortcut">
-    <string>R</string>
+    <string>Z</string>
    </property>
   </action>
   <action name="actionToggleFullscreen">
    <property name="text">
-    <string>F</string>
+    <string>⛶</string>
    </property>
    <property name="toolTip">
-    <string>toggle fullscreen (F)</string>
+    <string>Toggle Fullscreen (F)</string>
    </property>
    <property name="shortcut">
     <string>F</string>
@@ -140,7 +150,7 @@
     <string>L</string>
    </property>
    <property name="toolTip">
-    <string>Toggle Input Label Visibility (L)</string>
+    <string>Toggle Input Labels (L)</string>
    </property>
    <property name="shortcut">
     <string>L</string>
@@ -157,7 +167,7 @@
     <string>S</string>
    </property>
    <property name="toolTip">
-    <string>Toggle Straight-Skeleton Arcs Visibility (S)</string>
+    <string>Toggle Straight-Skeleton Arcs  (S)</string>
    </property>
    <property name="shortcut">
     <string>S</string>
@@ -168,7 +178,7 @@
     <string>C</string>
    </property>
    <property name="toolTip">
-    <string>finsh computing both chains (C)</string>
+    <string>Finsh Computing both Chains (C)</string>
    </property>
    <property name="shortcut">
     <string>C</string>
@@ -179,7 +189,7 @@
     <string>⏎</string>
    </property>
    <property name="toolTip">
-    <string>compute final skeleton (Return)</string>
+    <string>Compute Final Skeleton (Return)</string>
    </property>
    <property name="shortcut">
     <string>Return</string>
@@ -190,10 +200,21 @@
     <string>W</string>
    </property>
    <property name="toolTip">
-    <string>define a weight for one edge (W)</string>
+    <string>Define a Weight for an Edge (W)</string>
    </property>
    <property name="shortcut">
     <string>W</string>
+   </property>
+  </action>
+  <action name="actionResetAll">
+   <property name="text">
+    <string>↺</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset All (R)</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
   </action>
   <action name="actionEventStep">
@@ -201,7 +222,7 @@
     <string>n</string>
    </property>
    <property name="toolTip">
-    <string>compute next event (N)</string>
+    <string>Compute Next Event (N)</string>
    </property>
    <property name="shortcut">
     <string>N</string>

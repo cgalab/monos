@@ -466,3 +466,13 @@ void Wavefront::SortArcsOnNodes() {
 	}
 }
 
+void Wavefront::reset() {
+	nodes.clear();
+	events.clear();
+	arcList.clear();
+	pathFinder.clear();
+	upperSkeleton.clear();
+	lowerSkeleton.clear();
+	InitializeEventsAndPathsPerEdge();
+	InitializeNodes();
+}

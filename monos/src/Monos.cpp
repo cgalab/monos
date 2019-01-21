@@ -73,6 +73,11 @@ void Monos::write() {
 	}
 }
 
+
+void Monos::reset() {
+	wf.reset();
+}
+
 bool Monos::init() {
 	if(!config.isValid()) {return false;}
 

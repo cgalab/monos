@@ -11,11 +11,7 @@
 #include "Config.h"
 #include "Monos.h"
 
-#include "weightDialog.h"
-
-namespace Ui {
-  class MainWindow;
-}
+#include "weightdialog.h"
 
 class MainWindow : public CGAL::Qt::DemosMainWindow {
     Q_OBJECT
@@ -39,9 +35,12 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionVisToggleInput_triggered() { updateVisibilities(); };
     void on_actionVisToggleInputLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleArcs_triggered() { updateVisibilities(); };
+
     void on_actionResize_triggered();
     void on_actionToggleFullscreen_triggered();
-    void on_actionDefineWeight();
+
+    void on_actionDefineWeight_triggered();
+    void on_actionResetAll_triggered();
 
     void on_actionEventStep_triggered();
     void on_actionTimeForwardAfterChains_triggered();
@@ -57,7 +56,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
 
     Monos& monos;
 
-    Ui::WeightDialog* weightPopup;
+    WeightDialog* weightDialog;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
     std::shared_ptr<ArcGraphicsItem> skeleton_gi;
@@ -67,5 +66,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void time_changed();
     void simulation_has_finished();
 };
+
 
 #endif // MAINWINDOW_H

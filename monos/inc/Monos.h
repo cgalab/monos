@@ -45,6 +45,7 @@ public:
 	 * */
 	bool init();
 	void write();
+	void reset();
 
 	/**
 	 * enable stepping trough the computation

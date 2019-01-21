@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>WeightDialog</class>
  <widget class="QMainWindow" name="WeightDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>184</width>
+    <height>134</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
     <horstretch>0</horstretch>
@@ -35,29 +43,9 @@
      <number>0</number>
     </property>
     <item row="1" column="1">
-     <widget class="QLineEdit" name="weightInput"/>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_2">
+     <widget class="QLineEdit" name="weightInput">
       <property name="text">
-       <string>Weight: </string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QSpinBox" name="edgeSelect"/>
-    </item>
-    <item row="3" column="1">
-     <widget class="QPushButton" name="pushButtonOK">
-      <property name="text">
-       <string>OK</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Edge: </string>
+       <string>1</string>
       </property>
      </widget>
     </item>
@@ -73,6 +61,33 @@
        </size>
       </property>
      </spacer>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Edge: </string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QSpinBox" name="edgeSelect"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Weight: </string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QPushButton" name="pushButtonOK">
+      <property name="text">
+       <string>OK</string>
+      </property>
+      <property name="shortcut">
+       <string>Return</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

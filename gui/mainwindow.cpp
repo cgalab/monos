@@ -1,9 +1,10 @@
 #include "mainwindow.h"
+#include "weightdialog.h"
+
+#include "ui_weightDialog.h"
 #include "ui_mainwindow.h"
 
 #include "gml/GMLGraph.h"
-
-#include <QInputDialog>
 
 MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	CGAL::Qt::DemosMainWindow(),
@@ -126,10 +127,24 @@ MainWindow::on_actionResize_triggered() {
 	ui->gV->fitInView(br, Qt::KeepAspectRatio);
 }
 
-void
-MainWindow::on_actionDefineWeight() {
-	weightPopup = new Ui::WeightDialog();
-	//weightPopup->setupUi();
+void MainWindow::on_actionDefineWeight_triggered() {
+	std::string wt = "Set Weight";
+	weightDialog = new WeightDialog(wt);
+	weightDialog->setGeometry(this->x(), this->y(),184,134);
+	weightDialog->show();
+}
+
+void MainWindow::on_actionResetAll_triggered() {
+	monos.reset();
+	onLowerChain = true;
+	lowerChainDone = upperChainDone = bothChainsDone = mergeDone = false;
+
+	/* start with lower chain, rest by steppint through */
+	if(!monos.initSkeletonQueue(onLowerChain)) {
+		LOG(WARNING) << "Error Init SkeletonQueue!";
+	}
+
+	on_actionResize_triggered();
 }
 
 void

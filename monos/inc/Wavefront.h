@@ -73,6 +73,8 @@ public:
 
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 
+	void reset();
+
 	Nodes				nodes;
 	ArcList				arcList;
 	/* helping to find the paths, holds for every edge of polygon
