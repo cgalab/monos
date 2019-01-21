@@ -128,7 +128,8 @@ MainWindow::on_actionResize_triggered() {
 
 void
 MainWindow::on_actionDefineWeight() {
-	// TODO: popup ask for edge and weight!
+	weightPopup = new Ui::WeightDialog();
+	//weightPopup->setupUi();
 }
 
 void

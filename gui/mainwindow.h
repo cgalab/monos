@@ -11,6 +11,7 @@
 #include "Config.h"
 #include "Monos.h"
 
+#include "weightDialog.h"
 
 namespace Ui {
   class MainWindow;
@@ -55,6 +56,8 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     NT drawing_time_offset_increment;
 
     Monos& monos;
+
+    Ui::WeightDialog* weightPopup;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
     std::shared_ptr<ArcGraphicsItem> skeleton_gi;

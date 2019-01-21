@@ -34,6 +34,11 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
 if (NOT UPPERCASE_CMAKE_BUILD_TYPE MATCHES "^(DEBUG|RELEASE)$")
   message(FATAL_ERROR "Invalid value for CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 endif()
+# Fix behavior of CMAKE_CXX_STANDARD when targeting macOS.
+
+if (POLICY CMP0077)
+  cmake_policy(SET CMP0077 NEW)
+endif ()
 
 # so we can run in valgrind
 add_definitions(-DCGAL_DISABLE_ROUNDING_MATH_CHECK=ON)
