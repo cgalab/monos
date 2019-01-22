@@ -33,16 +33,6 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	/* general init. of monos */
 	monos.init();
 
-	/* start with lower chain, rest by steppint through */
-	if(!monos.initSkeletonQueue(onLowerChain)) {
-		LOG(WARNING) << "Error Init SkeletonQueue!";
-	}
-
-	//  GMLGraph graph;
-	//  graph = GMLGraph::create_from_graphml(is);
-	//s.add_graph(graph);
-	//s.initialize();
-
 	input_gi = std::make_shared<InputGraphicsItem>(&monos.data.getBasicInput());
 	scene.addItem(input_gi.get());
 
@@ -52,11 +42,6 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 
 	auto input_size = input_gi->boundingRect().size();
 	auto size_avg = (input_size.width() + input_size.height() ) /2.0;
-	//  s.wp.set_increment(size_avg/5000.);
-	//  drawing_time_offset_increment = size_avg/5000.;
-
-	//  kinetic_triangulation_gi = std::make_shared<KineticTriangulationGraphicsItem>(&s.get_kt(), size_avg/200.);
-	//  scene.addItem(kinetic_triangulation_gi.get());
 
 	time_label = new QLabel("", this);
 	update_time_label();
@@ -67,7 +52,6 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	ui->statusBar->addWidget(time_label, 0);
 	ui->statusBar->addWidget(xycoord, 0);
 
-	//  s.wp.do_initial_skips(skip_all, skip_to, NT(skip_until_time));
 	time_changed();
 }
 
@@ -78,6 +62,7 @@ MainWindow::~MainWindow()
 void
 MainWindow::updateVisibilities() {
 	input_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
+	input_gi->setVisibleEdgeLabels(ui->actionVisToggleInputEdgesLabels->isChecked());
 	input_gi->setVisible(ui->actionVisToggleInput->isChecked());
 
 	scene.removeItem(skeleton_gi.get());
@@ -85,20 +70,6 @@ MainWindow::updateVisibilities() {
 	skeleton_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
 	skeleton_gi->setVisible(ui->actionVisToggleInput->isChecked());
     skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
-
-	/*
-  triangulation_gi->setVisible(ui->actionVisToggleTriangulation->isChecked());
-	 */
-	//  kinetic_triangulation_gi->setVisible(ui->actionVisToggleKineticTriangulation->isChecked() ||
-	//                                       ui->actionVisToggleWavefront->isChecked() ||
-	//                                       ui->actionVisToggleArcs->isChecked());
-	//  kinetic_triangulation_gi->setVisibleEdges(ui->actionVisToggleKineticTriangulation->isChecked());
-	//  kinetic_triangulation_gi->setVisibleConstraints(ui->actionVisToggleWavefront->isChecked());
-	//  kinetic_triangulation_gi->setVisibleLabels(ui->actionVisToggleKineticTriangulationLabels->isChecked());
-	//  kinetic_triangulation_gi->setVisibleArcs(ui->actionVisToggleArcs->isChecked());
-
-  /*offset_gi->setVisible(ui->actionVisToggleOffset->isChecked());
-	 */
 }
 
 void
@@ -115,13 +86,6 @@ void
 MainWindow::on_actionResize_triggered() {
 	auto br = input_gi->boundingRect();
 	//br |= skeleton_gi->boundingRect();
-	/*
-  if (instance_triangulation_gi) {
-    br |= instance_triangulation_gi->boundingRect();
-  };
-  br |= skeleton_gi->boundingRect();
-  br |= offset_gi->boundingRect();
-	 */
 
 	ui->gV->setSceneRect(br);
 	ui->gV->fitInView(br, Qt::KeepAspectRatio);
@@ -132,36 +96,41 @@ void MainWindow::on_actionDefineWeight_triggered() {
 	weightDialog = new WeightDialog(wt);
 	weightDialog->setGeometry(this->x(), this->y(),184,134);
 	weightDialog->show();
+	auto spinBox = weightDialog->ui->edgeSelect;
+	spinBox->setRange(0, monos.data.getPolygon().size()-1);
+	spinBox->setSingleStep(1);
+	spinBox->setValue(0);
+	weightDialog->ui->weightInput->setPlaceholderText("1");
+	connect(weightDialog->ui->pushButtonOK,SIGNAL(clicked()),this,SLOT(on_actionDefineWeightDialogClosed()));
+
+}
+
+void MainWindow::on_actionDefineWeightDialogClosed() {
+	bool ok 	 = false;
+	uint edgeIdx = weightDialog->ui->edgeSelect->value();
+	auto weight  = weightDialog->ui->weightInput->text().toDouble(&ok);
+
+	if(ok) {
+		monos.data.setEdgeWeight(edgeIdx,Exact(weight));
+	}
 }
 
 void MainWindow::on_actionResetAll_triggered() {
 	monos.reset();
-	onLowerChain = true;
-	lowerChainDone = upperChainDone = bothChainsDone = mergeDone = false;
 
-	/* start with lower chain, rest by steppint through */
-	if(!monos.initSkeletonQueue(onLowerChain)) {
-		LOG(WARNING) << "Error Init SkeletonQueue!";
-	}
+	onLowerChain = firstStart = true;
+	lowerChainDone = upperChainDone = bothChainsDone = mergeDone = false;
 
 	on_actionResize_triggered();
 }
 
-void
-MainWindow::
-showEvent(QShowEvent *) {
-}
+void MainWindow:: showEvent(QShowEvent *) {}
 
 void MainWindow::mousePressEvent(QMouseEvent *event) {
 	(void) event;
-
-	// Kernel::Point_2 p( ui->gV->getMousePoint().x(),  ui->gV->getMousePoint().y() );
-	// XXX s.kinetic_triangulation->showInfoAt(p);
 }
 
-void
-MainWindow::
-update_time_label() {
+void MainWindow::update_time_label() {
 	scene.update(scene.sceneRect());
 	skeleton_gi->update(scene.sceneRect());
 	if(bothChainsDone && !mergeDone) {
@@ -169,86 +138,49 @@ update_time_label() {
 	} else if(mergeDone) {
 		time_label->setText(QString(" -finished- "));
 	} else {
-	  auto t = CGAL::to_double( monos.wf.getTime() );
-	  time_label->setText(QString("t: %1 ").
-	    arg(t)
-    //arg(s.wp.event_ctr()).
-	//    arg((kinetic_triangulation_gi->drawing_time_offset() < 0) ? "-" : "+" ).
-	//    arg(abs(CGAL::to_double(kinetic_triangulation_gi->drawing_time_offset())), 9, 'f', 5)
-	    );
+		auto t = CGAL::to_double( monos.wf.getTime() );
+		time_label->setText(QString("t: %1 ").arg(t));
 	}
 }
 
-void
-MainWindow::
-time_changed() {
+void MainWindow::time_changed() {
 	skeleton_gi->modelChanged();
-	//  if (s.wp.simulation_is_finished()) {
-	//    simulation_has_finished();
-	//  }
 	update_time_label();
-	//  kinetic_triangulation_gi->setTime(s.wp.get_time());
-	//  kinetic_triangulation_gi->highlighted_clear();
-	//  if (!s.wp.simulation_is_finished()) {
-	//    const std::shared_ptr<const EventQueueItem> next = s.wp.peak();
-	//    kinetic_triangulation_gi->highlighted_add(next->get_priority().t);
-	//  }
 }
 
 
-void
-MainWindow::on_actionTimeForwardAfterChains_triggered() {
+void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 
-	if(!bothChainsDone) {
-		do {
-			if(!upperChainDone || !lowerChainDone) {
-				if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
-					if(onLowerChain) {
-						lowerChainDone = true;
-					} else {
-						upperChainDone = true;
-					}
-
-					if(lowerChainDone && !upperChainDone) {
-						monos.finishSkeleton(onLowerChain);
-						onLowerChain = false;
-						monos.initSkeletonQueue(onLowerChain);
-					}
-				}
-			}
-		} while(!upperChainDone);
-
-		if(lowerChainDone && upperChainDone && !bothChainsDone) {
-			LOG(INFO) << "both done! TODO: finish 2nd skel end + merge";
-			monos.finishSkeleton(onLowerChain);
-			bothChainsDone = true;
-			monos.s.initMerge();
-		}
-
+	while(!bothChainsDone) {
+		on_actionEventStep_triggered();
 	}
 
 	time_changed();
 	on_actionResize_triggered();
 }
 
-void
-MainWindow::on_actionFinishComputation_triggered() {
-	//  s.wp.reset_time_to_last_event(); // backspace -- reset to last event time
+void MainWindow::on_actionFinishComputation_triggered() {
 
 	on_actionTimeForwardAfterChains_triggered();
 
 	while(monos.s.SingleMergeStep());
 
-	mergeDone = true;
 	monos.s.finishMerge();
+	mergeDone = true;
 
 	time_changed();
 	on_actionResize_triggered();
 }
 
-void
-MainWindow::on_actionEventStep_triggered() {
-	//  s.wp.advance_step(); // n - Move forward in time to the next event and handle it
+void MainWindow::on_actionEventStep_triggered() {
+
+	if(firstStart) {
+		if (!monos.initSkeletonQueue(onLowerChain)) {
+			LOG(WARNING) << "Error Init SkeletonQueue!";
+		}
+		firstStart = false;
+	}
+
 	if(!upperChainDone || !lowerChainDone) {
 		if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
 			if(onLowerChain) {
@@ -266,7 +198,6 @@ MainWindow::on_actionEventStep_triggered() {
 	}
 
 	if(lowerChainDone && upperChainDone && !bothChainsDone) {
-		LOG(INFO) << "both done! TODO: finish 2nd skel end + merge";
 		monos.finishSkeleton(onLowerChain);
 		bothChainsDone = true;
 		monos.s.initMerge();
@@ -274,8 +205,8 @@ MainWindow::on_actionEventStep_triggered() {
 
 	if(bothChainsDone && !mergeDone) {
 		if(!monos.s.SingleMergeStep()) {
-			mergeDone = true;
 			monos.s.finishMerge();
+			mergeDone = true;
 		}
 	}
 
@@ -283,12 +214,9 @@ MainWindow::on_actionEventStep_triggered() {
 }
 
 
-void
-MainWindow::simulation_has_finished() {
+void MainWindow::simulation_has_finished() {
 	if (did_finish) return;
 	did_finish = true;
-	//  ui->actionVisToggleWavefront->setChecked(false);
-	//  ui->actionVisToggleKineticTriangulation->setChecked(false);
 	updateVisibilities();
 }
 

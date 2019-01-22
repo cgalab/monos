@@ -167,6 +167,7 @@ struct Node {
 	// TODO: test  boost::container::small_vector instead of vector?
 
 	void disable() {type = NodeType::DISABLED;}
+	bool isDisabled() const { return type == NodeType::DISABLED;}
 
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));

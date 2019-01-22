@@ -72,8 +72,9 @@
    <addaction name="actionToggleFullscreen"/>
    <addaction name="separator"/>
    <addaction name="actionVisToggleInput"/>
-   <addaction name="actionVisToggleInputLabels"/>
    <addaction name="actionVisToggleArcs"/>
+   <addaction name="actionVisToggleInputLabels"/>
+   <addaction name="actionVisToggleInputEdgesLabels"/>
    <addaction name="separator"/>
    <addaction name="actionEventStep"/>
    <addaction name="actionTimeForwardAfterChains"/>
@@ -147,15 +148,33 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>L</string>
+    <string>V</string>
    </property>
    <property name="toolTip">
-    <string>Toggle Input Labels (L)</string>
+    <string>Toggle Input Vertex Labels (V)</string>
    </property>
    <property name="shortcut">
-    <string>L</string>
+    <string>V</string>
    </property>
   </action>
+  <action name="actionVisToggleInputEdgesLabels">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>E</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle Input Edge Labels (E)</string>
+   </property>
+   <property name="shortcut">
+    <string>E</string>
+   </property>
+  </action>
+   <addaction name=""/>
   <action name="actionVisToggleArcs">
    <property name="checkable">
     <bool>true</bool>

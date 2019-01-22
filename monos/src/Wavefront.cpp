@@ -473,6 +473,9 @@ void Wavefront::reset() {
 	pathFinder.clear();
 	upperSkeleton.clear();
 	lowerSkeleton.clear();
+	upperChain.clear();
+	lowerChain.clear();
 	InitializeEventsAndPathsPerEdge();
 	InitializeNodes();
 }
+

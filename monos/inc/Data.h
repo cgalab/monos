@@ -81,6 +81,11 @@ public:
 	const Point& eA(const uint& edgeIdx) const {return v(e(edgeIdx)[0]);}
 	const Point& eB(const uint& edgeIdx) const {return v(e(edgeIdx)[1]);}
 
+	void setEdgeWeight(const uint edgeIdx, const Exact weigth) {
+		edgeWeights[edgeIdx] = weigth;
+		if(gui) {basicInput.set_weight(edgeIdx,weigth);}
+	}
+
 	Exact normalDistance(const uint& edgeIdx, const Point& p) const {
 		Line l(getEdge(edgeIdx));
 		return CGAL::squared_distance(l,p);

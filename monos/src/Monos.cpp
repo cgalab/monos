@@ -76,6 +76,7 @@ void Monos::write() {
 
 void Monos::reset() {
 	wf.reset();
+	init();
 }
 
 bool Monos::init() {

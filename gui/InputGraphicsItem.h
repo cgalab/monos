@@ -20,7 +20,8 @@ class InputGraphicsItem :
     QPen vertices_pen;
     QPen segments_pen;
     QPen labels_pen;
-    bool visible_labels = false;
+    bool visible_labels      = false;
+    bool visible_edge_labels = false;
 
 
   protected:
@@ -41,6 +42,7 @@ class InputGraphicsItem :
     const QPen& segmentsPen() const { return segments_pen; }
     const QPen& labelsPen() const { return labels_pen; }
     void setVisibleLabels(bool visible) { if (visible_labels != visible) { prepareGeometryChange(); }; visible_labels = visible; }
+    void setVisibleEdgeLabels(bool visible) { if (visible_edge_labels != visible) { prepareGeometryChange(); }; visible_edge_labels = visible; }
 
     void modelChanged();
 };

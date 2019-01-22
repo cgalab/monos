@@ -24,7 +24,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     bool did_finish = false;
 
     bool onLowerChain = true;
-    bool lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
+    bool firstStart = true, lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
     bool mergeDone = false;
 
   private slots:
@@ -35,17 +35,19 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionVisToggleInput_triggered() { updateVisibilities(); };
     void on_actionVisToggleInputLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleArcs_triggered() { updateVisibilities(); };
+    void on_actionVisToggleInputEdgesLabels_triggered() { updateVisibilities(); }
 
-    void on_actionResize_triggered();
+	void on_actionResize_triggered();
     void on_actionToggleFullscreen_triggered();
 
-    void on_actionDefineWeight_triggered();
     void on_actionResetAll_triggered();
 
     void on_actionEventStep_triggered();
     void on_actionTimeForwardAfterChains_triggered();
     void on_actionFinishComputation_triggered();
 
+    void on_actionDefineWeight_triggered();
+    void on_actionDefineWeightDialogClosed();
 
   private:
     std::string title;

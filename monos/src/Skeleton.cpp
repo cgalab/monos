@@ -262,6 +262,7 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const int& secondNodeIdx, con
 		while(nextArcOnPath(nextArcIdx, arc->rightEdgeIdx, nextArcIdx)) {
 			if(nextArcIdx != arcIdx) {
 				wf.arcList[nextArcIdx].disable();
+				//wf.nodes[wf.arcList[nextArcIdx].secondNodeIdx].disable();
 			}
 		}
 		oldNode->disable(); //arcs.clear();

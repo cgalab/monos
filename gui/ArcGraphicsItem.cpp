@@ -26,53 +26,72 @@ ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs)
   setZValue(3);
 }
 
-void
-ArcGraphicsItem::
+
+bool ArcGraphicsItem::drawNode(const Node& node) const {
+	if( node.isDisabled() || node.arcs.empty() ) {
+		return false;
+	}
+	for(auto a : node.arcs) {
+		assert(a < arcs->size());
+		if( (*arcs)[a].type == ArcType::NORMAL) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void ArcGraphicsItem::
 paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * /*widget*/) {
-  CGAL::Qt::Converter<K> convert;
+	CGAL::Qt::Converter<K> convert;
 
-  painterostream = CGAL::Qt::PainterOstream<K> (painter);
+	painterostream = CGAL::Qt::PainterOstream<K> (painter);
 
-  painter->setPen(segmentsPen());
-  for (const auto& e : *arcs) {
-	  if(e.type != ArcType::DISABLED) {
-		  painterostream << e.edge;
-	  }
-  }
+	painter->setPen(segmentsPen());
+	for (const auto& e : *arcs) {
+		if(e.type != ArcType::DISABLED) {
+			painterostream << e.edge;
+		}
+	}
 
-  painter->setPen(verticesPen());
-  auto transform = painter->worldTransform();
-  painter->resetTransform();
-  for (const auto& i : *nodes) {
-    /* Using this results in "points" that are wide rectangles when one zooms too far in,
-     * so we draw out own points after manually transforming.
-     * //painterostream << i;
-     */
+	painter->setPen(verticesPen());
+	auto transform = painter->worldTransform();
+	painter->resetTransform();
+	for (const auto& i : *nodes) {
+		/* Using this results in "points" that are wide rectangles when one zooms too far in,
+		 * so we draw out own points after manually transforming.
+		 * //painterostream << i;
+		 */
 
-    QPointF point = transform.map(convert(i.point));
-    painter->drawPoint(point);
-  }
-  if (visible_labels) {
-    painter->setPen(labelsPen());
-    QFont font(painter->font());
-    /*
-    //font.setPixelSize(10);
-    font.setPointSize(10);
-    painter->setFont(font);
-    for (const auto& e : input->edges()) {
-      const QPointF p(transform.map(convert( CGAL::midpoint(input->get_segment(e).source(), input->get_segment(e).target()) )));
-      painter->drawText(p, "s");
-    }
-    */
-    font.setPointSize(8);
-    painter->setFont(font);
-    for (auto v = nodes->begin(); v != nodes->end(); ++v) {
-      const QPointF p(transform.map(convert(v->point)));
-      std::string t = "v#"+std::to_string(v - nodes->begin());
-      painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
-    }
-  }
-  painter->setWorldTransform(transform);
+		if(drawNode(i)) {
+			QPointF point = transform.map(convert(i.point));
+			painter->drawPoint(point);
+		}
+	}
+//	if (visible_labels) {
+//		painter->setPen(labelsPen());
+//		QFont font(painter->font());
+//
+////		font.setPointSize(10);
+////		painter->setFont(font);
+////		for (auto e = arcs->begin(); e != arcs->end(); ++e) {
+////			if(e->type != ArcType::DISABLED) {
+////				const QPointF p(transform.map(convert( CGAL::midpoint(e->edge.source(), e->edge.target()) )));
+////				std::string t = "e#"+std::to_string(e - arcs->begin());
+////				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
+////			}
+////		}
+//
+//		font.setPointSize(8);
+//		painter->setFont(font);
+//		for (auto v = nodes->begin(); v != nodes->end(); ++v) {
+//			if(drawNode(*v)) {
+//				const QPointF p(transform.map(convert(v->point)));
+//				std::string t = "v#"+std::to_string(v - nodes->begin());
+//				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
+//			}
+//		}
+//	}
+	painter->setWorldTransform(transform);
 }
 
 void

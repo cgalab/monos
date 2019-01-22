@@ -20,15 +20,16 @@ class WeightDialog : public CGAL::Qt::DemosMainWindow {
     explicit WeightDialog(const std::string& title);
     ~WeightDialog();
 
+    std::unique_ptr<Ui::WeightDialog>  	ui;
+
   private slots:
     void showEvent(QShowEvent *);
     void mousePressEvent(QMouseEvent *event);
 
-    void on_actionQuit_triggered() { close(); };
+    void on_actionQuit_triggered() { close(); }
 
   private:
     std::string 					 	title;
-    std::unique_ptr<Ui::WeightDialog>  	ui;
     QGraphicsScene 					 	scene;
 };
 

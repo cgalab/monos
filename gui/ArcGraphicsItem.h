@@ -24,6 +24,7 @@ class ArcGraphicsItem :
     QPen labels_pen;
     bool visible_labels = false;
 
+    bool drawNode(const Node& node) const;
 
   protected:
     QRectF bounding_rect;
