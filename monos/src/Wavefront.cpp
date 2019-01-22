@@ -278,9 +278,12 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 	} else {
 	/* weighted bisector */
 		LOG(INFO) << "weighted bisector!";
-		auto aOffsetLine = getWeightedOffsetLine(aIdx);
-		auto bOffsetLine = getWeightedOffsetLine(bIdx);
+		auto aOffsetLine    = getWeightedOffsetLine(aIdx);
+		auto bOffsetLine    = getWeightedOffsetLine(bIdx);
 		Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
+
+		// DEBUG draw the line in the GUI
+
 
 		return Ray(intersectionA,intersectionB);
 	}
@@ -478,4 +481,3 @@ void Wavefront::reset() {
 	InitializeEventsAndPathsPerEdge();
 	InitializeNodes();
 }
-
