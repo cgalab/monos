@@ -9,7 +9,7 @@ public:
 	using Events		     = std::vector<Event>;
 	using EventTimes 	     = std::set<TimeEdge,TimeEdgeCmp>;
 
-	Wavefront(const Data& dat):
+	Wavefront(Data& dat):
 		startLowerEdgeIdx(0),endLowerEdgeIdx(0),
 		startUpperEdgeIdx(0),endUpperEdgeIdx(0),
 		data(dat) {}
@@ -97,7 +97,7 @@ private:
 	/* for a polygon edge at position idx in data.polygon we have a respective event
 	 * for that edge at position idx as well */
 
-	const Data&     data;
+	Data&     data;
 };
 
 #endif /* WAVEFRONT_H_ */

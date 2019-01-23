@@ -43,6 +43,7 @@ using Vector         = K::Vector_2;
 using Point          = K::Point_2;
 using Line           = K::Line_2;
 using Ray            = K::Ray_2;
+using Circle         = K::Circle_2;
 using Direction      = K::Direction_2;
 using Edge       	 = K::Segment_2;
 using Intersect		 = K::Intersect_2;

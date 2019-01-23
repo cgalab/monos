@@ -110,6 +110,9 @@ public:
 	Line			monotonicityLine;
 	bool 			gui = false;
 
+	// debug
+	std::vector<Edge> lines;
+
 private:
 	bool loadFile(const std::string& fileName);
 

@@ -278,14 +278,46 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 	} else {
 	/* weighted bisector */
 		LOG(INFO) << "weighted bisector!";
-		auto aOffsetLine    = getWeightedOffsetLine(aIdx);
-		auto bOffsetLine    = getWeightedOffsetLine(bIdx);
-		Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
+		if(intersectionA != INFPOINT) {
+			Point bP = intersectionA;
 
-		// DEBUG draw the line in the GUI
+//			Vector bUnit = b.direction();
+//			Point cP1 = bP + bUnit;
+//			Point cP2 = bP - bUnit;
+//			Circle c = Circle(cP1,cP2);
+//
+//			Point aP = intersectElements(c,Ray(bP,a.direction()));
+//			Vector aUnit = aP - bP;
+//
+			Vector aUnit = a.perpendicular(bP).direction().to_vector();
+			Vector bUnit = b.perpendicular(bP).direction().to_vector();
+
+			aUnit *= data.w(aIdx)/aUnit.squared_length();
+			bUnit *= data.w(bIdx)/bUnit.squared_length();
 
 
-		return Ray(intersectionA,intersectionB);
+			Line aOffsetLine    = Line( bP + aUnit , a.direction() );
+			Line bOffsetLine    = Line( bP + bUnit , b.direction() );
+			Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
+
+
+			// DEBUG draw the line in the GUI
+			Edge a1 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , aOffsetLine.direction() ) );
+			Edge a2 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , -aOffsetLine.direction() ) );
+			Edge b1 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , bOffsetLine.direction() ) );
+			Edge b2 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , -bOffsetLine.direction() ) );
+
+			data.lines.push_back(a1);
+			data.lines.push_back(a2);
+			data.lines.push_back(b1);
+			data.lines.push_back(b2);
+
+			return Ray(intersectionA,intersectionB);
+
+		} else {
+			LOG(ERROR) << "parallel weighted bisector (TODO)!";
+			return Ray();
+		}
 	}
 }
 
@@ -418,17 +450,23 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 
 //Transformation rotate(CGAL::ROTATION, sin(pi), cos(pi));
 //Transformation rational_rotate(CGAL::ROTATION,Direction(1,1), 1, 100);
-Line Wavefront::getWeightedOffsetLine(const uint& i) const {
-	auto line = data.getEdge(i).supporting_line();
-	auto lineVectorPer = line.perpendicular(data.getEdge(i).source()).to_vector();
-
-	auto vectorLen = lineVectorPer.squared_length();
-	auto lineVectPerNorm = lineVectorPer/vectorLen;
-	auto aPerpDirWeighted = lineVectPerNorm * data.w(i);
-
-	Transformation translate(CGAL::TRANSLATION, aPerpDirWeighted );
-	return line.transform(translate);
-}
+//Line Wavefront::getWeightedOffsetLine(const uint& i) const {
+//	auto line = data.getEdge(i).supporting_line();
+//	auto lineVectorPer = line.perpendicular(data.getEdge(i).source()).to_vector();
+//
+//	auto vectorLen         = lineVectorPer.squared_length();
+//	auto lineVectPerNorm   = Vector(lineVectorPer.x()*lineVectorPer.x(),lineVectorPer.y()*lineVectorPer.y())/vectorLen;
+//	auto aPerpDirWeighted  = lineVectPerNorm * data.w(i);
+//
+//	LOG(INFO) << "len: " << vectorLen << " vector:" << lineVectorPer << " normvect:" << aPerpDirWeighted;
+//
+//	Point P = line.point() + aPerpDirWeighted;
+//
+//	return Line(P,line.direction());
+//
+////	Transformation translate(CGAL::TRANSLATION, aPerpDirWeighted );
+////	return line.transform(translate);
+//}
 
 
 /* used for the output, an arc loses its index in its firstNode when the merge is done */

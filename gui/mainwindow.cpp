@@ -36,7 +36,7 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	input_gi = std::make_shared<InputGraphicsItem>(&monos.data.getBasicInput());
 	scene.addItem(input_gi.get());
 
-	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf.nodes, &monos.wf.arcList);
+	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf.nodes, &monos.wf.arcList, &monos.data.lines);
 	scene.addItem(skeleton_gi.get());
 
 
