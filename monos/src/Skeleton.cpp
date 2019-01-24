@@ -238,8 +238,10 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 
 	/* update the targets of the relevant arcs */
 	for(auto arcIdx : arcIndices) {
-		/* TODO: parallel-bisectors, direction unclear */
-		updateArcTarget(arcIdx,newNodeIdx,p);
+		if(arcIdx < INFINITY) {
+			/* TODO: parallel-bisectors, direction unclear */
+			updateArcTarget(arcIdx,newNodeIdx,p);
+		}
 	}
 	return newNodeIdx;
 }
@@ -390,10 +392,14 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 			if(a->type == ArcType::NORMAL && wf.isArcInSkeleton(i)) {
 				outfile << "l " << a->firstNodeIdx+1 << " " << a->secondNodeIdx+1 << std::endl;
 			} else {
-				auto nodeA = wf.nodes[a->firstNodeIdx];
-				auto nodeB = wf.nodes[a->secondNodeIdx];
-				nodeA.arcs.clear();
-				nodeB.arcs.clear();
+				if(a->firstNodeIdx < wf.nodes.size()) {
+					auto nodeA = wf.nodes[a->firstNodeIdx];
+					nodeA.arcs.clear();
+				}
+				if(a->secondNodeIdx < wf.nodes.size()) {
+					auto nodeB = wf.nodes[a->secondNodeIdx];
+					nodeB.arcs.clear();
+				}
 			}
 		}
 

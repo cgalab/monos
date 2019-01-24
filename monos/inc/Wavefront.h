@@ -32,7 +32,7 @@ public:
 
 	Chain& getUpperChain() { return upperChain; }
 	Chain& getLowerChain() { return lowerChain; }
-	Line getWeightedOffsetLine(const uint& i) const;
+//	Line getWeightedOffsetLine(const uint& i) const;
 
 	Ray constructBisector(const uint& aIdx, const uint& bIdx) const;
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }

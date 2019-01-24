@@ -27,16 +27,7 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>0</number>
     </property>
     <property name="spacing">
@@ -228,6 +219,11 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>edgeSelect</tabstop>
+  <tabstop>weightInput</tabstop>
+  <tabstop>pushButtonOK</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

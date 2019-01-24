@@ -276,47 +276,73 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 			return bis;
 		}
 	} else {
-	/* weighted bisector */
+		/* weighted bisector */
 		LOG(INFO) << "weighted bisector!";
 		if(intersectionA != INFPOINT) {
 			Point bP = intersectionA;
+			Vector aN = a.perpendicular(bP).to_vector();
+			Vector bN = b.perpendicular(bP).to_vector();
 
-//			Vector bUnit = b.direction();
-//			Point cP1 = bP + bUnit;
-//			Point cP2 = bP - bUnit;
-//			Circle c = Circle(cP1,cP2);
-//
-//			Point aP = intersectElements(c,Ray(bP,a.direction()));
-//			Vector aUnit = aP - bP;
-//
-			Vector aUnit = a.perpendicular(bP).direction().to_vector();
-			Vector bUnit = b.perpendicular(bP).direction().to_vector();
+			aN /= CGAL::sqrt(aN.squared_length());
+			bN /= CGAL::sqrt(bN.squared_length());
 
-			aUnit *= data.w(aIdx)/aUnit.squared_length();
-			bUnit *= data.w(bIdx)/bUnit.squared_length();
+			aN *= data.w(aIdx);
+			bN *= data.w(bIdx);
 
-
-			Line aOffsetLine    = Line( bP + aUnit , a.direction() );
-			Line bOffsetLine    = Line( bP + bUnit , b.direction() );
+			Line aOffsetLine    = Line( bP + aN , a.direction() );
+			Line bOffsetLine    = Line( bP + bN , b.direction() );
 			Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
 
-
 			// DEBUG draw the line in the GUI
-			Edge a1 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , aOffsetLine.direction() ) );
-			Edge a2 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , -aOffsetLine.direction() ) );
-			Edge b1 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , bOffsetLine.direction() ) );
-			Edge b2 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , -bOffsetLine.direction() ) );
-
-			data.lines.push_back(a1);
-			data.lines.push_back(a2);
-			data.lines.push_back(b1);
-			data.lines.push_back(b2);
+//			if(data.gui) {
+//			Edge a1 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , aOffsetLine.direction() ) );
+//			Edge a2 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , -aOffsetLine.direction() ) );
+//			Edge b1 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , bOffsetLine.direction() ) );
+//			Edge b2 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , -bOffsetLine.direction() ) );
+//			data.lines.push_back(a1);
+//			data.lines.push_back(a2);
+//			data.lines.push_back(b1);
+//			data.lines.push_back(b2);
+//			}
 
 			return Ray(intersectionA,intersectionB);
 
 		} else {
-			LOG(ERROR) << "parallel weighted bisector (TODO)!";
-			return Ray();
+			LOG(INFO) << "parallel weighted bisector (TODO)!";
+
+			if(!CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
+				Point Pa = a.point(0);
+				Line l = a.perpendicular(Pa);
+				Point Pb = intersectElements(l,b);
+				Vector aN = l.to_vector();
+				aN /= CGAL::sqrt(aN.squared_length());
+				Vector bN = -aN;
+
+				auto aDir = aN.perpendicular(CGAL::LEFT_TURN);
+
+				Point Pa_off = Pa + aDir;
+				Point Pb_off = Pb + aDir;
+
+				aN *= data.w(aIdx);
+				bN *= data.w(bIdx);
+
+				Point Pa2 = Pa_off + aN;
+				Point Pb2 = Pb_off + bN;
+
+				Ray R1 = Ray(Pa,Pa2);
+				Ray R2 = Ray(Pa,Pa2);
+
+				Point wMidPoint = intersectElements(R1,R2);
+
+				Ray bis(wMidPoint,-a.direction());
+				Edge e = data.confineRayToBBox(bis);
+
+				bis = Ray(e.target(),wMidPoint);
+				return bis;
+			} else {
+				LOG(ERROR) << "collinear edges -> ghost vertex (TODO)!";
+				return Ray();
+			}
 		}
 	}
 }

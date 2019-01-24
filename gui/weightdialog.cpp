@@ -18,7 +18,7 @@ WeightDialog::WeightDialog(const std::string& title)
 	//addNavigation(ui->gV);
 
 	connect(ui->pushButtonOK,SIGNAL(clicked()),this,SLOT(on_actionQuit_triggered()));
-
+	connect(ui->weightInput, SIGNAL(returnPressed()),this,SLOT(on_actionQuit_triggered()));
 }
 
 WeightDialog::~WeightDialog() {}

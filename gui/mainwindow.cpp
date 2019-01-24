@@ -55,12 +55,9 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	time_changed();
 }
 
-MainWindow::~MainWindow()
-{
-}
+MainWindow::~MainWindow() {}
 
-void
-MainWindow::updateVisibilities() {
+void MainWindow::updateVisibilities() {
 	input_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
 	input_gi->setVisibleEdgeLabels(ui->actionVisToggleInputEdgesLabels->isChecked());
 	input_gi->setVisible(ui->actionVisToggleInput->isChecked());
@@ -72,8 +69,7 @@ MainWindow::updateVisibilities() {
     skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
 }
 
-void
-MainWindow::on_actionToggleFullscreen_triggered() {
+void MainWindow::on_actionToggleFullscreen_triggered() {
 	if (this->isFullScreen()) {
 		this->showNormal();
 	} else {
@@ -82,8 +78,7 @@ MainWindow::on_actionToggleFullscreen_triggered() {
 	on_actionResize_triggered();
 }
 
-void
-MainWindow::on_actionResize_triggered() {
+void MainWindow::on_actionResize_triggered() {
 	auto br = input_gi->boundingRect();
 	//br |= skeleton_gi->boundingRect();
 
@@ -92,7 +87,7 @@ MainWindow::on_actionResize_triggered() {
 }
 
 void MainWindow::on_actionDefineWeight_triggered() {
-	std::string wt = "Set Weight";
+	std::string wt = "Weight";
 	weightDialog = new WeightDialog(wt);
 	weightDialog->setGeometry(this->x(), this->y(),184,134);
 	weightDialog->show();
@@ -102,7 +97,7 @@ void MainWindow::on_actionDefineWeight_triggered() {
 	spinBox->setValue(0);
 	weightDialog->ui->weightInput->setPlaceholderText("1");
 	connect(weightDialog->ui->pushButtonOK,SIGNAL(clicked()),this,SLOT(on_actionDefineWeightDialogClosed()));
-
+	connect(weightDialog->ui->weightInput, SIGNAL(returnPressed()),this,SLOT(on_actionDefineWeightDialogClosed()));
 }
 
 void MainWindow::on_actionDefineWeightDialogClosed() {
