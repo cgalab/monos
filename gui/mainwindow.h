@@ -67,6 +67,8 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void update_time_label();
     void time_changed();
     void simulation_has_finished();
+
+    void updateWeightValue(int idx);
 };
 
 

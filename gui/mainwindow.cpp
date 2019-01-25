@@ -95,9 +95,18 @@ void MainWindow::on_actionDefineWeight_triggered() {
 	spinBox->setRange(0, monos.data.getPolygon().size()-1);
 	spinBox->setSingleStep(1);
 	spinBox->setValue(0);
-	weightDialog->ui->weightInput->setPlaceholderText("1");
+	updateWeightValue(0);
 	connect(weightDialog->ui->pushButtonOK,SIGNAL(clicked()),this,SLOT(on_actionDefineWeightDialogClosed()));
 	connect(weightDialog->ui->weightInput, SIGNAL(returnPressed()),this,SLOT(on_actionDefineWeightDialogClosed()));
+	connect(weightDialog->ui->edgeSelect, QOverload<int>::of(&QSpinBox::valueChanged),
+	    [=](int i){ updateWeightValue(i); });
+}
+
+
+
+void MainWindow::updateWeightValue(int idx) {
+	Exact weight = monos.data.w(idx);
+	weightDialog->ui->weightInput->setText(QString::fromStdString(std::to_string(weight.doubleValue())));
 }
 
 void MainWindow::on_actionDefineWeightDialogClosed() {
