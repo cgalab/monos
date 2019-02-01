@@ -189,8 +189,10 @@ void MainWindow::on_actionEventStep_triggered() {
 		if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
 			if(onLowerChain) {
 				lowerChainDone = true;
+				LOG(INFO) << "Upper Chain Finished!";
 			} else {
 				upperChainDone = true;
+				LOG(INFO) << "Lower Chain Finished!";
 			}
 
 			if(lowerChainDone && !upperChainDone) {

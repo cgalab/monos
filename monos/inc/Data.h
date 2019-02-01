@@ -100,6 +100,7 @@ public:
 	/* verify if the input polygon is monotone, if required we rotate
 	 * the vertices such that x-monotonicity holds for P */
 	bool ensureMonotonicity();
+
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 
 	const BasicInput& getBasicInput() const {return basicInput;}

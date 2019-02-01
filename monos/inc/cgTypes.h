@@ -165,7 +165,6 @@ struct Node {
 
 	/* all incident arcs, i.e., the indices to them */
 	std::vector<uint> 	arcs;
-	// TODO: test  boost::container::small_vector instead of vector?
 
 	void disable() {type = NodeType::DISABLED;}
 	bool isDisabled() const { return type == NodeType::DISABLED;}

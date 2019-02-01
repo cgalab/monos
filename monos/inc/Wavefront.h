@@ -4,6 +4,19 @@
 #include "cgTypes.h"
 #include "Data.h"
 
+class MonotonePathTraversal {
+public:
+	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0)
+	: edgeIdx(edgeIdx)
+	, currentArcIdx(currentArcIdx)
+	, oppositeArcIdx(oppositeArcIdx) {}
+
+	bool done() const {return currentArcIdx == oppositeArcIdx;}
+
+	uint edgeIdx;
+	uint currentArcIdx, oppositeArcIdx;
+};
+
 class Wavefront {
 public:
 	using Events		     = std::vector<Event>;
@@ -32,7 +45,6 @@ public:
 
 	Chain& getUpperChain() { return upperChain; }
 	Chain& getLowerChain() { return lowerChain; }
-//	Line getWeightedOffsetLine(const uint& i) const;
 
 	Ray constructBisector(const uint& aIdx, const uint& bIdx) const;
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
@@ -65,6 +77,9 @@ public:
 	}
 
 	bool isArcInSkeleton(const uint& arcIdx) const;
+	inline bool liesOnFace(const Arc& arc, const uint edgeIdx) const {
+		return arc.leftEdgeIdx == edgeIdx || arc.rightEdgeIdx == edgeIdx;
+	}
 
 	Exact getTime() const {return currentTime;}
 
@@ -72,9 +87,18 @@ public:
 	void SortArcsOnNodes();
 
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
+	Arc* getArc(const MonotonePathTraversal& path) {return &arcList[path.currentArcIdx];}
 
-	void reset();
+	/* -- monotone path traversal -- */
+	/* for the merge we have to traverse the faces of a chain-skeleton from 'left to right'
+	 * with respect to the monotonicity line. Actually only the right path suffices! */
+	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
+	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB);
+	Node* getRightmostNodeOfArc(const Arc& arc);
+	void initPathForEdge(const bool upper, const uint edgeIdx);
+	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
 
+	/* the chain skeleton and the final skeleton is stored in nodes and arcList */
 	Nodes				nodes;
 	ArcList				arcList;
 	/* helping to find the paths, holds for every edge of polygon
@@ -85,6 +109,12 @@ public:
 	uint startLowerEdgeIdx, endLowerEdgeIdx;
 	uint startUpperEdgeIdx, endUpperEdgeIdx;
 	Chain  		upperChain, lowerChain;
+
+	/* for the merge to keep track of the current state */
+	MonotonePathTraversal upperPath, lowerPath;
+
+	/* MISC */
+	void reset(); /* for GUI version only, to redo the computation without restart */
 
 private:
 	/* EVENT QUEUE --------------------------------------------------------------------

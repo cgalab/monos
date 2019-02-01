@@ -474,25 +474,97 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	pathFinder[event.rightEdge()][0] = nodeIdx;
 }
 
-//Transformation rotate(CGAL::ROTATION, sin(pi), cos(pi));
-//Transformation rational_rotate(CGAL::ROTATION,Direction(1,1), 1, 100);
-//Line Wavefront::getWeightedOffsetLine(const uint& i) const {
-//	auto line = data.getEdge(i).supporting_line();
-//	auto lineVectorPer = line.perpendicular(data.getEdge(i).source()).to_vector();
-//
-//	auto vectorLen         = lineVectorPer.squared_length();
-//	auto lineVectPerNorm   = Vector(lineVectorPer.x()*lineVectorPer.x(),lineVectorPer.y()*lineVectorPer.y())/vectorLen;
-//	auto aPerpDirWeighted  = lineVectPerNorm * data.w(i);
-//
-//	LOG(INFO) << "len: " << vectorLen << " vector:" << lineVectorPer << " normvect:" << aPerpDirWeighted;
-//
-//	Point P = line.point() + aPerpDirWeighted;
-//
-//	return Line(P,line.direction());
-//
-////	Transformation translate(CGAL::TRANSLATION, aPerpDirWeighted );
-////	return line.transform(translate);
-//}
+
+bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
+	if(path.done()) {return false;}
+
+	auto& currentArc  = arcList[path.currentArcIdx];
+	auto& oppositeArc = arcList[path.oppositeArcIdx];
+
+	if(/* opposite arcs right endpoint is to the left of current arc*/ isArcLeftOfArc(oppositeArc,currentArc)) {
+		std::swap(path.currentArcIdx,path.oppositeArcIdx);
+		return true;
+	} else /* step to the next arc to the right of current arc */ {
+		auto rightNode = getRightmostNodeOfArc(currentArc);
+		uint nextArcIdx = INFINITY;
+		for(auto a : rightNode->arcs) {
+			if(a != path.currentArcIdx) {
+				auto arc = arcList[a];
+				if(arc.leftEdgeIdx == path.edgeIdx) {
+					nextArcIdx = a;
+					break;
+				}
+			}
+		}
+		if(nextArcIdx != INFINITY) {
+			path.currentArcIdx = nextArcIdx;
+			return true;
+		} else {
+			LOG(ERROR) << "No next arc found!";
+			return false;
+		}
+	}
+}
+
+bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) {
+	return data.monotoneSmaller(getRightmostNodeOfArc(arcA)->point,getRightmostNodeOfArc(arcB)->point);
+}
+
+Node* Wavefront::getRightmostNodeOfArc(const Arc& arc) {
+	Node* Na = &nodes[arc.firstNodeIdx];
+	if(arc.type == ArcType::NORMAL) {
+		Node* Nb = &nodes[arc.secondNodeIdx];
+		return (data.monotoneSmaller(Na->point,Nb->point)) ? Nb : Na;
+	} else if (arc.type == ArcType::RAY) {
+		return Na;
+	} else {
+		LOG(ERROR) << "Traversing a disabled arc!";
+		return nullptr;
+	}
+}
+
+void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
+	/* set the upperPath/lowerPath in 'wf' */
+	Node& terminalNode   = (upper) ? getTerminalNodeForVertex(data.e(edgeIdx)[0]) : getTerminalNodeForVertex(data.e(edgeIdx)[1]);
+	uint  initialArcIdx  = terminalNode.arcs.front();
+	Arc&  initialArc     = arcList[initialArcIdx];
+
+	auto ie = pathFinder[edgeIdx];
+
+	Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
+	uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
+
+	if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
+		if(upper) {
+			upperPath = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx);
+		} else {
+			lowerPath = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx);
+		}
+	} else {
+		Arc&  distantArc    = arcList[distantArcIdx];
+		auto path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx);
+
+		if(upper) {
+			upperPath = path;
+		} else {
+			lowerPath = path;
+		}
+	}
+}
+
+uint Wavefront::getPossibleRayIdx(const Node& node, uint edgeIdx) const {
+	uint arcIdx = INFINITY;
+	for(auto a : node.arcs) {
+		auto& arc = arcList[a];
+		if(arc.type == ArcType::RAY && liesOnFace(arc,edgeIdx)) {
+			return a;
+		} else if(liesOnFace(arc,edgeIdx)) {
+			arcIdx = a;
+		}
+	}
+	return arcIdx;
+}
+
 
 
 /* used for the output, an arc loses its index in its firstNode when the merge is done */

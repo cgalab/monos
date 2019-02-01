@@ -299,6 +299,7 @@ bool Data::ensureMonotonicity() {
 		return false;
 	}
 }
+
 bool Data::monotoneSmaller(const Point& a, const Point& b) const {
 	return (monotonicityLine.projection(b) - monotonicityLine.projection(a)).direction() == monotonicityLine.direction();
 }
