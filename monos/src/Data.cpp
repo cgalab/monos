@@ -301,7 +301,10 @@ bool Data::ensureMonotonicity() {
 }
 
 bool Data::monotoneSmaller(const Point& a, const Point& b) const {
-	return (monotonicityLine.projection(b) - monotonicityLine.projection(a)).direction() == monotonicityLine.direction();
+	auto aP = monotonicityLine.projection(a);
+	auto bP = monotonicityLine.projection(b);
+	auto cP = bP + monotonicityLine.to_vector();
+	return CGAL::collinear_are_ordered_along_line(aP,bP,cP);
 }
 BBox Data::computeBoundingBox() const {
 	auto box = BBox();

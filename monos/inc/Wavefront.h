@@ -15,6 +15,8 @@ public:
 
 	uint edgeIdx;
 	uint currentArcIdx, oppositeArcIdx;
+
+	friend std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path);
 };
 
 class Wavefront {
@@ -93,8 +95,8 @@ public:
 	/* for the merge we have to traverse the faces of a chain-skeleton from 'left to right'
 	 * with respect to the monotonicity line. Actually only the right path suffices! */
 	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
-	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB);
-	Node* getRightmostNodeOfArc(const Arc& arc);
+	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const;
+	const Node& getRightmostNodeOfArc(const Arc& arc) const;
 	void initPathForEdge(const bool upper, const uint edgeIdx);
 	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
 

@@ -92,12 +92,9 @@ void Skeleton::initMerge() {
 	sourceNode    		= &wf.nodes[sourceNodeIdx];
 	newNodeIdx    		= sourceNodeIdx;
 
-	std::cout << "OK"; fflush(stdout);
 	/* set the upperPath/lowerPath in 'wf' */
 	wf.initPathForEdge(true,upperChainIndex);
-	std::cout << " -a- "; fflush(stdout);
 	wf.initPathForEdge(false,lowerChainIndex);
-	std::cout << " -b- "; fflush(stdout);
 }
 
 /* add last are, connect to end node! */
@@ -245,16 +242,19 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 
 	Arc* Arc_u;
 	Arc* Arc_l;
-
+std::cout << " go " << std::endl; fflush(stdout);
 	while(!EndOfChain() && !success) {
 		Arc_l = wf.getArc(wf.lowerPath);
 		Arc_u = wf.getArc(wf.upperPath);
 
+		/* check which arc lies futher to the left */
 		onUpperChain = (wf.isArcLeftOfArc(*Arc_l,*Arc_u)) ? false : true;
 
+		std::cout << std::boolalpha<< " upperChain: " << onUpperChain << std::endl;
+
 		if(onUpperChain) {
-			if(isValidArc(wf.upperPath.currentArcIdx) && CGAL::do_intersect(bis,Arc_u->edge)) {
-				Pi_u = intersectElements(bis,Arc_u->edge);
+			if(isValidArc(wf.upperPath.currentArcIdx) && do_intersect(bis,*Arc_u)) {
+				Pi_u = intersectRayArc(bis,*Arc_u);
 				if(data.monotoneSmaller(currentPoint,Pi_u)) {
 					success = true;
 				}
@@ -265,13 +265,18 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 				}
 			}
 		} else {
-			if(isValidArc(wf.lowerPath.currentArcIdx) && CGAL::do_intersect(bis,Arc_l->edge)) {
-				Pi_l = intersectElements(bis,Arc_l->edge);
+			std::cout << " a " << bis << " " << std::endl;
+			if( isValidArc(wf.lowerPath.currentArcIdx) && do_intersect(bis,*Arc_l) ) {
+				std::cout << " 1 " << Arc_l->edge << " " << std::endl;
+				Pi_l = intersectRayArc(bis,*Arc_l);
 				if(data.monotoneSmaller(currentPoint,Pi_l)) {
+					std::cout << " s " << std::endl;
 					success = true;
 				}
 			} else {
+				std::cout << " b " << std::endl;
 				if(!wf.nextMonotoneArcOfPath(wf.lowerPath)) {
+					std::cout << " 2 " << std::endl;
 					lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
 					LOG(WARNING) << "Check findNextIntersectingArc (lower)";
 				}

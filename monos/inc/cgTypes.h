@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CGALTYPES_H_
-#define CGALTYPES_H_
+#ifndef CGTYPES_H_
+#define CGTYPES_H_
 
 #include <iterator>
 #include <array>
@@ -217,10 +217,15 @@ Point intersectElements(const T& a, const U& b) {
 	return intersectionPoint;
 }
 
+Point intersectRayArc(const Ray& ray, const Arc& arc) {
+	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
+}
+
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
 	return CGAL::parallel(Line(a),Line(b));
 }
 
+bool do_intersect(const Ray& ray, const Arc& arc);
 
 #endif /* CGALTYPES_H_ */

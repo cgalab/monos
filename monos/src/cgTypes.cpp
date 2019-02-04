@@ -36,6 +36,16 @@ Exact normalDistance(const Line& l, const Point& p) {
 	return CGAL::squared_distance(l,p);
 }
 
+bool do_intersect(const Ray& ray, const Arc& arc) {
+	switch(arc.type) {
+	case ArcType::NORMAL: return CGAL::do_intersect(ray,arc.edge);
+	case ArcType::RAY: return CGAL::do_intersect(ray,arc.ray);
+
+	case ArcType::DISABLED:
+	default: LOG(WARNING) << "Not supposed to happen!"; return false;
+	}
+}
+
 //Point intersectEdgeEdge(Edge *a, Edge *b) {
 //	Point intersectionPoint = INFPOINT;
 //

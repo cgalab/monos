@@ -1,5 +1,11 @@
 #include "Wavefront.h"
 
+std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
+	os << "path-edge: " << path.edgeIdx << " current:" << path.currentArcIdx << " opposite: " << path.oppositeArcIdx;
+	return os;
+}
+
+
 void Wavefront::InitializeEventsAndPathsPerEdge() {
 	/* set up empty events for every edge;
 	* set up initial target node for pathfinder
@@ -487,7 +493,7 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	} else /* step to the next arc to the right of current arc */ {
 		auto rightNode = getRightmostNodeOfArc(currentArc);
 		uint nextArcIdx = INFINITY;
-		for(auto a : rightNode->arcs) {
+		for(auto a : rightNode.arcs) {
 			if(a != path.currentArcIdx) {
 				auto arc = arcList[a];
 				if(arc.leftEdgeIdx == path.edgeIdx) {
@@ -506,20 +512,20 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	}
 }
 
-bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) {
-	return data.monotoneSmaller(getRightmostNodeOfArc(arcA)->point,getRightmostNodeOfArc(arcB)->point);
+bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
+	return data.monotoneSmaller(getRightmostNodeOfArc(arcA).point,getRightmostNodeOfArc(arcB).point);
 }
 
-Node* Wavefront::getRightmostNodeOfArc(const Arc& arc) {
-	Node* Na = &nodes[arc.firstNodeIdx];
+const Node& Wavefront::getRightmostNodeOfArc(const Arc& arc) const {
+	const auto& Na = nodes[arc.firstNodeIdx];
 	if(arc.type == ArcType::NORMAL) {
-		Node* Nb = &nodes[arc.secondNodeIdx];
-		return (data.monotoneSmaller(Na->point,Nb->point)) ? Nb : Na;
+		const auto& Nb = nodes[arc.secondNodeIdx];
+		return (data.monotoneSmaller(Na.point,Nb.point)) ? Nb : Na;
 	} else if (arc.type == ArcType::RAY) {
 		return Na;
 	} else {
-		LOG(ERROR) << "Traversing a disabled arc!";
-		return nullptr;
+		LOG(ERROR) << "Traversing a disabled arc/ray!";
+		return Na;
 	}
 }
 
@@ -530,11 +536,11 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 	Arc&  initialArc     = arcList[initialArcIdx];
 
 	auto ie = pathFinder[edgeIdx];
-
 	Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
 	uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
 
 	if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
+
 		if(upper) {
 			upperPath = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx);
 		} else {
@@ -542,12 +548,14 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 		}
 	} else {
 		Arc&  distantArc    = arcList[distantArcIdx];
-		auto path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx);
+		MonotonePathTraversal path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx);
 
 		if(upper) {
 			upperPath = path;
+			std::cout << upperPath << std::endl;
 		} else {
 			lowerPath = path;
+			std::cout << lowerPath << std::endl;
 		}
 	}
 }
@@ -587,12 +595,19 @@ void Wavefront::SortArcsOnNodes() {
 	uint i = 0;
 	for(auto n : nodes) {
 		n.sort(arcList);
+
+		/*	-- DEBUG ONLY --*/
 		std::cout << i << " (" << n.point << ") " << n.arcs.size() << ": ";
 		for(auto a : n.arcs) {
 			std::cout << a << " [";
 			auto arc = &arcList[a];
 			std::cout << arc->firstNodeIdx << "-" << arc->secondNodeIdx << "] ";
-			auto nodeB = &nodes[ (arc->firstNodeIdx == i) ? arc->secondNodeIdx : arc->firstNodeIdx  ];
+
+			auto nodeB = &nodes[ arc->firstNodeIdx ];
+			if(arc->type != ArcType::RAY && arc->firstNodeIdx == i) {
+				nodeB = &nodes[ arc->secondNodeIdx ];
+			}
+
 			if(arc->firstNodeIdx == i) {
 				std::cout << arc->secondNodeIdx;
 			} else {
@@ -601,6 +616,7 @@ void Wavefront::SortArcsOnNodes() {
 			std::cout <<  " (" << nodeB->arcs.size() << ") ";
 		}
 		std::cout << std::endl;
+		/*	-- DEBUG ONLY --*/
 		++i;
 	}
 }
