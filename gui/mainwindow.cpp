@@ -239,7 +239,16 @@ void MainWindow::dropEvent(QDropEvent *e) {
         QString fileName = url.toLocalFile();
         LOG(INFO) << "Dropped file:" << fileName.toStdString();
         if (fileName.endsWith(".obj") || fileName.endsWith(".graphml")) {
+
         	monos.reinitialize(fileName.toStdString(),true);
+
+        	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput());
+        	scene.addItem(input_gi.get());
+
+        	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
+        	scene.addItem(skeleton_gi.get());
+
+        	on_actionResize_triggered();
         }
     }
 }

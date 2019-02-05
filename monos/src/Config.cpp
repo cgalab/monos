@@ -1,5 +1,4 @@
 #include "Config.h"
-#include "tools.h"
 
 bool Config::evaluateArguments(std::list<std::string> args) {
 	std::string argument;

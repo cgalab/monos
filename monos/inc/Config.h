@@ -5,6 +5,7 @@
 #include <list>
 
 #include "Definitions.h"
+#include "tools.h"
 
 class Config {
 public:
@@ -35,14 +36,20 @@ public:
 
 	bool isValid() const { return validConfig; }
 
-	std::string   fileName;
+	void setNewInputfile(const std::string& _fileName) {
+		if(fileExists(_fileName) && validConfig) {
+			fileName = _fileName;
+		}
+	}
+
+	std::string   	fileName;
 
 	bool 			verbose;
 	bool			silent;
 	bool 			gui;
 
 	OutputType  	outputType;
-	std::string	outputFileName;
+	std::string		outputFileName;
 
 private:
 	bool evaluateArguments(std::list<std::string> args);

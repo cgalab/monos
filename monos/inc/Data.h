@@ -62,7 +62,7 @@ class Data {
 	using EdgeIterator = std::vector<IndexEdge,CORE::allocator<IndexEdge>>::iterator;
 
 public:
-	Data()  {}
+	Data(bool gui = false):gui(gui)  {}
 	~Data() {}
 
 	void initialize(const Config& cfg);
@@ -109,7 +109,7 @@ public:
 
 	BBox 			bbox;
 	Line			monotonicityLine;
-	bool 			gui = false;
+	bool 			gui;
 
 	// debug
 	std::vector<Edge> lines;

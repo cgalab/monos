@@ -38,8 +38,7 @@ Monos::~Monos() {
 }
 
 void Monos::constructorInit(bool gui) {
-	data = new Data();
-	data->setGui(gui);
+	data = new Data(gui);
 
 	/* load data: input and bbox */
 	data->initialize(config);
@@ -62,7 +61,7 @@ void Monos::reinitialize(const std::string& fileName, bool gui) {
 
 		destruct();
 
-		config.fileName = fileName;
+		config.setNewInputfile(fileName);
 		constructorInit(gui);
 	}
 }
