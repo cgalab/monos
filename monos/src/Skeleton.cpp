@@ -242,7 +242,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 
 	Arc* Arc_u;
 	Arc* Arc_l;
-std::cout << " go " << std::endl; fflush(stdout);
+	std::cout << " go " << std::endl; fflush(stdout);
 	while(!EndOfChain() && !success) {
 		Arc_l = wf.getArc(wf.lowerPath);
 		Arc_u = wf.getArc(wf.upperPath);
@@ -251,6 +251,8 @@ std::cout << " go " << std::endl; fflush(stdout);
 		onUpperChain = (wf.isArcLeftOfArc(*Arc_l,*Arc_u)) ? false : true;
 
 		std::cout << std::boolalpha<< " upperChain: " << onUpperChain << std::endl;
+		std::cout << " BEFORE paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
+		fflush(stdout);
 
 		if(onUpperChain) {
 			if(isValidArc(wf.upperPath.currentArcIdx) && do_intersect(bis,*Arc_u)) {
@@ -258,12 +260,13 @@ std::cout << " go " << std::endl; fflush(stdout);
 				if(data.monotoneSmaller(currentPoint,Pi_u)) {
 					success = true;
 				}
-			} else {
-				if(!wf.nextMonotoneArcOfPath(wf.upperPath)) {
-					upperChainIndex = nextUpperChainIndex(upperChainIndex);
-					LOG(WARNING) << "Check findNextIntersectingArc (upper)";
-				}
 			}
+			if(!success && !wf.nextMonotoneArcOfPath(wf.upperPath)) {
+				upperChainIndex = nextUpperChainIndex(upperChainIndex);
+				wf.initPathForEdge(true,upperChainIndex);
+				LOG(WARNING) << "Check findNextIntersectingArc (upper)";
+			}
+
 		} else {
 			std::cout << " a " << bis << " " << std::endl;
 			if( isValidArc(wf.lowerPath.currentArcIdx) && do_intersect(bis,*Arc_l) ) {
@@ -273,17 +276,20 @@ std::cout << " go " << std::endl; fflush(stdout);
 					std::cout << " s " << std::endl;
 					success = true;
 				}
-			} else {
-				std::cout << " b " << std::endl;
-				if(!wf.nextMonotoneArcOfPath(wf.lowerPath)) {
-					std::cout << " 2 " << std::endl;
-					lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-					LOG(WARNING) << "Check findNextIntersectingArc (lower)";
-				}
 			}
+			std::cout << " b " << std::endl;
+			if(!success && !wf.nextMonotoneArcOfPath(wf.lowerPath)) {
+				std::cout << " 2 " << std::endl;
+				lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
+				wf.initPathForEdge(false,lowerChainIndex);
+				LOG(WARNING) << "Check findNextIntersectingArc (lower)";
+			}
+
 		}
 
 		std::cout << std::endl << "uc:" << upperChainIndex << " "; fflush(stdout);
+		std::cout << " AFTER paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
+		fflush(stdout);
 	}
 
 	/* setting the 'newPoint' to the found intersection if 'success' */

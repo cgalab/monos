@@ -482,13 +482,14 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 
 
 bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
+	LOG(INFO) << " next ";
 	if(path.done()) {return false;}
 
 	auto& currentArc  = arcList[path.currentArcIdx];
 	auto& oppositeArc = arcList[path.oppositeArcIdx];
 
 	if(/* opposite arcs right endpoint is to the left of current arc*/ isArcLeftOfArc(oppositeArc,currentArc)) {
-		std::swap(path.currentArcIdx,path.oppositeArcIdx);
+		path.swap();
 		return true;
 	} else /* step to the next arc to the right of current arc */ {
 		auto rightNode = getRightmostNodeOfArc(currentArc);
@@ -496,7 +497,7 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		for(auto a : rightNode.arcs) {
 			if(a != path.currentArcIdx) {
 				auto arc = arcList[a];
-				if(arc.leftEdgeIdx == path.edgeIdx) {
+				if( liesOnFace(arc,path.edgeIdx) ) {
 					nextArcIdx = a;
 					break;
 				}

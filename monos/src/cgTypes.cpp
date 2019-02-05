@@ -31,7 +31,6 @@ std::ostream& operator<< (std::ostream& os, const Event& event) {
 }
 
 
-
 Exact normalDistance(const Line& l, const Point& p) {
 	return CGAL::squared_distance(l,p);
 }
@@ -44,6 +43,10 @@ bool do_intersect(const Ray& ray, const Arc& arc) {
 	case ArcType::DISABLED:
 	default: LOG(WARNING) << "Not supposed to happen!"; return false;
 	}
+}
+
+Point intersectRayArc(const Ray& ray, const Arc& arc) {
+	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
 }
 
 //Point intersectEdgeEdge(Edge *a, Edge *b) {

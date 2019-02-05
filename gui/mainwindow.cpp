@@ -20,6 +20,8 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	ui->gV->scale(1, -1);
 	ui->gV->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
 	ui->gV->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
+	setAcceptDrops(true);
+
 	//addNavigation(ui->gV);
 
 	/* add navigation */
@@ -33,12 +35,11 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	/* general init. of monos */
 	monos.init();
 
-	input_gi = std::make_shared<InputGraphicsItem>(&monos.data.getBasicInput());
+	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput());
 	scene.addItem(input_gi.get());
 
-	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf.nodes, &monos.wf.arcList, &monos.data.lines);
+	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
 	scene.addItem(skeleton_gi.get());
-
 
 	auto input_size = input_gi->boundingRect().size();
 	auto size_avg = (input_size.width() + input_size.height() ) /2.0;
@@ -92,7 +93,7 @@ void MainWindow::on_actionDefineWeight_triggered() {
 	weightDialog->setGeometry(this->x(), this->y(),184,134);
 	weightDialog->show();
 	auto spinBox = weightDialog->ui->edgeSelect;
-	spinBox->setRange(0, monos.data.getPolygon().size()-1);
+	spinBox->setRange(0, monos.data->getPolygon().size()-1);
 	spinBox->setSingleStep(1);
 	spinBox->setValue(0);
 	updateWeightValue(0);
@@ -105,7 +106,7 @@ void MainWindow::on_actionDefineWeight_triggered() {
 
 
 void MainWindow::updateWeightValue(int idx) {
-	Exact weight = monos.data.w(idx);
+	Exact weight = monos.data->w(idx);
 	weightDialog->ui->weightInput->setText(QString::fromStdString(std::to_string(weight.doubleValue())));
 }
 
@@ -115,7 +116,7 @@ void MainWindow::on_actionDefineWeightDialogClosed() {
 	auto weight  = weightDialog->ui->weightInput->text().toDouble(&ok);
 
 	if(ok) {
-		monos.data.setEdgeWeight(edgeIdx,Exact(weight));
+		monos.data->setEdgeWeight(edgeIdx,Exact(weight));
 	}
 }
 
@@ -142,7 +143,7 @@ void MainWindow::update_time_label() {
 	} else if(mergeDone) {
 		time_label->setText(QString(" -finished- "));
 	} else {
-		auto t = CGAL::to_double( monos.wf.getTime() );
+		auto t = CGAL::to_double( monos.wf->getTime() );
 		time_label->setText(QString("t: %1 ").arg(t));
 	}
 }
@@ -167,9 +168,10 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 	on_actionTimeForwardAfterChains_triggered();
 
-	while(monos.s.SingleMergeStep());
+	while(monos.s->SingleMergeStep())
+	;
 
-	monos.s.finishMerge();
+	monos.s->finishMerge();
 	mergeDone = true;
 
 	time_changed();
@@ -206,12 +208,12 @@ void MainWindow::on_actionEventStep_triggered() {
 	if(lowerChainDone && upperChainDone && !bothChainsDone) {
 		monos.finishSkeleton(onLowerChain);
 		bothChainsDone = true;
-		monos.s.initMerge();
+		monos.s->initMerge();
 	}
 
 	if(bothChainsDone && !mergeDone) {
-		if(!monos.s.SingleMergeStep()) {
-			monos.s.finishMerge();
+		if(!monos.s->SingleMergeStep()) {
+			monos.s->finishMerge();
 			mergeDone = true;
 		}
 	}
@@ -226,3 +228,18 @@ void MainWindow::simulation_has_finished() {
 	updateVisibilities();
 }
 
+void MainWindow::dragEnterEvent(QDragEnterEvent *e) {
+    if (e->mimeData()->hasUrls()) {
+        e->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent *e) {
+    foreach (const QUrl &url, e->mimeData()->urls()) {
+        QString fileName = url.toLocalFile();
+        LOG(INFO) << "Dropped file:" << fileName.toStdString();
+        if (fileName.endsWith(".obj") || fileName.endsWith(".graphml")) {
+        	monos.reinitialize(fileName.toStdString(),true);
+        }
+    }
+}

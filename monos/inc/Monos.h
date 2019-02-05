@@ -47,17 +47,21 @@ public:
 	void write();
 	void reset();
 
+	void constructorInit(bool gui);
+	void reinitialize(const std::string& fileName, bool gui);
+	void destruct();
+
 	/**
 	 * enable stepping trough the computation
 	 * */
-	bool initSkeletonQueue(bool lower) {return wf.InitSkeletonQueue(lower);}
-	bool computeSingleSkeletonEvent(bool lower) {return wf.ComputeSingleSkeletonEvent(lower);}
-	bool finishSkeleton(bool lower)    {return wf.FinishSkeleton(lower);   }
+	bool initSkeletonQueue(bool lower) {return wf->InitSkeletonQueue(lower);}
+	bool computeSingleSkeletonEvent(bool lower) {return wf->ComputeSingleSkeletonEvent(lower);}
+	bool finishSkeleton(bool lower)    {return wf->FinishSkeleton(lower);   }
 
-	Data			data;
+	Data			*data;
 	Config 			config;
-	Wavefront 		wf;
-	Skeleton		s;
+	Wavefront 		*wf;
+	Skeleton		*s;
 };
 
 #endif /* MONOS_H_ */

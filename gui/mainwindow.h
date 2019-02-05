@@ -6,6 +6,8 @@
 #include <QGraphicsScene>
 #include <QLabel>
 
+#include <QMimeData>
+
 #include "ArcGraphicsItem.h"
 #include "InputGraphicsItem.h"
 #include "Config.h"
@@ -48,6 +50,9 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
 
     void on_actionDefineWeight_triggered();
     void on_actionDefineWeightDialogClosed();
+
+    void dragEnterEvent(QDragEnterEvent *e);
+    void dropEvent(QDropEvent *e);
 
   private:
     std::string title;

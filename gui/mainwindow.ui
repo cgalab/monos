@@ -16,6 +16,9 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -46,6 +49,9 @@
      <widget class="MyQGraphicsView" name="gV">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(255, 255, 255);</string>
+      </property>
+      <property name="dragMode">
+       <enum>QGraphicsView::NoDrag</enum>
       </property>
      </widget>
     </item>
@@ -174,7 +180,6 @@
     <string>E</string>
    </property>
   </action>
-   <addaction name=""/>
   <action name="actionVisToggleArcs">
    <property name="checkable">
     <bool>true</bool>

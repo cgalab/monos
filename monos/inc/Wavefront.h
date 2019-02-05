@@ -12,6 +12,7 @@ public:
 	, oppositeArcIdx(oppositeArcIdx) {}
 
 	bool done() const {return currentArcIdx == oppositeArcIdx;}
+	void swap() { std::swap(currentArcIdx, oppositeArcIdx); }
 
 	uint edgeIdx;
 	uint currentArcIdx, oppositeArcIdx;

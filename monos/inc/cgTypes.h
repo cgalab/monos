@@ -217,9 +217,7 @@ Point intersectElements(const T& a, const U& b) {
 	return intersectionPoint;
 }
 
-Point intersectRayArc(const Ray& ray, const Arc& arc) {
-	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
-}
+Point intersectRayArc(const Ray& ray, const Arc& arc);
 
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
