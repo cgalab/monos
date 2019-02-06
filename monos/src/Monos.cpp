@@ -28,7 +28,7 @@
 Monos::Monos(std::list<std::string>& args, bool gui):
 config(args,gui) {
 	/* evaluate arguments */
-	if(!config.isValid()) {return;}
+	if(!config.isValid() && !gui) {return;}
 
 	constructorInit(gui);
 }

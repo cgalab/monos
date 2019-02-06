@@ -37,8 +37,9 @@ public:
 	bool isValid() const { return validConfig; }
 
 	void setNewInputfile(const std::string& _fileName) {
-		if(fileExists(_fileName) && validConfig) {
+		if(fileExists(_fileName)) {
 			fileName = _fileName;
+			validConfig = true;
 		}
 	}
 

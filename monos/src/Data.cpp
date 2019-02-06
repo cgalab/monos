@@ -28,7 +28,11 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 
 void Data::initialize(const Config& cfg) {
 	/* load input vertices/polygon and weights */
-	if(!loadFile(cfg.fileName)) { assert(false); return;}
+	if(cfg.isValid()) {
+		if (!loadFile(cfg.fileName)) {
+			assert(false); return;
+		}
+	}
 }
 
 Edge Data::getEdge(const uint& idx) const {

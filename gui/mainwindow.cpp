@@ -88,6 +88,8 @@ void MainWindow::on_actionResize_triggered() {
 }
 
 void MainWindow::on_actionDefineWeight_triggered() {
+	if(!monos.config.isValid()) {return;}
+
 	std::string wt = "Weight";
 	weightDialog = new WeightDialog(wt);
 	weightDialog->setGeometry(this->x(), this->y(),184,134);
@@ -155,6 +157,7 @@ void MainWindow::time_changed() {
 
 
 void MainWindow::on_actionTimeForwardAfterChains_triggered() {
+	if(!monos.config.isValid()) {return;}
 
 	while(!bothChainsDone) {
 		on_actionEventStep_triggered();
@@ -165,6 +168,7 @@ void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 }
 
 void MainWindow::on_actionFinishComputation_triggered() {
+	if(!monos.config.isValid()) {return;}
 
 	on_actionTimeForwardAfterChains_triggered();
 
@@ -179,6 +183,7 @@ void MainWindow::on_actionFinishComputation_triggered() {
 }
 
 void MainWindow::on_actionEventStep_triggered() {
+	if(!monos.config.isValid()) {return;}
 
 	if(firstStart) {
 		if (!monos.initSkeletonQueue(onLowerChain)) {
