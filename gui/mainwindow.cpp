@@ -68,6 +68,7 @@ void MainWindow::updateVisibilities() {
 	skeleton_gi->setVisibleLabels(ui->actionVisToggleInputLabels->isChecked());
 	skeleton_gi->setVisible(ui->actionVisToggleInput->isChecked());
     skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
+	skeleton_gi->setVisibleArcLabels(ui->actionVisToggleArcLabels->isChecked());
 }
 
 void MainWindow::on_actionToggleFullscreen_triggered() {

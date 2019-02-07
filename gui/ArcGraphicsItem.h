@@ -23,7 +23,9 @@ class ArcGraphicsItem :
     QPen vertices_pen;
     QPen segments_pen;
     QPen labels_pen;
-    bool visible_labels = false;
+
+    bool visible_labels 	 = false;
+    bool visible_arc_labels  = false;
 
     bool drawNode(const Node& node) const;
 
@@ -45,6 +47,7 @@ class ArcGraphicsItem :
     const QPen& segmentsPen() const { return segments_pen; }
     const QPen& labelsPen() const { return labels_pen; }
     void setVisibleLabels(bool visible) { if (visible_labels != visible) { prepareGeometryChange(); }; visible_labels = visible; }
+    void setVisibleArcLabels(bool visible) { if (visible_arc_labels != visible) { prepareGeometryChange(); }; visible_arc_labels = visible; }
 
     void modelChanged();
 };

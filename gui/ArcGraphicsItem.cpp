@@ -72,20 +72,20 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 			painter->drawPoint(point);
 		}
 	}
-//	if (visible_labels) {
-//		painter->setPen(labelsPen());
-//		QFont font(painter->font());
-//
-////		font.setPointSize(10);
-////		painter->setFont(font);
-////		for (auto e = arcs->begin(); e != arcs->end(); ++e) {
-////			if(e->type != ArcType::DISABLED) {
-////				const QPointF p(transform.map(convert( CGAL::midpoint(e->edge.source(), e->edge.target()) )));
-////				std::string t = "e#"+std::to_string(e - arcs->begin());
-////				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
-////			}
-////		}
-//
+	if (visible_arc_labels) {
+		painter->setPen(labelsPen());
+		QFont font(painter->font());
+
+		font.setPointSize(10);
+		painter->setFont(font);
+		for (auto e = arcs->begin(); e != arcs->end(); ++e) {
+			if(e->type != ArcType::DISABLED) {
+				const QPointF p(transform.map(convert( CGAL::midpoint(e->edge.source(), e->edge.target()) )));
+				std::string t = "e#"+std::to_string(e - arcs->begin());
+				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
+			}
+		}
+
 //		font.setPointSize(8);
 //		painter->setFont(font);
 //		for (auto v = nodes->begin(); v != nodes->end(); ++v) {
@@ -95,7 +95,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 //				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
 //			}
 //		}
-//	}
+	}
 	painter->setWorldTransform(transform);
 }
 

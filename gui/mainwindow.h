@@ -37,6 +37,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionVisToggleInput_triggered() { updateVisibilities(); };
     void on_actionVisToggleInputLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleArcs_triggered() { updateVisibilities(); };
+    void on_actionVisToggleArcLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleInputEdgesLabels_triggered() { updateVisibilities(); }
 
 	void on_actionResize_triggered();

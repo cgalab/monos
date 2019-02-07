@@ -23,7 +23,6 @@ class InputGraphicsItem :
     bool visible_labels      = false;
     bool visible_edge_labels = false;
 
-
   protected:
     QRectF bounding_rect;
     void updateBoundingBox();
