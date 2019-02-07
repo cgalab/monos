@@ -118,6 +118,12 @@ bool Monos::init() {
 	/* compute BBox and min/max monotonicity vertices */
 	data->bbox = data->computeBoundingBox();
 
+	/* debug */
+	Point p = data->v(data->bbox.xMinIdx);
+	Edge e = data->confineRayToBBox(Ray(p,data->monotonicityLine.to_vector()));
+	data->lines.push_back(e);
+
+
 	/** input must be x-monotone */
 	wf->ChainDecomposition();
 	LOG(INFO) << "chain decomposition done";

@@ -20,7 +20,8 @@
 
 class Skeleton {
 public:
-	Skeleton(const Data& _data, Wavefront& _wf) :
+//	Skeleton(const Data& _data, Wavefront& _wf) :
+	Skeleton(Data& _data, Wavefront& _wf) :
 		data(_data),wf(_wf) {}
 
 	~Skeleton() {}
@@ -58,7 +59,8 @@ private:
 		return (arc.type == ArcType::NORMAL) ? intersectElements(ray, arc.edge) : intersectElements(ray, arc.ray);
 	}
 
-	const Data& data;
+//	const Data& data;
+	Data& data;
 	Wavefront& 	wf;
 
 	Node* sourceNode = nullptr;

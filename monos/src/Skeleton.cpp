@@ -143,6 +143,13 @@ bool Skeleton::SingleMergeStep() {
 		LOG(INFO) << "bisector is vertical!";
 	}
 
+	/* debug */
+	if(data.gui) {
+		//data.lines.clear();
+		Edge visBis = data.confineRayToBBox(bis);
+		data.lines.push_back(visBis);
+	}
+
 	std::cout << " bis: u/l " << upperChainIndex << "/" << lowerChainIndex << " - " << bis;
 	fflush(stdout);
 	Edge eA = data.getEdge(upperChainIndex);
@@ -251,7 +258,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		onUpperChain = (wf.isArcLeftOfArc(*Arc_l,*Arc_u)) ? false : true;
 
 		std::cout << std::boolalpha<< " upperChain: " << onUpperChain << std::endl;
-		std::cout << " BEFORE paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
+		std::cout << "BEFORE paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
 		fflush(stdout);
 
 		if(onUpperChain) {
@@ -288,8 +295,8 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		}
 
 		std::cout << std::endl << "uc:" << upperChainIndex << " "; fflush(stdout);
-		std::cout << " AFTER paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
-		fflush(stdout);
+		std::cout << std::endl << "AFTER  paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
+		std::cout << std::endl; fflush(stdout);
 	}
 
 	/* setting the 'newPoint' to the found intersection if 'success' */

@@ -133,6 +133,11 @@ public:
 
 	void disable() {type=ArcType::DISABLED;}
 
+	bool adjacent(const Arc& arc) const {
+		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
+			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
+	}
+
 	ArcType type;
 	uint firstNodeIdx, secondNodeIdx;
 	uint leftEdgeIdx,  rightEdgeIdx;

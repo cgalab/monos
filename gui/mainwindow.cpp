@@ -160,7 +160,7 @@ void MainWindow::time_changed() {
 void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 	if(!monos.config.isValid()) {return;}
 
-	while(!bothChainsDone) {
+	while(!lowerChainDone || !upperChainDone) {
 		on_actionEventStep_triggered();
 	}
 
@@ -209,9 +209,7 @@ void MainWindow::on_actionEventStep_triggered() {
 				monos.initSkeletonQueue(onLowerChain);
 			}
 		}
-	}
-
-	if(lowerChainDone && upperChainDone && !bothChainsDone) {
+	} else if(lowerChainDone && upperChainDone && !bothChainsDone) {
 		monos.finishSkeleton(onLowerChain);
 		bothChainsDone = true;
 		monos.s->initMerge();

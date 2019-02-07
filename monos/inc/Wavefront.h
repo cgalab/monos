@@ -12,6 +12,7 @@ public:
 	, oppositeArcIdx(oppositeArcIdx) {}
 
 	bool done() const {return currentArcIdx == oppositeArcIdx;}
+	bool isAnIndex(const uint idx) const { return idx == currentArcIdx || idx == oppositeArcIdx; }
 	void swap() { std::swap(currentArcIdx, oppositeArcIdx); }
 
 	uint edgeIdx;
