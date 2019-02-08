@@ -304,18 +304,15 @@ bool Data::ensureMonotonicity() {
 	}
 }
 
-bool Data::monotoneSmaller(const Point& a, const Point& b) const {
-
-	Line perpL = monotonicityLine.perpendicular(a);
+bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
+	Line perpL = line.perpendicular(a);
 	return !perpL.has_on_positive_side(b);
-
-//	auto aP = monotonicityLine.projection(a);
-//	auto bP = monotonicityLine.projection(b);
-//	Vector ab = Vector(a,b);
-//	return ( ab.direction() == monotonicityLine.direction() );
-	//auto cP = bP + monotonicityLine.to_vector();
-	//return CGAL::collinear_are_ordered_along_line(aP,bP,cP);
 }
+
+bool Data::monotoneSmaller(const Point& a, const Point& b) const {
+	return monotoneSmaller(monotonicityLine,a,b);
+}
+
 BBox Data::computeBoundingBox() const {
 	auto box = BBox();
 	for(uint i=0; i < inputVertices.size(); ++i) {

@@ -150,28 +150,18 @@ bool Skeleton::SingleMergeStep() {
 		data.lines.push_back(visBis);
 	}
 
-	std::cout << " bis: u/l " << upperChainIndex << "/" << lowerChainIndex << " - " << bis;
+	LOG(INFO) << "SingleMergeStep: Bis (" << upperChainIndex << "/" << lowerChainIndex << ") ";
 	fflush(stdout);
-	Edge eA = data.getEdge(upperChainIndex);
-	Edge eB = data.getEdge(lowerChainIndex);
-
-	std::cout << " Points: " << eA.source() << "," << eA.target();
-	std::cout << " / " << eB.source() << "," << eB.target() << std::endl;
-
-	/* identify arcs and intersection points */
-	uint  upperArcIdx, lowerArcIdx;
-	Point pU = INFPOINT, pL = INFPOINT;
 
 	std::vector<uint> arcs;
 	Point newPoint = INFPOINT;
 	bool  onUpperChain = true;
 
-	std::cout << std::endl << "UPPER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
-
 	/* obtain the arcIdx and newPoint for the next bis arc intersection */
 	findNextIntersectingArc(bis,arcs,onUpperChain,newPoint);
 
 	if(!arcs.empty()) {
+		LOG(INFO) << "After findNextIntersectingArc: arcs NOT empty!";
 		newNodeIdx = handleMerge(arcs,upperChainIndex,lowerChainIndex,newPoint,bis);
 
 		Arc* modifiedArc = &wf.arcList[arcs.front()];
@@ -185,6 +175,8 @@ bool Skeleton::SingleMergeStep() {
 		}
 		sourceNodeIdx = newNodeIdx;
 		sourceNode = &wf.nodes[sourceNodeIdx];
+	} else {
+		LOG(INFO) << "After findNextIntersectingArc: arcs ARE empty!";
 	}
 
 //	if( (upperChainIndex+1 != wf.startUpperEdgeIdx || lowerChainIndex != wf.endLowerEdgeIdx+1) ) {
@@ -245,89 +237,59 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 	/* new intersection point must be to the right of 'currentPoint' in reps. to the monotonicity line */
 	auto& currentPoint = sourceNode->point;
 	bool success = false, onUpperChain;
-	Point Pi_u = INFPOINT, Pi_l = INFPOINT;
+	Point Pi = INFPOINT;
+	MonotonePathTraversal* path = (upperChain) ? &wf.upperPath : &wf.lowerPath;
 
-	Arc* Arc_u;
-	Arc* Arc_l;
-	std::cout << " go " << std::endl; fflush(stdout);
+	LOG(WARNING) << "use monotone-smaller with bis rather then monotonicity line!";
+
+	Arc* arc_u;
+	Arc* arc_l;
+	LOG(INFO) << "findNextIntersectingArc start"; fflush(stdout);
 	while(!EndOfChain() && !success) {
-		Arc_l = wf.getArc(wf.lowerPath);
-		Arc_u = wf.getArc(wf.upperPath);
-
+		arc_l = wf.getArc(wf.lowerPath);
+		arc_u = wf.getArc(wf.upperPath);
 		/* check which arc lies futher to the left */
-		onUpperChain = (wf.isArcLeftOfArc(*Arc_l,*Arc_u)) ? false : true;
+		onUpperChain = (wf.isArcLeftOfArc(*arc_l,*arc_u)) ? false : true;
 
-		std::cout << std::boolalpha<< " upperChain: " << onUpperChain << std::endl;
-		std::cout << "BEFORE paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
+		path = (onUpperChain) ? &wf.upperPath : &wf.lowerPath;
+		auto arc = (onUpperChain) ? arc_u : arc_l;
+
+		std::cout << std::boolalpha<< "onUpperChain: " << onUpperChain << std::endl;
+		std::cout << "BEFORE path: " << *path << std::endl;
 		fflush(stdout);
 
-		if(onUpperChain) {
-			if(isValidArc(wf.upperPath.currentArcIdx) && do_intersect(bis,*Arc_u)) {
-				Pi_u = intersectRayArc(bis,*Arc_u);
-				if(data.monotoneSmaller(currentPoint,Pi_u)) {
-					success = true;
+		if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
+			Pi = intersectRayArc(bis,*arc);
+			LOG(INFO) << "Intersection found with " << path->currentArcIdx;
+			if(data.monotoneSmaller(bis.supporting_line(),currentPoint,Pi)) {
+				LOG(INFO) << "success";
+				success = true;
+			}
+		}
+		if(!success) {
+			if(!wf.nextMonotoneArcOfPath(*path)) {
+				if(onUpperChain) {
+					upperChainIndex = nextUpperChainIndex(upperChainIndex);
+					wf.initPathForEdge(true,upperChainIndex);
+				} else {
+					lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
+					wf.initPathForEdge(false,lowerChainIndex);
 				}
+				LOG(WARNING) << "next chain index";
 			}
-			if(!success && !wf.nextMonotoneArcOfPath(wf.upperPath)) {
-				upperChainIndex = nextUpperChainIndex(upperChainIndex);
-				wf.initPathForEdge(true,upperChainIndex);
-				LOG(WARNING) << "Check findNextIntersectingArc (upper)";
-			}
-
-		} else {
-			std::cout << " a " << bis << " " << std::endl;
-			if( isValidArc(wf.lowerPath.currentArcIdx) && do_intersect(bis,*Arc_l) ) {
-				std::cout << " 1 " << Arc_l->edge << " " << std::endl;
-				Pi_l = intersectRayArc(bis,*Arc_l);
-				if(data.monotoneSmaller(currentPoint,Pi_l)) {
-					std::cout << " s " << std::endl;
-					success = true;
-				}
-			}
-			std::cout << " b " << std::endl;
-			if(!success && !wf.nextMonotoneArcOfPath(wf.lowerPath)) {
-				std::cout << " 2 " << std::endl;
-				lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-				wf.initPathForEdge(false,lowerChainIndex);
-				LOG(WARNING) << "Check findNextIntersectingArc (lower)";
-			}
-
 		}
 
-		std::cout << std::endl << "uc:" << upperChainIndex << " "; fflush(stdout);
-		std::cout << std::endl << "AFTER  paths u: " << wf.upperPath << " // l: " << wf.lowerPath;
-		std::cout << std::endl; fflush(stdout);
+		std::cout << std::endl << "AFTER  path: " << *path << std::endl; fflush(stdout);
 	}
 
 	/* setting the 'newPoint' to the found intersection if 'success' */
 	if(success) {
-		if(onUpperChain) {
-			newPoint = Pi_u;
-			arcs.push_back(wf.upperPath.currentArcIdx);
-		} else {
-			newPoint = Pi_l;
-			arcs.push_back(wf.lowerPath.currentArcIdx);
-		}
+		newPoint = Pi;
+		arcs.push_back(path->currentArcIdx);
 		upperChain = onUpperChain;
 	}
 
-//	while(upperChainIndex+1 != wf.startUpperEdgeIdx
-//			&& !findRayFaceIntersection(upperChainIndex,bis,true, upperArcIdx, pU)) {
-//		upperChainIndex = nextUpperChainIndex(upperChainIndex);
-//		std::cout << std::endl << "uc:" << upperChainIndex << " "; fflush(stdout);
-//	}
-
-	std::cout << std::endl << "LOWER u/l " << upperChainIndex << "/" << lowerChainIndex << ":"; fflush(stdout);
-
-//	while(lowerChainIndex != wf.endLowerEdgeIdx+1
-//			&& !findRayFaceIntersection(lowerChainIndex,bis,false, lowerArcIdx, pL)) {
-//		lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-//		std::cout << " lc:" << lowerChainIndex << " "; fflush(stdout);
-//	}
-//
-//	std::cout << "." << upperChainIndex << " " << lowerChainIndex
-//			  << " pU: " << pU << " pL: " << pL; fflush(stdout);
-
+	LOG(INFO) << "findNextIntersectingArc END"; fflush(stdout);
 }
 
 uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis) {
