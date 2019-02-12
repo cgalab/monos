@@ -117,12 +117,12 @@ bool Monos::init() {
 
 	/* compute BBox and min/max monotonicity vertices */
 	data->bbox = data->computeBoundingBox();
+
 	/* debug */
-	Point p = data->v(data->bbox.monotoneMinIdx);
-//	Edge e = data->confineRayToBBox(Ray(p,data->monotonicityLine.to_vector()));
-	Edge e(p,p+data->monotonicityLine.to_vector()); // = data->confineRayToBBox(Ray(p,data->monotonicityLine.to_vector()));
-	std::cout << "line ege: " << e;
-	data->lines.push_back(e);
+	LOG(INFO) << "monotonicity line: " << data->monotonicityLine;
+//	Point p = data->v(data->bbox.monotoneMinIdx);
+//	Edge e(p,p+data->monotonicityLine.to_vector()); // = data->confineRayToBBox(Ray(p,data->monotonicityLine.to_vector()));
+//	data->lines.push_back(e);
 
 
 	/** input must be x-monotone */

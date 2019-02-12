@@ -99,7 +99,7 @@ public:
 	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
 	bool isArcLeftOfArc(const Line& ray, const Arc& arcA, const Arc& arcB) const;
 	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const;
-	const Node& getRightmostNodeOfArc(const Arc& arc) const;
+	uint getRightmostNodeIdxOfArc(const Arc& arc) const;
 	void initPathForEdge(const bool upper, const uint edgeIdx);
 	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
 

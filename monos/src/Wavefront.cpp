@@ -502,7 +502,7 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		return true;
 	} else {
 		/* step to the next arc to the right of current arc */
-		auto rightNode = getRightmostNodeOfArc(currentArc);
+		auto rightNode = nodes[getRightmostNodeIdxOfArc(currentArc)];
 		uint nextArcIdx = INFINITY;
 		for(auto a : rightNode.arcs) {
 			if( !path.isAnIndex(a) ) {
@@ -525,23 +525,29 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 }
 
 bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
-	return data.monotoneSmaller(line,getRightmostNodeOfArc(arcA).point,getRightmostNodeOfArc(arcB).point);
+	auto NaIdx = getRightmostNodeIdxOfArc(arcA);
+	auto NbIdx = getRightmostNodeIdxOfArc(arcB);
+	if(NaIdx == NbIdx) {
+		return false;
+	} else {
+		return data.monotoneSmaller(line,nodes[NaIdx].point,nodes[NbIdx].point);
+	}
 }
 
 bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
-	return data.monotoneSmaller(getRightmostNodeOfArc(arcA).point,getRightmostNodeOfArc(arcB).point);
+	return isArcLeftOfArc(data.monotonicityLine,arcA,arcB);
 }
 
-const Node& Wavefront::getRightmostNodeOfArc(const Arc& arc) const {
+uint Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
 	const auto& Na = nodes[arc.firstNodeIdx];
 	if(arc.type == ArcType::NORMAL) {
 		const auto& Nb = nodes[arc.secondNodeIdx];
-		return (data.monotoneSmaller(Na.point,Nb.point)) ? Nb : Na;
+		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
 	} else if (arc.type == ArcType::RAY) {
-		return Na;
+		return arc.firstNodeIdx;
 	} else {
 		LOG(ERROR) << "Traversing a disabled arc/ray!";
-		return Na;
+		return arc.firstNodeIdx;
 	}
 }
 
@@ -554,6 +560,8 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 	auto ie = pathFinder[edgeIdx];
 	Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
 	uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
+	std::cout << "distantArcIdx arc idx " << distantArcIdx << std::endl; fflush(stdout);
+
 
 	MonotonePathTraversal path;
 
@@ -561,6 +569,10 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 		path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx);
 	} else {
 		Arc&  distantArc    = arcList[distantArcIdx];
+
+		bool test = isArcLeftOfArc(initialArc,distantArc);
+		std::cout << std::boolalpha << "test " << test << std::endl; fflush(stdout);
+
 		path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx);
 	}
 

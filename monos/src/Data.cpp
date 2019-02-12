@@ -326,6 +326,7 @@ bool Data::ensureMonotonicity() {
 		if(monotonicityLine.to_vector().x() < 0.0) {
 			monotonicityLine = monotonicityLine.opposite();
 		}
+		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
 		return true;
 	} else { /* polygon is not monotone */
 		LOG(WARNING) << "Polygon not monotone!";
@@ -334,7 +335,11 @@ bool Data::ensureMonotonicity() {
 }
 
 bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-	Line perpL = line.perpendicular(a);
+	assert(a!=b);
+	if(a == b) {
+		return false;
+	}
+	Line perpL = Line(a,perpMonotonDir);
 	return !perpL.has_on_positive_side(b);
 }
 

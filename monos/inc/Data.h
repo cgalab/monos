@@ -109,6 +109,7 @@ public:
 
 	BBox 			bbox;
 	Line			monotonicityLine;
+	Direction		perpMonotonDir;
 	bool 			gui;
 
 	// debug

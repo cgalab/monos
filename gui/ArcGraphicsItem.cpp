@@ -21,6 +21,7 @@ ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs, const std::vect
   , painterostream(0)
   , vertices_pen(QPen(::Qt::blue, 3))
   , segments_pen(QPen(::Qt::blue, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin))
+  , segments_debug_pen(QPen(::Qt::magenta, 0, Qt::DashDotDotLine, Qt::RoundCap, Qt::RoundJoin))
   , labels_pen(QPen(Qt::darkBlue, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin))
 {
   modelChanged();
@@ -54,6 +55,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 		}
 	}
 
+	painter->setPen(segmentsDebugPen());
 	for(auto l : *lines) {
 		painterostream << l;
 	}
