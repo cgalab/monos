@@ -261,7 +261,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
 			Pi = intersectRayArc(bis,*arc);
 			LOG(INFO) << "Intersection found with " << path->currentArcIdx;
-			if(data.monotoneSmaller(bis.supporting_line(),currentPoint,Pi)) {
+			if(data.monotoneSmaller(currentPoint,Pi)) {
 				LOG(INFO) << "success";
 				success = true;
 			}

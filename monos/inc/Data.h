@@ -52,8 +52,8 @@ struct MonotoneVector {
 };
 
 struct MonVectCmp {
-	bool operator()(const MonotoneVector &left, const MonotoneVector &right) const {
-		return CGAL::left_turn(ORIGIN-left.vector,ORIGIN,ORIGIN+right.vector);
+	bool operator()(const MonotoneVector &second, const MonotoneVector &first) const {
+		return !CGAL::right_turn(ORIGIN-first.vector,ORIGIN,ORIGIN+second.vector);
 	}
 };
 

@@ -524,6 +524,10 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	}
 }
 
+bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
+	return data.monotoneSmaller(line,getRightmostNodeOfArc(arcA).point,getRightmostNodeOfArc(arcB).point);
+}
+
 bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
 	return data.monotoneSmaller(getRightmostNodeOfArc(arcA).point,getRightmostNodeOfArc(arcB).point);
 }

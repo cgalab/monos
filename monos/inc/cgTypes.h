@@ -82,9 +82,11 @@ struct BBox {
 	uint  monotoneMinIdx, monotoneMaxIdx;
 	Point monotoneMin,    monotoneMax;
 
-	bool outside(Point p) const {return p.x() < xMin || xMax < p.x() ||
+	bool outside(const Point& p) const {return p.x() < xMin || xMax < p.x() ||
 			       	   	   	   	  p.y() < yMin || yMax < p.y();  }
-	bool inside(Point p) const {return !outside(p);}
+	bool onBoundary(const Point& p) const {return inside(p) && (p.x() == xMin || xMax == p.x() ||
+			       	   	   	   	  p.y() == yMin || yMax == p.y());  }
+	bool inside(const Point& p) const {return !outside(p);}
 };
 
 class Event {

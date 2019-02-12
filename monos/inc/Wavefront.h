@@ -97,6 +97,7 @@ public:
 	/* for the merge we have to traverse the faces of a chain-skeleton from 'left to right'
 	 * with respect to the monotonicity line. Actually only the right path suffices! */
 	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
+	bool isArcLeftOfArc(const Line& ray, const Arc& arcA, const Arc& arcB) const;
 	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const;
 	const Node& getRightmostNodeOfArc(const Arc& arc) const;
 	void initPathForEdge(const bool upper, const uint edgeIdx);

@@ -243,17 +243,17 @@ bool Data::ensureMonotonicity() {
 
 		/* ensure the vertex is reflex */
 		if(CGAL::right_turn(corner-vA,corner,corner+vB)) {
-			MonotoneVector a(vA,MonotoneType::END,idCnt);
-			MonotoneVector b(vB,MonotoneType::START,  idCnt);
+			MonotoneVector a(vA,MonotoneType::START, idCnt);
+			MonotoneVector b(vB,MonotoneType::END,   idCnt);
 			intervals.push_back(a);
 			intervals.push_back(b);
 
-			a = MonotoneVector(Vector(-vA.x(),-vA.y()),MonotoneType::END,edgeA[1]);
-			b = MonotoneVector(Vector(-vB.x(),-vB.y()),MonotoneType::START,  edgeA[1]);
+			a = MonotoneVector(Vector(-vA.x(),-vA.y()),MonotoneType::START,  idCnt+1);
+			b = MonotoneVector(Vector(-vB.x(),-vB.y()),MonotoneType::END,    idCnt+1);
 			intervals.push_back(a);
 			intervals.push_back(b);
 
-			++idCnt;
+			idCnt+=2;
 		}
 	} while(++edgeIt != polygon.end());
 
@@ -267,39 +267,68 @@ bool Data::ensureMonotonicity() {
 	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
 
 	/* iterate to first START vector */
-	auto itStart = intervals.begin();
-	for(;itStart->type != MonotoneType::START; ++itStart);
+	auto itStart  = intervals.begin();
+	auto it 	  = itStart;
+	int activeCnt = 0;		/* keep track how many intervals are active */
+	std::vector<bool> activeIntervals(intervals.size(),false);
 
-	uint activeCnt  = 0;		/* keep track how many intervals are active */
-	auto it 		= itStart;
-	bool success 	= false;
-	do {
+	for(;it != intervals.end(); ++it) {
 		if(it->type == MonotoneType::START) {
-			++activeCnt;
-		} else { /* type is MonotoneType::END */
-			--activeCnt;
+			if(!activeIntervals[it->id]) {
+				activeIntervals[it->id] = true;
+				++activeCnt;
+			}
 		}
-
-		/* we found a window*/
-		if(activeCnt == 0) {
-			success = true;
+		if(it->type == MonotoneType::END) {
+			if(activeIntervals[it->id]) {
+				activeIntervals[it->id] = false;
+				--activeCnt;
+			}
 		}
+	}
 
-		++it;
-		if(it == intervals.end()) {it = intervals.begin();}
-	} while(it != itStart && !success);
+	it 			    = itStart;
+	bool success 	= false;
 
+	if(activeCnt == 0) {
+		success = true;
+	} else {
+		do {
+			if(it->type == MonotoneType::START) {
+				if(!activeIntervals[it->id]) {
+					activeIntervals[it->id] = true;
+					++activeCnt;
+				}
+			}
+			if(it->type == MonotoneType::END) {
+				if(activeIntervals[it->id]) {
+					activeIntervals[it->id] = false;
+					--activeCnt;
+				}
+			}
+
+			/* we found a window*/
+			if(activeCnt == 0) {
+				success = true;
+			}
+		} while(!success && ++it != intervals.end());
+	}
 
 	/* construct the monotonicity line */
 	if(success) {
 		Vector a = it->vector;
-		it = (it == intervals.begin()) ? intervals.end()-1 : it-1;
-
+		++it;
 		Vector b = it->vector;
-		Vector c = a+b;
-		monotonicityLine = Line(ORIGIN, ORIGIN + c.perpendicular(CGAL::POSITIVE));
+
+		auto c = CGAL::bisector(Line(ORIGIN,a),Line(ORIGIN,b));
+		monotonicityLine = c.perpendicular(ORIGIN);
+
+		if(monotonicityLine.to_vector().x() < 0.0) {
+			monotonicityLine = monotonicityLine.opposite();
+		}
 		return true;
 	} else { /* polygon is not monotone */
+		LOG(WARNING) << "Polygon not monotone!";
 		return false;
 	}
 }
@@ -346,15 +375,15 @@ BBox Data::computeBoundingBox() const {
 }
 
 Edge Data::confineRayToBBox(const Ray& ray) const {
-	auto p = ray.source();
+	Point iA(ray.source()), iB(INFPOINT);
 
 	for(auto e : {bbox.top, bbox.bottom, bbox.left, bbox.right}) {
 		auto intersection = intersectElements<Ray,Edge>(ray,e);
-		if( intersection != INFPOINT ) {
-			return Edge(p,intersection);
+		if( intersection != INFPOINT && intersection != iA) {
+			iB = intersection;
 		}
 	}
-	return Edge(p,INFPOINT);
+	return Edge(iA,iB);
 }
 
 
