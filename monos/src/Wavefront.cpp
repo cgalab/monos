@@ -490,12 +490,12 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	auto& oppositeArc = arcList[path.oppositeArcIdx];
 
 	/* check if rightmost endpoint of both arcs is the same */
-	if(currentArc.adjacent(oppositeArc)) {
+	if(currentArc.adjacent(oppositeArc) && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
 		path.currentArcIdx = path.oppositeArcIdx;
 		LOG(INFO) << "current and opposite are adjacent";
 		return true;
-	} else if(isArcLeftOfArc(oppositeArc,currentArc)) {
-		/* opposite arcs right endpoint is to the left of current arc*/
+	} else if(isArcLeftOfArc(oppositeArc,currentArc) && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
+		/* opposite arcs left endpoint is to the left of the current arc ones */
 		std::cout << "swap " << path << " --> ";
 		path.swap();
 		std::cout << path << std::endl;
@@ -515,7 +515,11 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		}
 		if(nextArcIdx != INFINITY) {
 			path.currentArcIdx = nextArcIdx;
-			LOG(INFO) << "next arc " << nextArcIdx << " found";
+			currentArc  = arcList[path.currentArcIdx];
+			if(isArcLeftOfArc(oppositeArc,currentArc)) {
+				path.swap();
+			}
+			LOG(INFO) << "next arc " << path.currentArcIdx << " found";
 			return true;
 		} else {
 			LOG(ERROR) << "No next arc found!";
@@ -525,13 +529,57 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 }
 
 bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
-	auto NaIdx = getRightmostNodeIdxOfArc(arcA);
-	auto NbIdx = getRightmostNodeIdxOfArc(arcB);
+	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);
+	auto NbIdx = getLeftmostNodeIdxOfArc(arcB);
+	auto Na = &nodes[NaIdx];
+	auto Nb = &nodes[NbIdx];
 	if(NaIdx == NbIdx) {
 		return false;
 	} else {
-		return data.monotoneSmaller(line,nodes[NaIdx].point,nodes[NbIdx].point);
+		bool pointAmonotoneSmaller = data.monotoneSmaller(line,Na->point,Nb->point);
+		Point PLa = data.monotonicityLine.point(0);
+		Point PLb = PLa + data.monotonicityLine.to_vector();
+		if(arcA.isEdge() && arcB.isEdge()) {
+			return pointAmonotoneSmaller;
+		} else if( (arcA.isEdge() && arcB.isRay()) || (arcA.isRay() && arcB.isEdge()) ) {
+			auto& ray  = (arcA.isRay())  ? arcA : arcB;
+
+			Point PLc = PLb + ray.ray.to_vector();
+
+//			bool rayPointsLeft = CGAL::angle(data.monotonicityLine.to_vector(), ray.ray.to_vector()) == CGAL::ACUTE;
+			bool rayPointsLeft = CGAL::angle(PLa, PLb, PLc) == CGAL::ACUTE;
+
+			std::cout << std::boolalpha << "acute angel: " << rayPointsLeft << std::endl;
+			std::cout << "x of vect: " << ray.ray.to_vector().x().doubleValue() << "   ";
+
+			if(    ( rayPointsLeft && arcA.isRay())
+				|| (!rayPointsLeft && pointAmonotoneSmaller)
+			) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			assert(arcA.isRay());
+			assert(arcB.isRay());
+			Point PLcA = PLb + arcA.ray.to_vector();
+			Point PLcB = PLb + arcB.ray.to_vector();
+//			bool rayAPointsLeft = CGAL::angle(data.monotonicityLine.to_vector(), arcA.ray.to_vector()) == CGAL::ACUTE;
+//			bool rayBPointsLeft = CGAL::angle(data.monotonicityLine.to_vector(), arcB.ray.to_vector()) == CGAL::ACUTE;
+			bool rayAPointsLeft = CGAL::angle(PLa,PLb,PLcA) == CGAL::ACUTE;
+			bool rayBPointsLeft = CGAL::angle(PLa,PLb,PLcB) == CGAL::ACUTE;
+			std::cout << std::boolalpha << "acute angels: " << rayAPointsLeft << " " << rayBPointsLeft << std::endl;
+			std::cout << "x of vects: " << arcA.ray.to_vector().x().doubleValue() << "   " << arcB.ray.to_vector().x().doubleValue() << "   ";
+			if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
+				return pointAmonotoneSmaller;
+			} else if(!rayAPointsLeft) {
+				return true;
+			} else if(!rayBPointsLeft) {
+				return false;
+			}
+		}
 	}
+	assert(false);
 }
 
 bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
@@ -540,10 +588,23 @@ bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
 
 uint Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
 	const auto& Na = nodes[arc.firstNodeIdx];
-	if(arc.type == ArcType::NORMAL) {
+	if(arc.isEdge()) {
 		const auto& Nb = nodes[arc.secondNodeIdx];
 		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
-	} else if (arc.type == ArcType::RAY) {
+	} else if (arc.isRay()) {
+		return arc.firstNodeIdx;
+	} else {
+		LOG(ERROR) << "Traversing a disabled arc/ray!";
+		return arc.firstNodeIdx;
+	}
+}
+
+uint Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
+	const auto& Na = nodes[arc.firstNodeIdx];
+	if(arc.isEdge()) {
+		const auto& Nb = nodes[arc.secondNodeIdx];
+		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
+	} else if (arc.isRay()) {
 		return arc.firstNodeIdx;
 	} else {
 		LOG(ERROR) << "Traversing a disabled arc/ray!";

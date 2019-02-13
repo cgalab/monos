@@ -2,80 +2,6 @@
 #include "Skeleton.h"
 
 
-/* walk along the arcs adjacent to 'edgeIdx' until we find an intersection with 'ray'
- * we walk along both face paths */
-//bool Skeleton::findRayFaceIntersection(const uint& edgeIdx, const Ray& ray, const bool upperChain, uint& arcIdx, Point& intersection) {
-//	auto edge 	   = data.e(edgeIdx);
-//	bool success   = false;
-//
-//	/* every face consists of 'at most' two paths */
-//	uint pathCount = 2;
-//	Node* node;
-//
-//	/* as the merge s
-//	 * starts from the relative 'leftmost' part we use the path closest to that side first */
-//	/* we have to consider that we might end up following the 'leftmost' vertex, i.e., merge vertex */
-//	if(upperChain) {
-//		if(!isMergeStartEndNodeIdx(edge[1])) {
-//			node = &wf.getTerminalNodeForVertex( edge[1] );
-//		} else {
-//			node = &wf.getTerminalNodeForVertex( edge[0] );
-//		}
-//	} else {
-//		if(!isMergeStartEndNodeIdx(edge[0])) {
-//			node = &wf.getTerminalNodeForVertex( edge[0] );
-//		} else {
-//			node = &wf.getTerminalNodeForVertex( edge[1] );
-//		}
-//	}
-//
-//	if(isMergeStartEndNodeIdx(edge[0]) || isMergeStartEndNodeIdx(edge[1])) {--pathCount;}
-//
-//	std::cout << " fPRI(" << edge[0] << "," << edge[1] << ": "<< node->arcs.size() << ") " << std::endl; fflush(stdout);
-//
-//	while(pathCount > 0 && !success) {
-//		if(node->arcs.size() > 0) {
-//			auto arcItIdx = node->arcs.front();
-//			do {
-//				std::cout << " path-" << pathCount << " "; fflush(stdout);
-//				auto arc = &wf.arcList[arcItIdx];
-//
-//				std::cout << " " << arc->firstNodeIdx << "->" << arc->secondNodeIdx << " ";fflush(stdout);
-//
-//				/* check that we do not find our source node as a new intersection  */
-//				if(arc->secondNodeIdx < startIdxMergeNodes || arc->secondNodeIdx == MAX) {
-////				if(arc->firstNodeIdx < startIdxMergeNodes) {
-////				if(arc->secondNodeIdx < sourceNodeIdx) {
-//					/* find an intersection */
-//					auto p = intersectArcRay(*arc,ray);
-//					if(p != INFPOINT) {
-//						LOG(INFO) << "YES!";
-//						success = true;
-//						intersection = p;
-//						arcIdx = arcItIdx;
-//					}
-//				}
-//			} while( !success && nextArcOnPath(arcItIdx,edgeIdx, arcItIdx) );
-//		}
-//		/* the second path is set, as every face consists of two paths */
-//		node = &wf.getTerminalNodeForVertex( (upperChain) ? edge[0] : edge[1] );
-//		--pathCount;
-//	}
-//	if(!success) {
-//		intersection = INFPOINT;
-//		LOG(INFO) << "NO intersection at face " << edgeIdx << ".";
-//		Edge e(data.getEdge(edgeIdx));
-//		auto p = intersectElements(e,ray);
-//		if(p != INFPOINT) {
-//			LOG(INFO) << "YES! intersects Edge ";
-//			success = true;
-//			intersection = p;
-//			arcIdx = INFINITY;
-//		}
-//	}
-//	return success;
-//}
-
 uint Skeleton::nextUpperChainIndex(const uint& idx) const {
 	return (idx > 0) ? idx - 1 : data.getPolygon().size() - 1;
 }
@@ -255,7 +181,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 				}
 			}
 			if(!piReached) {
-				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
+				Point Pr = wf.nodes[wf.getLeftmostNodeIdxOfArc(*arc)].point;
 				if(data.monotoneSmaller(Pi,Pr)) {
 					piReached = true;
 					path = (onUpperChain) ? &wf.upperPath : &wf.lowerPath;

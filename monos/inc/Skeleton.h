@@ -38,7 +38,6 @@ public:
 
 private:
 	void findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint);
-//	bool findRayFaceIntersection(const uint& edgeIdx, const Ray& ray, const bool upperChain, uint& arcIdx, Point& intersection);
 	bool nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const;
 
 	uint handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis);
@@ -68,9 +67,6 @@ private:
 	uint startIdxMergeNodes = 0;
 
 	uint upperChainIndex = 0, lowerChainIndex = 0;
-
-//	uint currentUpperArcIdx = INFINITY, currentLowerArcIdx = INFINITY;
-//	uint currentUpperArcIdx = INFINITY, currentLowerArcIdx = INFINITY;
 };
 
 #endif /* SKELETON_H_ */

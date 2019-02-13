@@ -112,7 +112,7 @@ public:
 	Direction		perpMonotonDir;
 	bool 			gui;
 
-	// debug
+	// gui debug
 	std::vector<Edge> lines;
 
 private:
