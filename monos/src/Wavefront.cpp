@@ -637,7 +637,11 @@ uint Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
 
 void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 	/* set the upperPath/lowerPath in 'wf' */
+	LOG(INFO) << "initPathForEdge " << edgeIdx; fflush(stdout);
 	Node& terminalNode   = (upper) ? getTerminalNodeForVertex(data.e(edgeIdx)[0]) : getTerminalNodeForVertex(data.e(edgeIdx)[1]);
+
+	assert(!terminalNode.arcs.empty());
+
 	uint  initialArcIdx  = terminalNode.arcs.front();
 	Arc&  initialArc     = arcList[initialArcIdx];
 

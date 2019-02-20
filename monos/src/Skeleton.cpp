@@ -91,10 +91,14 @@ bool Skeleton::SingleMergeStep() {
 		Arc* modifiedArc = &wf.arcList[arcs.front()];
 		if(onUpperChain) {
 			upperChainIndex = (modifiedArc->leftEdgeIdx != upperChainIndex) ? modifiedArc->leftEdgeIdx : modifiedArc->rightEdgeIdx;
-			wf.initPathForEdge(true,upperChainIndex);
+			if(!EndOfChain()) {
+				wf.initPathForEdge(true,upperChainIndex);
+			}
 		} else {
 			lowerChainIndex = (modifiedArc->leftEdgeIdx != lowerChainIndex) ? modifiedArc->leftEdgeIdx : modifiedArc->rightEdgeIdx;
-			wf.initPathForEdge(false,lowerChainIndex);
+			if(!EndOfChain()) {
+				wf.initPathForEdge(false,lowerChainIndex);
+			}
 		}
 		sourceNodeIdx = newNodeIdx;
 		sourceNode = &wf.nodes[sourceNodeIdx];
@@ -106,7 +110,7 @@ bool Skeleton::SingleMergeStep() {
 }
 
 bool Skeleton::EndOfChain() const {
-	return upperChainIndex+1 == wf.startUpperEdgeIdx || lowerChainIndex == wf.endLowerEdgeIdx+1;
+	return upperChainIndex == wf.startUpperEdgeIdx || lowerChainIndex == wf.endLowerEdgeIdx;
 }
 
 
@@ -290,6 +294,7 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const in
 		arc->edge = Edge(arc->ray.source(),edgeEndPoint);
 		arc->ray = Ray();
 	} else {
+		assert(arc->isEdge());
 		arc->edge = Edge(arc->edge.source(),edgeEndPoint);
 	}
 
