@@ -258,7 +258,7 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 
 	/* update the targets of the relevant arcs */
 	for(auto arcIdx : arcIndices) {
-		if(arcIdx < INFINITY) {
+		if(arcIdx < MAX) {
 			/* TODO: parallel-bisectors, direction unclear */
 			LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
 			updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,p);
@@ -324,9 +324,8 @@ bool Skeleton::nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& next
 			if(a != arcIdx) {
 				auto nextArc = &wf.arcList[a];
 
-				if( arc->type != ArcType::RAY
-					&&  arc->secondNodeIdx == nextArc->firstNodeIdx
-					&& (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
+				if(	 arc->secondNodeIdx == nextArc->firstNodeIdx
+				  && (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
 				) {
 					/* set 'return' value */
 					nextArcIdx = a;

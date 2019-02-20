@@ -504,17 +504,26 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		return true;
 	} else {
 		/* step to the next arc to the right of current arc */
-		auto rightNode = nodes[getRightmostNodeIdxOfArc(currentArc)];
-		uint nextArcIdx = MAX;
-		for(auto a : rightNode.arcs) {
-			if( !path.isAnIndex(a) ) {
-				auto arc = arcList[a];
-				if( liesOnFace(arc,path.edgeIdx) ) {
-					nextArcIdx = a;
-					break;
+		uint rightNodeIdx = getRightmostNodeIdxOfArc(currentArc);
+		auto rightNode    = nodes[rightNodeIdx];
+		uint nextArcIdx   = MAX;
+		uint repeat       = 1;
+
+		do{
+			for(auto a : rightNode.arcs) {
+				if( !path.isAnIndex(a) ) {
+					auto arc = arcList[a];
+					if( liesOnFace(arc,path.edgeIdx) ) {
+						nextArcIdx = a;
+						break;
+					}
 				}
 			}
-		}
+			if(nextArcIdx == MAX) {
+				rightNode = nodes[currentArc.getSecondNodeIdx(rightNodeIdx)];
+			}
+		} while(nextArcIdx == MAX && repeat-- > 0);
+
 		if(nextArcIdx != MAX) {
 			LOG(INFO) << "next arc " << nextArcIdx << " found";
 			path.currentArcIdx = nextArcIdx;

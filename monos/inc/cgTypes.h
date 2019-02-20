@@ -140,6 +140,8 @@ public:
 			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
 	}
 
+	uint getSecondNodeIdx(const uint idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
+
 	bool isRay() const { return type == ArcType::RAY; }
 	bool isEdge() const { return type == ArcType::NORMAL; }
 
