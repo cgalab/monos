@@ -6,17 +6,21 @@
 
 class MonotonePathTraversal {
 public:
-	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0)
+	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0, bool upperChain=true)
 	: edgeIdx(edgeIdx)
 	, currentArcIdx(currentArcIdx)
-	, oppositeArcIdx(oppositeArcIdx) {}
+	, oppositeArcIdx(oppositeArcIdx)
+	, upperChain(upperChain)
+	{}
 
 	bool done() const {return currentArcIdx == oppositeArcIdx;}
+	bool isUpperChain() const { return upperChain; }
 	bool isAnIndex(const uint idx) const { return idx == currentArcIdx || idx == oppositeArcIdx; }
 	void swap() { std::swap(currentArcIdx, oppositeArcIdx); }
 
 	uint edgeIdx;
 	uint currentArcIdx, oppositeArcIdx;
+	bool upperChain;
 
 	friend std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path);
 };
@@ -99,6 +103,7 @@ public:
 	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
 	bool isArcLeftOfArc(const Line& ray, const Arc& arcA, const Arc& arcB) const;
 	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const;
+	bool isArcLeftOfPoint(const Arc& arc, const Point& point) const;
 	uint getLeftmostNodeIdxOfArc(const Arc& arc) const;
 	uint getRightmostNodeIdxOfArc(const Arc& arc) const;
 	void initPathForEdge(const bool upper, const uint edgeIdx);

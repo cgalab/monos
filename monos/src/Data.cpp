@@ -346,6 +346,11 @@ bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) con
 bool Data::monotoneSmaller(const Point& a, const Point& b) const {
 	return monotoneSmaller(monotonicityLine,a,b);
 }
+bool Data::rayPointsLeft(const Ray& ray) const {
+	Point Pa = monotonicityLine.point(0);
+	Point Pb = Pa + ray.to_vector();
+	return monotoneSmaller(Pb,Pa);
+}
 
 BBox Data::computeBoundingBox() const {
 	auto box = BBox();

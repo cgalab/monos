@@ -49,6 +49,7 @@ private:
 	uint mergeStartNodeIdx() const {return data.e(wf.startLowerEdgeIdx)[0];}
 	uint mergeEndNodeIdx() const {return data.e(wf.endLowerEdgeIdx)[1];}
 	inline bool isMergeStartEndNodeIdx(const uint& idx) const {return idx == mergeStartNodeIdx() || idx == mergeEndNodeIdx();}
+	void updatePath(const Point &p, MonotonePathTraversal& path);
 
 	bool EndOfChain() const;
 	bool isValidArc(const uint& arcIdx) const {return arcIdx < wf.arcList.size();}

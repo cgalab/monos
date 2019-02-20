@@ -109,28 +109,35 @@ bool Skeleton::EndOfChain() const {
 	return upperChainIndex+1 == wf.startUpperEdgeIdx || lowerChainIndex == wf.endLowerEdgeIdx+1;
 }
 
-void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint) {
+
+/* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
+ * in respect to the 'monotonicityLine' */
+void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& setUpperChain, Point& newPoint) {
 	assert(sourceNode != nullptr);
 
 	/* new intersection point must be to the right of 'currentPoint' in reps. to the monotonicity line */
 	auto& currentPoint = sourceNode->point;
-	bool success = false, onUpperChain;
+	bool success = false, localOnUpperChain;
 	Point Pi = INFPOINT;
-	MonotonePathTraversal* path = (upperChain) ? &wf.upperPath : &wf.lowerPath;
+	MonotonePathTraversal* path;
+	Arc *arc, *arc_u, *arc_l;
 
-	Arc* arc_u;
-	Arc* arc_l;
 	LOG(INFO) << "findNextIntersectingArc start"; fflush(stdout);
 	while(!EndOfChain() && !success) {
 		arc_l = wf.getArc(wf.lowerPath);
 		arc_u = wf.getArc(wf.upperPath);
+
+		/* check arcs in respect to source node */
+//		updatePath(sourceNode->point,wf.lowerPath);
+//		updatePath(sourceNode->point,wf.upperPath);
+
 		/* check which arc lies futher to the left */
-		onUpperChain = (wf.isArcLeftOfArc(*arc_l,*arc_u)) ? false : true;
+		localOnUpperChain = (wf.isArcLeftOfArc(*arc_l,*arc_u)) ? false : true;
 
-		path = (onUpperChain) ? &wf.upperPath : &wf.lowerPath;
-		auto arc = (onUpperChain) ? arc_u : arc_l;
+		path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+		arc  = (localOnUpperChain) ? arc_u         : arc_l;
 
-		std::cout << std::boolalpha<< "onUpperChain: " << onUpperChain << std::endl;
+		std::cout << std::boolalpha<< "localOnUpperChain: " << localOnUpperChain << std::endl;
 		std::cout << "BEFORE path: " << *path << std::endl;
 		fflush(stdout);
 
@@ -144,7 +151,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		}
 		if(!success) {
 			if(!wf.nextMonotoneArcOfPath(*path)) {
-				if(onUpperChain) {
+				if(localOnUpperChain) {
 					upperChainIndex = nextUpperChainIndex(upperChainIndex);
 					wf.initPathForEdge(true,upperChainIndex);
 				} else {
@@ -159,37 +166,43 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 	}
 
 	if(success) {
-		/* we found an intersecting arc on 'onUpperChain', now we have to traverse
+		/* we found an intersecting arc on 'localOnUpperChain', now we have to traverse
 		 * the face on the opposite side until we reach the hight of the intersecting
 		 * arc, i.r.t. the monotonicity line
 		 ***/
-		path = (!onUpperChain) ? &wf.upperPath : &wf.lowerPath;
-		auto arc = (!onUpperChain) ? arc_u : arc_l;
+		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+		auto arc = (!localOnUpperChain) ? arc_u : arc_l;
 
 		bool piReached = false;
 		Point Pi_2 = INFPOINT;
+		std::cout << std::endl << "updateing 2nd  path: " << *path << std::endl; fflush(stdout);
 
 		while(!EndOfChain() && !piReached) {
 			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
 				Pi_2 = intersectRayArc(bis,*arc);
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx;
-				if(data.monotoneSmaller(currentPoint,Pi_2) && data.monotoneSmaller(Pi_2,Pi)) {
-					LOG(INFO) << "success";
-					piReached = true;
-					Pi = Pi_2;
-					onUpperChain = !onUpperChain;
+				if(data.monotoneSmaller(currentPoint,Pi_2)) {
+					if(data.monotoneSmaller(Pi_2,Pi)) {
+						LOG(INFO) << "success";
+						piReached = true;
+						Pi = Pi_2;
+						localOnUpperChain = !localOnUpperChain;
+					} else {
+						piReached = true;
+						path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+					}
 				}
 			}
 			if(!piReached) {
-				Point Pr = wf.nodes[wf.getLeftmostNodeIdxOfArc(*arc)].point;
-				if(data.monotoneSmaller(Pi,Pr)) {
+				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
+				if(data.monotoneSmaller(currentPoint,Pr)) {
 					piReached = true;
-					path = (onUpperChain) ? &wf.upperPath : &wf.lowerPath;
+					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 				}
 			}
 			if(!piReached) {
 				if(!wf.nextMonotoneArcOfPath(*path)) {
-					if(onUpperChain) {
+					if(path->isUpperChain()) {
 						upperChainIndex = nextUpperChainIndex(upperChainIndex);
 						wf.initPathForEdge(true,upperChainIndex);
 					} else {
@@ -204,10 +217,16 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		/* setting the 'newPoint' to the found intersection if 'success' */
 		newPoint = Pi;
 		arcs.push_back(path->currentArcIdx);
-		upperChain = onUpperChain;
+		setUpperChain = localOnUpperChain;
 	}
 
 	LOG(INFO) << "findNextIntersectingArc END"; fflush(stdout);
+}
+
+void Skeleton::updatePath(const Point &p, MonotonePathTraversal& path) {
+	auto arc = wf.getArc(path);
+	while(wf.isArcLeftOfPoint(*arc,p) && wf.nextMonotoneArcOfPath(path))
+	;
 }
 
 uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis) {

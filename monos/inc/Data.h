@@ -103,6 +103,8 @@ public:
 
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 	bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const;
+	bool rayPointsLeft(const Ray& ray) const;
+
 	const BasicInput& getBasicInput() const {return basicInput;}
 
 	void setGui(const bool _gui) { gui = _gui; }

@@ -480,9 +480,9 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	pathFinder[event.rightEdge()][0] = nodeIdx;
 }
 
-
 bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	LOG(INFO) << "nextMonotoneArcOfPath";
+	std::cout << path << std::endl;
 
 	if(path.done()) {return false;}
 
@@ -490,11 +490,13 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	auto& oppositeArc = arcList[path.oppositeArcIdx];
 
 	/* check if rightmost endpoint of both arcs is the same */
-	if(currentArc.adjacent(oppositeArc) && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
+	if(currentArc.adjacent(oppositeArc)) { // && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
 		path.currentArcIdx = path.oppositeArcIdx;
 		LOG(INFO) << "current and opposite are adjacent";
 		return true;
-	} else if(isArcLeftOfArc(oppositeArc,currentArc) && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
+	//} else if(currentArc.adjacent(oppositeArc)) {
+
+	} else if(isArcLeftOfArc(oppositeArc,currentArc)) { // && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
 		/* opposite arcs left endpoint is to the left of the current arc ones */
 		std::cout << "swap " << path << " --> ";
 		path.swap();
@@ -503,7 +505,7 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	} else {
 		/* step to the next arc to the right of current arc */
 		auto rightNode = nodes[getRightmostNodeIdxOfArc(currentArc)];
-		uint nextArcIdx = INFINITY;
+		uint nextArcIdx = MAX;
 		for(auto a : rightNode.arcs) {
 			if( !path.isAnIndex(a) ) {
 				auto arc = arcList[a];
@@ -513,7 +515,8 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 				}
 			}
 		}
-		if(nextArcIdx != INFINITY) {
+		if(nextArcIdx != MAX) {
+			LOG(INFO) << "next arc " << nextArcIdx << " found";
 			path.currentArcIdx = nextArcIdx;
 			currentArc  = arcList[path.currentArcIdx];
 			if(isArcLeftOfArc(oppositeArc,currentArc)) {
@@ -528,57 +531,68 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	}
 }
 
+bool Wavefront::isArcLeftOfPoint(const Arc& arc, const Point& point) const {
+	auto Idx = getRightmostNodeIdxOfArc(arc);
+	auto Na = &nodes[Idx];
+	if(arc.isEdge()) {
+		return data.monotoneSmaller(Na->point,point);
+	} else {
+		assert(arc.isRay());
+		return data.monotoneSmaller(Na->point,point) && !data.rayPointsLeft(arc.ray);
+	}
+}
+
+
 bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
 	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);
 	auto NbIdx = getLeftmostNodeIdxOfArc(arcB);
 	auto Na = &nodes[NaIdx];
 	auto Nb = &nodes[NbIdx];
+
+	/* left endpoints are adjacent, check right endpoints */
 	if(NaIdx == NbIdx) {
-		return false;
-	} else {
-		bool pointAmonotoneSmaller = data.monotoneSmaller(line,Na->point,Nb->point);
-		Point PLa = data.monotonicityLine.point(0);
-		Point PLb = PLa + data.monotonicityLine.to_vector();
-		if(arcA.isEdge() && arcB.isEdge()) {
-			return pointAmonotoneSmaller;
-		} else if( (arcA.isEdge() && arcB.isRay()) || (arcA.isRay() && arcB.isEdge()) ) {
-			auto& ray  = (arcA.isRay())  ? arcA : arcB;
+		NaIdx = getRightmostNodeIdxOfArc(arcA);
+		NbIdx = getRightmostNodeIdxOfArc(arcB);
+		Na = &nodes[NaIdx];
+		Nb = &nodes[NbIdx];
+	}
 
-			Point PLc = PLb + ray.ray.to_vector();
+	bool pointAmonotoneSmaller = data.monotoneSmaller(line,Na->point,Nb->point);
 
-//			bool rayPointsLeft = CGAL::angle(data.monotonicityLine.to_vector(), ray.ray.to_vector()) == CGAL::ACUTE;
-			bool rayPointsLeft = CGAL::angle(PLa, PLb, PLc) == CGAL::ACUTE;
+	if(arcA.isEdge() && arcB.isEdge()) {
+		/* 1st: both arcs are edges */
+		return pointAmonotoneSmaller;
+	} else if( (arcA.isEdge() && arcB.isRay()) || (arcA.isRay() && arcB.isEdge()) ) {
+		/* 2nd: one edge one ray */
+		auto& ray  = (arcA.isRay())  ? arcA : arcB;
+		bool rayPointsLeft = data.rayPointsLeft(ray.ray);
 
-			std::cout << std::boolalpha << "acute angel: " << rayPointsLeft << std::endl;
-			std::cout << "x of vect: " << ray.ray.to_vector().x().doubleValue() << "   ";
-
-			if(    ( rayPointsLeft && arcA.isRay())
-				|| (!rayPointsLeft && pointAmonotoneSmaller)
-			) {
-				return true;
-			} else {
-				return false;
-			}
+		if(    ( rayPointsLeft && arcA.isRay())
+			|| (!rayPointsLeft && pointAmonotoneSmaller)
+		) {
+			return true;
 		} else {
-			assert(arcA.isRay());
-			assert(arcB.isRay());
-			Point PLcA = PLb + arcA.ray.to_vector();
-			Point PLcB = PLb + arcB.ray.to_vector();
-//			bool rayAPointsLeft = CGAL::angle(data.monotonicityLine.to_vector(), arcA.ray.to_vector()) == CGAL::ACUTE;
-//			bool rayBPointsLeft = CGAL::angle(data.monotonicityLine.to_vector(), arcB.ray.to_vector()) == CGAL::ACUTE;
-			bool rayAPointsLeft = CGAL::angle(PLa,PLb,PLcA) == CGAL::ACUTE;
-			bool rayBPointsLeft = CGAL::angle(PLa,PLb,PLcB) == CGAL::ACUTE;
-			std::cout << std::boolalpha << "acute angels: " << rayAPointsLeft << " " << rayBPointsLeft << std::endl;
-			std::cout << "x of vects: " << arcA.ray.to_vector().x().doubleValue() << "   " << arcB.ray.to_vector().x().doubleValue() << "   ";
-			if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
-				return pointAmonotoneSmaller;
-			} else if(!rayAPointsLeft) {
-				return true;
-			} else if(!rayBPointsLeft) {
-				return false;
-			}
+			return false;
+		}
+	} else {
+		/* 3rd: both arcs are rays */
+		assert(arcA.isRay());
+		assert(arcB.isRay());
+
+		bool rayAPointsLeft = data.rayPointsLeft(arcA.ray);
+		bool rayBPointsLeft = data.rayPointsLeft(arcB.ray);
+//		std::cout << std::boolalpha << "acute angels: " << rayAPointsLeft << " " << rayBPointsLeft << std::endl;
+//		std::cout << "x of vects: " << arcA.ray.to_vector().x().doubleValue() << "   " << arcB.ray.to_vector().x().doubleValue() << "   ";
+
+		if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
+			return pointAmonotoneSmaller;
+		} else if(rayAPointsLeft) {
+			return true;
+		} else if(rayBPointsLeft) {
+			return false;
 		}
 	}
+
 	assert(false);
 }
 
@@ -627,14 +641,14 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 	MonotonePathTraversal path;
 
 	if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
-		path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx);
+		path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
 	} else {
 		Arc&  distantArc    = arcList[distantArcIdx];
 
 		bool test = isArcLeftOfArc(initialArc,distantArc);
 		std::cout << std::boolalpha << "test " << test << std::endl; fflush(stdout);
 
-		path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx);
+		path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
 	}
 
 	if(upper) {
