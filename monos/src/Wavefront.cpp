@@ -640,28 +640,30 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 	LOG(INFO) << "initPathForEdge " << edgeIdx; fflush(stdout);
 	Node& terminalNode   = (upper) ? getTerminalNodeForVertex(data.e(edgeIdx)[0]) : getTerminalNodeForVertex(data.e(edgeIdx)[1]);
 
-	assert(!terminalNode.arcs.empty());
-
-	uint  initialArcIdx  = terminalNode.arcs.front();
-	Arc&  initialArc     = arcList[initialArcIdx];
-
-	auto ie = pathFinder[edgeIdx];
-	Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
-	uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
-	std::cout << "distantArcIdx arc idx " << distantArcIdx << std::endl; fflush(stdout);
-
-
 	MonotonePathTraversal path;
 
-	if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
-		path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
+	if(!terminalNode.arcs.empty()) {
+		uint  initialArcIdx  = terminalNode.arcs.front();
+		Arc&  initialArc     = arcList[initialArcIdx];
+
+		auto ie = pathFinder[edgeIdx];
+		Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
+		uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
+		std::cout << "distantArcIdx arc idx " << distantArcIdx << std::endl; fflush(stdout);
+
+
+		if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
+			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
+		} else {
+			Arc&  distantArc    = arcList[distantArcIdx];
+
+			bool test = isArcLeftOfArc(initialArc,distantArc);
+			std::cout << std::boolalpha << "test " << test << std::endl; fflush(stdout);
+
+			path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
+		}
 	} else {
-		Arc&  distantArc    = arcList[distantArcIdx];
-
-		bool test = isArcLeftOfArc(initialArc,distantArc);
-		std::cout << std::boolalpha << "test " << test << std::endl; fflush(stdout);
-
-		path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
+		path = MonotonePathTraversal(edgeIdx,MAX,MAX,upper);
 	}
 
 	if(upper) {

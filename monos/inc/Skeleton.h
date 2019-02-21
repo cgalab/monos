@@ -49,15 +49,19 @@ private:
 	uint mergeStartNodeIdx() const {return data.e(wf.startLowerEdgeIdx)[0];}
 	uint mergeEndNodeIdx() const {return data.e(wf.endLowerEdgeIdx)[1];}
 	inline bool isMergeStartEndNodeIdx(const uint& idx) const {return idx == mergeStartNodeIdx() || idx == mergeEndNodeIdx();}
-	void updatePath(const Point &p, MonotonePathTraversal& path);
 
-	bool EndOfChain() const;
 	bool isValidArc(const uint& arcIdx) const {return arcIdx < wf.arcList.size();}
 	Arc& getArc(const uint& arcIdx) {assert(isValidArc(arcIdx)); return wf.arcList[arcIdx];}
 	Point& getSourceNodePoint() const { return wf.nodes[sourceNodeIdx].point; }
 	inline Point intersectArcRay(const Arc& arc, const Ray& ray) const {
 		return (arc.type == ArcType::NORMAL) ? intersectElements(ray, arc.edge) : intersectElements(ray, arc.ray);
 	}
+
+	bool EndOfOneChains()  const {return EndOfUpperChain() || EndOfLowerChain(); }
+	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain(); }
+	bool EndOfUpperChain() const {return upperChainIndex == wf.startUpperEdgeIdx;}
+	bool EndOfLowerChain() const {return lowerChainIndex == wf.endLowerEdgeIdx;  }
+	bool EndOfChain(bool upper) { return (upper) ? EndOfUpperChain() : EndOfLowerChain();}
 
 //	const Data& data;
 	Data& data;
