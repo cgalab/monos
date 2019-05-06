@@ -39,7 +39,7 @@ void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double&
 
 void setupEasylogging(int argc, char** argv) {
 	START_EASYLOGGINGPP(argc, argv);
-
+	//ELPP_NO_DEFAULT_LOG_FILE
 	el::Configurations defaultConf;
 	defaultConf.setToDefault();
 	//defaultConf.setGlobally(el::ConfigurationType::Format, "%datetime{H:%m:%s.%g} %level %func: %msg");
@@ -50,5 +50,4 @@ void setupEasylogging(int argc, char** argv) {
 	el::Loggers::reconfigureAllLoggers(defaultConf);
 	el::Loggers::reconfigureLogger("default", defaultConf);
 }
-
 

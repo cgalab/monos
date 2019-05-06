@@ -317,7 +317,6 @@ bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {
 
 		std::cout << " arcs:" << arcs->size() << " "; fflush(stdout);
 
-
 		/* remove reference to 'arcIdx' from node */
 		auto pos = std::find(arcs->begin(),arcs->end(),arcIdxIt);
 		if(pos != arcs->end()) {

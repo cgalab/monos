@@ -64,6 +64,9 @@ endif()
 option(DEBUG_OUTPUT               "Include logging at debug level" ${DEBUG_OUTPUT})
 option(DEBUG_OUTPUT_WITH_FILES    "Include filenames and line numbersin debug output" OFF)
 
+## NO LOG FILE
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DELPP_NO_DEFAULT_LOG_FILE")
+
 configure_file (
   "${PROJECT_SOURCE_DIR}/config.h.in"
   "${PROJECT_BINARY_DIR}/config.h"
