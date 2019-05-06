@@ -218,13 +218,10 @@ Point intersectElements(const T& a, const U& b) {
 			if (const Point* p = boost::get<Point>(&*result)) {
 				return Point(*p);
 			} else {
-				LOG(WARNING) << "Intersection forms a segment";
+				LOG(WARNING) << "Intersection forms a segment/ray/line";
 				const Edge* s = boost::get<Edge>(&*result);
 				std::cout << *s << std::endl;
 				return intersectionPoint;
-//			} else {
-//				const Point* p = boost::get<Point>(&*result);
-//				return Point(*p);
 			}
 		}
 	}

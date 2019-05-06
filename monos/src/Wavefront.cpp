@@ -242,7 +242,12 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 		 **/
 		e = Event(distance,intersection,aIdx,bIdx,cIdx,it);
 	} else {
-		e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
+		if(CGAL::collinear(abRay.point(0),abRay.point(1),bcRay.point(1))) {
+			LOG(INFO) << "bisectors are collinear!";
+			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
+		} else {
+			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
+		}
 	}
 	return e;
 }
