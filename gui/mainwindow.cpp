@@ -173,11 +173,16 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 	on_actionTimeForwardAfterChains_triggered();
 
-	while(monos.s->SingleMergeStep())
-	;
+//	while(monos.s->SingleMergeStep())
+//	;
+//
+//	monos.s->finishMerge();
+//	mergeDone = true;
 
-	monos.s->finishMerge();
-	mergeDone = true;
+	while(!mergeDone) {
+		on_actionEventStep_triggered();
+	}
+
 
 	time_changed();
 	on_actionResize_triggered();

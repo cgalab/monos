@@ -38,7 +38,7 @@ public:
 
 private:
 	void findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint);
-	bool nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const;
+	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
 	uint handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis);
 	void updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);

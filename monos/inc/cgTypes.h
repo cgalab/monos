@@ -151,6 +151,8 @@ public:
 
 	Edge edge;
 	Ray  ray;
+
+	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };
 
 using ArcList		= std::vector<Arc>;

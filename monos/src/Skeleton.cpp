@@ -44,7 +44,7 @@ void Skeleton::MergeUpperLowerSkeleton() {
  * */
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex;
-	/* we start the bisector from the source node to the left since the merge line is 'x'-monotone */
+	/* we start the bisector from the source node from the "left" since the merge line is monotone */
 	auto bis = wf.constructBisector(upperChainIndex,lowerChainIndex);
 	if( wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL && (bis.direction() != data.perpMonotonDir || bis.direction() != -data.perpMonotonDir) ) {
 		auto lastArcNodeIdx = (wf.getLastArc()->firstNodeIdx != sourceNodeIdx) ? wf.getLastArc()->firstNodeIdx : wf.getLastArc()->secondNodeIdx;
@@ -110,7 +110,7 @@ bool Skeleton::SingleMergeStep() {
 void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& setUpperChain, Point& newPoint) {
 	assert(sourceNode != nullptr);
 
-	/* new intersection point must be to the right of 'currentPoint' in reps. to the monotonicity line */
+	/* new intersection point must be to the right of 'currentPoint' in respect to the monotonicity line */
 	auto& currentPoint = sourceNode->point;
 	bool success = false, localOnUpperChain;
 	Point Pi = INFPOINT;
@@ -122,7 +122,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
 		arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
 
-		/* check which arc lies futher to the left */
+		/* check which arc lies further to the left */
 		if(arc_l == nullptr) {
 			localOnUpperChain = true;
 		} else if(arc_u == nullptr) {
@@ -229,6 +229,9 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		newPoint = Pi;
 		arcs.push_back(path->currentArcIdx);
 		setUpperChain = localOnUpperChain;
+	} else {
+		LOG(ERROR) << "NO INTERSECTION FOUND!!!";
+		assert(false);
 	}
 
 	LOG(INFO) << "findNextIntersectingArc END"; fflush(stdout);
@@ -268,16 +271,12 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const in
 	auto arc = &wf.arcList[arcIdx];
 
 	/* remove or disable rest of path that we broke? */
+	/* we act in case the degree of the second node is <3, otherwise for >2 the path is still accessible from another route */
 	if(arc->type == ArcType::NORMAL) {
-		auto oldNode = &wf.nodes[arc->secondNodeIdx];
-		uint nextArcIdx = arcIdx;
-		while(nextArcOnPath(nextArcIdx, edgeIdx, nextArcIdx)) {
-			if(nextArcIdx != arcIdx) {
-				wf.arcList[nextArcIdx].disable();
-			}
-		}
-		oldNode->disable(); //arcs.clear();
+		removePath(arcIdx, edgeIdx);
 	}
+
+	std::cout << "arc 10: " << wf.arcList[10] << std::endl;
 
 	auto newNode = &wf.nodes[secondNodeIdx];
 	if(arc->type == ArcType::RAY) {
@@ -293,70 +292,86 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const in
 	newNode->arcs.push_back(arcIdx);
 }
 
-bool Skeleton::nextArcOnPath(const uint& arcIdx, const uint& edgeIdx, uint& nextArcIdx) const {
-	auto arc  = &wf.arcList[arcIdx];
+bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {
+	auto arcIdxIt = arcIdx;
 
-//	if(arc->type == ArcType::RAY || arc->type == ArcType::DISABLED) {return false;}
-	if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {return false;}
+	while(true) {
+		auto arc  = &wf.arcList[arcIdxIt];
 
-	std::cout << " type: ";
-	switch(arc->type) {
-	case ArcType::RAY: std::cout << " RAY "; break;
-	case ArcType::NORMAL: std::cout << " NORMAL "; break;
-	case ArcType::DISABLED: std::cout << " DISAB "; break;
-	}
-
-	std::cout << " arc-start: " << arc->firstNodeIdx << " "; fflush(stdout);
-	std::cout << " arc-endpoint: " << arc->secondNodeIdx << " "; fflush(stdout);
-
-
-	auto arcs = &wf.nodes[arc->secondNodeIdx].arcs;
-
-	std::cout << " arcs:" << arcs->size() << " "; fflush(stdout);
-
-	if(arcs->size() < 20) {
-
-		for(auto a : *arcs) {
-			if(a != arcIdx) {
-				auto nextArc = &wf.arcList[a];
-
-				if(	 arc->secondNodeIdx == nextArc->firstNodeIdx
-				  && (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
-				) {
-					/* set 'return' value */
-					nextArcIdx = a;
-
-					LOG(INFO) << " is adjacent! ";
-					return true;
-				}
+		if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {
+			if(arcIdx != arcIdxIt) {
+				arc->disable();
 			}
+			return false;
 		}
 
-		LOG(WARNING) << " no more arc on path! ";
-		return false;
+		if(arcIdx != arcIdxIt) {
+			arc->disable();
+		}
 
-	} else {
+		std::cout << " arc-start: " << arc->firstNodeIdx << " "; fflush(stdout);
+		std::cout << " arc-endpoint: " << arc->secondNodeIdx << " "; fflush(stdout);
 
-		/* TODO: fix this: */
-		auto it = std::lower_bound(arcs->begin(),arcs->end(),arcIdx,ArcCmp(wf.arcList));
-		assert(it != arcs->end());
+		auto secondNode = &wf.nodes[arc->secondNodeIdx];
+		auto arcs = &secondNode->arcs;
 
-		auto nextArc = &wf.arcList[*(++it)];
-		if(nextArc->leftEdgeIdx == edgeIdx || nextArc->rightEdgeIdx == edgeIdx) {
-			nextArcIdx = *it;
-			return true;
+		std::cout << " arcs:" << arcs->size() << " "; fflush(stdout);
+
+
+		/* remove reference to 'arcIdx' from node */
+		auto pos = std::find(arcs->begin(),arcs->end(),arcIdxIt);
+		if(pos != arcs->end()) {
+			arcs->erase(pos);
 		} else {
-			--it; --it;
-			nextArc = &wf.arcList[*(it)];
-			if(nextArc->leftEdgeIdx == edgeIdx || nextArc->rightEdgeIdx == edgeIdx) {
-				nextArcIdx = *it;
-				return true;
-			} else {
-				LOG(WARNING) << " OH NO! SOME SORTING FAILED!! ";
+			LOG(WARNING) << "Should not occur!";
+			return false;
+		}
+
+		if(arcs->size() < 3) {
+			/* degree two means that only one path is left */
+			bool nextArcFound = false;
+			for(auto a : *arcs) {
+				if(a != arcIdxIt) {
+					auto nextArc = &wf.arcList[a];
+
+					if(	 arc->secondNodeIdx == nextArc->firstNodeIdx
+					  && (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
+					) {
+						/* iterate arcs */
+						arcIdxIt = a;
+						nextArcFound = true;
+						LOG(INFO) << " - " << arcIdxIt << " is adjacent! ";
+					}
+				}
+			}
+			if(!nextArcFound) {
 				return false;
 			}
 		}
 	}
+	LOG(WARNING) << " no more arc on path! ";
+	return false;
+
+//		/* TODO: fix this: */
+//		auto it = std::lower_bound(arcs->begin(),arcs->end(),arcIdx,ArcCmp(wf.arcList));
+//		assert(it != arcs->end());
+//
+//		auto nextArc = &wf.arcList[*(++it)];
+//		if(nextArc->leftEdgeIdx == edgeIdx || nextArc->rightEdgeIdx == edgeIdx) {
+//			nextArcIdx = *it;
+//			return true;
+//		} else {
+//			--it; --it;
+//			nextArc = &wf.arcList[*(it)];
+//			if(nextArc->leftEdgeIdx == edgeIdx || nextArc->rightEdgeIdx == edgeIdx) {
+//				nextArcIdx = *it;
+//				return true;
+//			} else {
+//				LOG(WARNING) << " OH NO! SOME SORTING FAILED!! ";
+//				return false;
+//			}
+//		}
+
 }
 
 

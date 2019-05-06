@@ -51,7 +51,11 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 	painter->setPen(segmentsPen());
 	for (const auto& e : *arcs) {
 		if(e.type != ArcType::DISABLED) {
-			painterostream << e.edge;
+			if(e.type == ArcType::RAY) {
+				painterostream << Edge(e.ray.start(), e.ray.point(1));
+			} else {
+				painterostream << e.edge;
+			}
 		}
 	}
 
@@ -82,8 +86,11 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 		painter->setFont(font);
 		for (auto e = arcs->begin(); e != arcs->end(); ++e) {
 			if(e->type != ArcType::DISABLED) {
-				const QPointF p(transform.map(convert( CGAL::midpoint(e->edge.source(), e->edge.target()) )));
-				std::string t = "e#"+std::to_string(e - arcs->begin());
+				QPointF p(transform.map(convert( CGAL::midpoint(e->edge.source(), e->edge.target()) )));
+				if(e->type == ArcType::RAY) {
+					p = QPointF(transform.map(convert( CGAL::midpoint(e->ray.source(), e->ray.point(1)) )));
+				}
+				std::string t = "a#"+std::to_string(e - arcs->begin());
 				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
 			}
 		}

@@ -30,6 +30,17 @@ std::ostream& operator<< (std::ostream& os, const Event& event) {
     return os;
 }
 
+std::ostream& operator<< (std::ostream& os, const Arc& arc) {
+    os << "N(" << arc.firstNodeIdx << "," << arc.secondNodeIdx << ")"
+    		<< " E(" << arc.leftEdgeIdx << "," << arc.rightEdgeIdx << ")";
+    switch(arc.type) {
+    case ArcType::DISABLED : os << " disabled"; break;
+    case ArcType::RAY : os << " ray"; break;
+    case ArcType::NORMAL : os << " edge"; break;
+    }
+    return os;
+}
+
 
 Exact normalDistance(const Line& l, const Point& p) {
 	return CGAL::squared_distance(l,p);

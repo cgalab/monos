@@ -128,6 +128,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 		/* remove this edge from the chain (wavefront) */
 		chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge());
+
 		return true;
 	}
 	return false;
@@ -486,17 +487,17 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 
 	if(path.done()) {return false;}
 
-	auto& currentArc  = arcList[path.currentArcIdx];
-	auto& oppositeArc = arcList[path.oppositeArcIdx];
+	auto currentArc  = &arcList[path.currentArcIdx];
+	auto oppositeArc = &arcList[path.oppositeArcIdx];
 
-	/* check if rightmost endpoint of both arcs is the same */
-	if(currentArc.adjacent(oppositeArc)) { // && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
+	/* check if rightmost end-point of both arcs is the same */
+	if(currentArc->adjacent(*oppositeArc)) { // && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
 		path.currentArcIdx = path.oppositeArcIdx;
 		LOG(INFO) << "current and opposite are adjacent";
 		return true;
 	//} else if(currentArc.adjacent(oppositeArc)) {
 
-	} else if(isArcLeftOfArc(oppositeArc,currentArc)) { // && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
+	} else if(isArcLeftOfArc(*oppositeArc,*currentArc)) { // && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
 		/* opposite arcs left endpoint is to the left of the current arc ones */
 		std::cout << "swap " << path << " --> ";
 		path.swap();
@@ -504,7 +505,7 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		return true;
 	} else {
 		/* step to the next arc to the right of current arc */
-		uint rightNodeIdx = getRightmostNodeIdxOfArc(currentArc);
+		uint rightNodeIdx = getRightmostNodeIdxOfArc(*currentArc);
 		auto rightNode    = nodes[rightNodeIdx];
 		uint nextArcIdx   = MAX;
 		uint repeat       = 1;
@@ -520,15 +521,15 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 				}
 			}
 			if(nextArcIdx == MAX) {
-				rightNode = nodes[currentArc.getSecondNodeIdx(rightNodeIdx)];
+				rightNode = nodes[currentArc->getSecondNodeIdx(rightNodeIdx)];
 			}
 		} while(nextArcIdx == MAX && repeat-- > 0);
 
 		if(nextArcIdx != MAX) {
 			LOG(INFO) << "next arc " << nextArcIdx << " found";
 			path.currentArcIdx = nextArcIdx;
-			currentArc  = arcList[path.currentArcIdx];
-			if(isArcLeftOfArc(oppositeArc,currentArc)) {
+			currentArc  = &arcList[path.currentArcIdx];
+			if(isArcLeftOfArc(*oppositeArc,*currentArc)) {
 				path.swap();
 			}
 			LOG(INFO) << "next arc " << path.currentArcIdx << " found";
@@ -603,6 +604,7 @@ bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arc
 	}
 
 	assert(false);
+	return false;
 }
 
 bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
