@@ -38,6 +38,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionVisToggleInputLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleArcs_triggered() { updateVisibilities(); };
     void on_actionVisToggleArcLabels_triggered() { updateVisibilities(); };
+    void on_actionVisToggleNodeLabels_triggered() { updateVisibilities(); };
     void on_actionVisToggleInputEdgesLabels_triggered() { updateVisibilities(); }
 
 	void on_actionResize_triggered();
@@ -67,7 +68,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     WeightDialog* weightDialog;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
-    std::shared_ptr<ArcGraphicsItem> skeleton_gi;
+    std::shared_ptr<ArcGraphicsItem>   skeleton_gi;
 
     void updateVisibilities();
     void update_time_label();

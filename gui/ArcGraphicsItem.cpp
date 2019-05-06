@@ -30,12 +30,12 @@ ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs, const std::vect
 
 
 bool ArcGraphicsItem::drawNode(const Node& node) const {
-	if( node.isDisabled() || node.arcs.empty() ) {
+	if( node.isDisabled() || node.arcs.empty() || node.arcs.size() < 2) {
 		return false;
 	}
 	for(auto a : node.arcs) {
 		assert(a < arcs->size());
-		if( (*arcs)[a].type == ArcType::NORMAL) {
+		if( (*arcs)[a].type == ArcType::NORMAL ||(*arcs)[a].type == ArcType::RAY) {
 			return true;
 		}
 	}
@@ -78,6 +78,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 			painter->drawPoint(point);
 		}
 	}
+
 	if (visible_arc_labels) {
 		painter->setPen(labelsPen());
 		QFont font(painter->font());
@@ -94,16 +95,20 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
 			}
 		}
+	}
 
-//		font.setPointSize(8);
-//		painter->setFont(font);
-//		for (auto v = nodes->begin(); v != nodes->end(); ++v) {
-//			if(drawNode(*v)) {
-//				const QPointF p(transform.map(convert(v->point)));
-//				std::string t = "v#"+std::to_string(v - nodes->begin());
-//				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
-//			}
-//		}
+	if(visible_node_labels) {
+		painter->setPen(labelsPen());
+		QFont font(painter->font());
+		font.setPointSize(8);
+		painter->setFont(font);
+		for (auto v = nodes->begin(); v != nodes->end(); ++v) {
+			if(drawNode(*v)) {
+				const QPointF p(transform.map(convert(v->point)));
+				std::string t = "n#"+std::to_string(v - nodes->begin());
+				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
+			}
+		}
 	}
 	painter->setWorldTransform(transform);
 }

@@ -69,6 +69,7 @@ void MainWindow::updateVisibilities() {
 	skeleton_gi->setVisible(ui->actionVisToggleInput->isChecked());
     skeleton_gi->setVisible(ui->actionVisToggleArcs->isChecked());
 	skeleton_gi->setVisibleArcLabels(ui->actionVisToggleArcLabels->isChecked());
+	skeleton_gi->setVisibleNodeLabels(ui->actionVisToggleNodeLabels->isChecked());
 }
 
 void MainWindow::on_actionToggleFullscreen_triggered() {
@@ -173,16 +174,9 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 	on_actionTimeForwardAfterChains_triggered();
 
-//	while(monos.s->SingleMergeStep())
-//	;
-//
-//	monos.s->finishMerge();
-//	mergeDone = true;
-
 	while(!mergeDone) {
 		on_actionEventStep_triggered();
 	}
-
 
 	time_changed();
 	on_actionResize_triggered();

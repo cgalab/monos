@@ -81,6 +81,7 @@
    <addaction name="actionVisToggleArcs"/>
    <addaction name="actionVisToggleInputLabels"/>
    <addaction name="actionVisToggleInputEdgesLabels"/>
+   <addaction name="actionVisToggleNodeLabels"/>
    <addaction name="actionVisToggleArcLabels"/>
    <addaction name="separator"/>
    <addaction name="actionEventStep"/>
@@ -179,6 +180,23 @@
    </property>
    <property name="shortcut">
     <string>E</string>
+   </property>
+  </action>
+  <action name="actionVisToggleNodeLabels">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>N</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle Node Labels (b)</string>
+   </property>
+   <property name="shortcut">
+    <string>b</string>
    </property>
   </action>
   <action name="actionVisToggleArcLabels">
