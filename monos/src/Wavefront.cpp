@@ -117,6 +117,16 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 	if(currentTime <= eventTime) {
 		currentTime = eventTime;
 
+		std::list<TimeEdge> events;
+		events.push_back(*etIt);
+		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
+			/* check for multi-events */
+			auto etCheck = eventTimes.begin();
+			events.push_back(*etCheck);
+			eventTimes.erase(etCheck);
+			LOG(INFO) << "TODO! multiple events with time " << etCheck->time;
+		}
+
 		/* build skeleton from event */
 		addNewNodefromEvent(*event,skeleton);
 
@@ -157,10 +167,33 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 			/* last node on path of both edges must be the same, get that node */
 			auto endNodeIdx = pathFinder[aEdgeIdx][1];
 			auto node = &nodes[endNodeIdx];
+			Ray bis;
 
 			/* compute bisector between the two edges */
-			auto bis = constructBisector(aEdgeIdx,bEdgeIdx);
-			bis = Ray(node->point,bis.direction());
+			auto bisRet = constructBisector(aEdgeIdx,bEdgeIdx);
+			if(bisRet.type == BisType::RAY) {
+				bis = Ray(node->point,bisRet.ray.direction());
+			} else {
+				Line l(bisRet.line);
+				Point pRef(data.monotonicityLine.point()+l.to_vector());
+				if( isLowerChain(chain) && data.monotonicityLine.has_on_negative_side(pRef)) {
+					/* vector points below monotonicity line */
+					l = l.opposite();
+				}
+				if(!isLowerChain(chain) && data.monotonicityLine.has_on_positive_side(pRef)) {
+					/* vector points above monotonicity line */
+					l = l.opposite();
+				}
+
+				bis = Ray(node->point,bisRet.line.direction());
+			}
+
+			/* need to know if upper or lower chain! To distinguish bisector rays that lead up or down! */
+			auto check = normalDistance(data.getEdge(aEdgeIdx).supporting_line(),node->point + bis.to_vector());
+			if(check < node->time) {
+				bis = bis.opposite();
+			}
+
 			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis);
 
 			/* iterate over remaining chain */
@@ -222,19 +255,52 @@ void Wavefront::updateInsertEvent(const Event& event) {
 
 Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx, const ChainRef& it) const {
 	Event e;
+//	Ray abRay, bcRay;
 
 	/* compute bisector from edges */
-	auto abRay = constructBisector(aIdx, bIdx);
-	abRay = Ray(nodes[pathFinder[aIdx][1]].point,abRay.direction());
-	auto bcRay = constructBisector(bIdx, cIdx);
-	bcRay = Ray(nodes[pathFinder[bIdx][1]].point,bcRay.direction());
+	auto abBis = constructBisector(aIdx, bIdx);
+	auto bcBis = constructBisector(bIdx, cIdx);
+
+//	/* in case of rays all is good,
+//	 * if we get lines as bisectors we construct rays by using 'bIdx' as the 'edge in the middle'
+//	 * */
+//	auto pAB = nodes[pathFinder[aIdx][1]].point;
+//	if(abBis.type == BisType::RAY) {
+//		abRay = Ray(pAB,abBis.ray.direction());
+//	} else {
+//		Line l(bcBis.line);
+//		Line refLine(data.getEdge(bIdx).supporting_line());
+//		if(normalDistance(refLine,pAB) > normalDistance(refLine,pAB+l.to_vector())) {
+//			l = l.opposite();
+//			bcRay = Ray(pAB,l.direction());
+//		} {
+//			bcRay = Ray(pAB,l.direction());
+//		}
+//	}
+//
+//	auto pBC = nodes[pathFinder[bIdx][1]].point;
+//	if(bcBis.type == BisType::RAY) {
+//		bcRay = Ray(pBC,bcBis.ray.direction());
+//	} else {
+//		Line l(bcBis.line);
+//		Line refLine(data.getEdge(bIdx).supporting_line());
+//		if(normalDistance(refLine,pBC) > normalDistance(refLine,pBC+l.to_vector())) {
+//			l = l.opposite();
+//			bcRay = Ray(pBC,l.direction());
+//		} {
+//			bcRay = Ray(pBC,l.direction());
+//		}
+//	}
+
 
 	/* compute bisector intersection, this is the collapse
 	 * time of the middle edge (b) 'edge-event' for b  */
-	auto intersection = intersectElements(abRay, bcRay);
+	std::cout << "bi " << std::endl; fflush(stdout);
+	auto intersection = intersectElements(abBis.supporting_line(), bcBis.supporting_line());
+	std::cout << "ai " << std::endl; fflush(stdout);
 
-	if(intersection != INFPOINT) {
-		Line b(data.getEdge(bIdx).supporting_line());
+	Line b(data.getEdge(bIdx).supporting_line());
+	if(intersection != INFPOINT && b.has_on_positive_side(intersection)) {
 		auto distance = normalDistance(b, intersection);
 		assert(distance > 0);
 		/* does collapse so we create an event
@@ -242,17 +308,18 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 		 **/
 		e = Event(distance,intersection,aIdx,bIdx,cIdx,it);
 	} else {
-		if(CGAL::collinear(abRay.point(0),abRay.point(1),bcRay.point(1))) {
+		if(CGAL::collinear(abBis.point(0),abBis.point(1),bcBis.point(1))) {
 			LOG(INFO) << "bisectors are collinear!";
 			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
 		} else {
 			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
 		}
 	}
+	std::cout << e << " ret event. "; fflush(stdout);
 	return e;
 }
 
-Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
+Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 	Line a(data.getEdge(aIdx).supporting_line());
 	Line b(data.getEdge(bIdx).supporting_line());
 
@@ -274,18 +341,18 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 					!b.has_on_positive_side(pBis) ) {
 				bis = bis.opposite();
 			}
-			return bis;
+			return Bisector(bis);
 		} else {
 			Line bisLine = CGAL::bisector(a,b.opposite());
-			Point P = intersectElements(bisLine,data.bbox.left);
-			if(P == INFPOINT) {
-				P = intersectElements(bisLine,data.bbox.top);
-			}
-			Ray bis(P,bisLine.direction());
-			if(data.bbox.outside(P + bisLine.to_vector())) {
-				bis = Ray(P,-bisLine.direction());
-			}
-			return bis;
+//			Point P = intersectElements(bisLine,data.bbox.left);
+//			if(P == INFPOINT) {
+//				P = intersectElements(bisLine,data.bbox.top);
+//			}
+//			Ray bis(P,bisLine.direction());
+//			if(data.bbox.outside(P + bisLine.to_vector())) {
+//				bis = Ray(P,-bisLine.direction());
+//			}
+			return Bisector(bisLine);
 		}
 	} else {
 		/* weighted bisector */
@@ -317,7 +384,7 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 //			data.lines.push_back(b2);
 //			}
 
-			return Ray(intersectionA,intersectionB);
+			return Bisector(Ray(intersectionA,intersectionB));
 
 		} else {
 			LOG(INFO) << "parallel weighted bisector (TODO)!";
@@ -350,10 +417,11 @@ Ray Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
 				Edge e = data.confineRayToBBox(bis);
 
 				bis = Ray(e.target(),wMidPoint);
-				return bis;
+				return Bisector(bis);
 			} else {
 				LOG(ERROR) << "collinear edges -> ghost vertex (TODO)!";
-				return Ray();
+				assert(false);
+				return Bisector(Ray());
 			}
 		}
 	}

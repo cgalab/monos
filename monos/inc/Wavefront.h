@@ -4,6 +4,22 @@
 #include "cgTypes.h"
 #include "Data.h"
 
+
+class Bisector {
+public:
+	Bisector(Ray r) :type(BisType::RAY), ray(r)  {}
+	Bisector(Line l):type(BisType::LINE),line(l) {}
+
+	const BisType type;
+	const Ray     ray;
+	const Line    line;
+
+	bool isRay() const { return type == BisType::RAY; }
+	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
+	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
+	Point point(uint i = 0) const { return supporting_line().point(i); }
+};
+
 class MonotonePathTraversal {
 public:
 	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0, bool upperChain=true)
@@ -54,7 +70,7 @@ public:
 	Chain& getUpperChain() { return upperChain; }
 	Chain& getLowerChain() { return lowerChain; }
 
-	Ray constructBisector(const uint& aIdx, const uint& bIdx) const;
+	Bisector constructBisector(const uint& aIdx, const uint& bIdx) const;
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
 
 	/* call simplification from monos class */
@@ -108,6 +124,8 @@ public:
 	uint getRightmostNodeIdxOfArc(const Arc& arc) const;
 	void initPathForEdge(const bool upper, const uint edgeIdx);
 	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
+
+	bool isLowerChain(const Chain& chain) const { return chain == lowerChain; }
 
 	/* the chain skeleton and the final skeleton is stored in nodes and arcList */
 	Nodes				nodes;

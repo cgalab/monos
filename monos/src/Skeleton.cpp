@@ -44,28 +44,38 @@ void Skeleton::MergeUpperLowerSkeleton() {
  * */
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex;
+
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
-	auto bis = wf.constructBisector(upperChainIndex,lowerChainIndex);
-	if( wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL && (bis.direction() != data.perpMonotonDir || bis.direction() != -data.perpMonotonDir) ) {
+	auto bisRes = wf.constructBisector(upperChainIndex,lowerChainIndex);
+
+	Ray bis;
+
+	if( wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL && (bisRes.direction() != data.perpMonotonDir
+			|| bisRes.direction() != -data.perpMonotonDir) ) {
 		auto lastArcNodeIdx = (wf.getLastArc()->firstNodeIdx != sourceNodeIdx) ? wf.getLastArc()->firstNodeIdx : wf.getLastArc()->secondNodeIdx;
 		auto pointOnLastArc = wf.nodes[lastArcNodeIdx].point;
-		auto pointOnLastArcProjected = bis.supporting_line().projection(pointOnLastArc);
+		auto pointOnLastArcProjected = bisRes.supporting_line().projection(pointOnLastArc);
 
 		bis = Ray(sourceNode->point, sourceNode->point - pointOnLastArcProjected);
 
 	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL) {
 		/* bisector is vertical in respect to monotonicity line */
-		Point P = intersectElements(bis,data.bbox.bottom);
-		if (P == INFPOINT) {
-			P = intersectElements(bis,data.bbox.right);
+		Point P;
+		for(auto e : {data.bbox.bottom,data.bbox.right,data.bbox.top,data.bbox.left}) {
+			if(bisRes.isRay()) {
+				P = intersectElements(bisRes.ray,e);
+			} else {
+				P = intersectElements(bisRes.line,e);
+			}
+			if (P != INFPOINT) {
+				break;
+			}
 		}
 		if (P == INFPOINT) {
-			P = intersectElements(bis,data.bbox.top);
+			LOG(ERROR) << "There must be some intersection!";
+			assert(false);
 		}
-		if (P == INFPOINT) {
-			P = intersectElements(bis,data.bbox.left);
-		}
-		bis = Ray(P,-bis.direction());
+		bis = Ray(P,-bisRes.direction());
 
 		LOG(INFO) << "bisector is vertical!";
 	}
@@ -119,6 +129,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 
 	LOG(INFO) << "findNextIntersectingArc start"; fflush(stdout);
 	while(!EndOfBothChains() && !success) {
+		std::cout << ".";
 		arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
 		arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
 

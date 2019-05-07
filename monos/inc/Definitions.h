@@ -47,6 +47,7 @@
 enum class OutputType : uint {OBJ=0,NONE};
 enum class NodeType   : uint {TERMINAL=0,NORMAL,DISABLED};
 enum class ArcType    : uint {NORMAL=0,RAY,DISABLED};
+enum class BisType    : uint {RAY,LINE};
 
 using uint = uint;
 #define MAX std::numeric_limits<uint>::max()
