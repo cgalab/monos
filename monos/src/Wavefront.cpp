@@ -117,14 +117,20 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 	if(currentTime <= eventTime) {
 		currentTime = eventTime;
 
-		std::list<TimeEdge> events;
-		events.push_back(*etIt);
+		std::vector<Event*> eventStack;
+		eventStack.push_back(event);
 		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
 			/* check for multi-events */
 			auto etCheck = eventTimes.begin();
-			events.push_back(*etCheck);
+			event = &events[etCheck->edgeIdx];
+			eventStack.push_back(event);
 			eventTimes.erase(etCheck);
-			LOG(INFO) << "TODO! multiple events with time " << etCheck->time;
+			LOG(INFO) << "multiple events with time " << etCheck->time;
+		}
+
+		if(eventStack.size() > 1) {
+			// TDOO: handle multiple events
+			LOG(ERROR) << "HANDLE MULTI EVENTS!";
 		}
 
 		/* build skeleton from event */
