@@ -117,34 +117,65 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 	if(currentTime <= eventTime) {
 		currentTime = eventTime;
 
-		std::vector<Event*> eventStack;
-		eventStack.push_back(event);
+		std::vector<Event*> multiEventStack;
+		multiEventStack.push_back(event);
 		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
 			/* check for multi-events */
 			auto etCheck = eventTimes.begin();
 			event = &events[etCheck->edgeIdx];
-			eventStack.push_back(event);
+			multiEventStack.push_back(event);
 			eventTimes.erase(etCheck);
 			LOG(INFO) << "multiple events with time " << etCheck->time;
 		}
 
-		if(eventStack.size() > 1) {
-			// TDOO: handle multiple events
-			LOG(ERROR) << "HANDLE MULTI EVENTS!";
+
+		if(multiEventStack.size() > 1) {
+			/********************************************************************************/
+			/* ---------------------------- MULTI EVENTS HERE ------------------------------*/
+			/********************************************************************************/
+
+			Point extremePoint = event->eventPoint;
+			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
+			std::map<Point,uint> pointToIndex;
+			std::vector<std::vector<Event*>> eventsPerPoint;
+			for(auto e : multiEventStack) {
+				Point p = data.pointOnMonotonicityLine(e->eventPoint);
+
+				/* finding extreme points to favourize in processing */
+				//if(isLowerChain(chain)       && e->eventPoint.y() < extremePoint.y()) {extremePoint = e->eventPoint;}
+				//else if(!isLowerChain(chain) && e->eventPoint.y() > extremePoint.y()) {extremePoint = e->eventPoint;}
+
+				/* build map point -> list of events */
+				auto it = pointToIndex.find(p);
+				if(it != pointToIndex.end()) {
+					eventsPerPoint[it->second].push_back(e);
+				} else {
+					pointToIndex.insert(std::pair<Point,uint>(p,eventsPerPoint.size()));
+					eventsPerPoint.push_back( {{e}} );
+				}
+			}
+
+
+
+
+			// TDOO: handle multiple events (equal point)
+		} else {
+			/********************************************************************************/
+			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
+			/********************************************************************************/
+
+			/* build skeleton from event */
+			addNewNodefromEvent(*event,skeleton);
+
+			/* check neighbors for new events, and back into the queue */
+			/* edges B,C are the two edges left, right of the event edge,
+			 * A,D their respective neighbors */
+			updateNeighborEdgeEvents(*event,chain);
+
+			/* remove this edge from the chain (wavefront) */
+			chain.erase(event->chainEdge);
+			disableEdge(event->mainEdge());
 		}
-
-		/* build skeleton from event */
-		addNewNodefromEvent(*event,skeleton);
-
-		/* check neighbors for new events, and back into the queue */
-		/* edges B,C are the two edges left, right of the event edge,
-		 * A,D their respective neighbors */
-		updateNeighborEdgeEvents(*event,chain);
-
-		/* remove this edge from the chain (wavefront) */
-		chain.erase(event->chainEdge);
-		disableEdge(event->mainEdge());
-
 		return true;
 	}
 	return false;

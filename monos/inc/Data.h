@@ -104,6 +104,7 @@ public:
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 	bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const;
 	bool rayPointsLeft(const Ray& ray) const;
+	Point pointOnMonotonicityLine(const Point p) const { return monotonicityLine.projection(p); }
 
 	const BasicInput& getBasicInput() const {return basicInput;}
 
