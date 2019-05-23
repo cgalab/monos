@@ -137,13 +137,12 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			Point extremePoint = event->eventPoint;
 			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
 			std::map<Point,uint> pointToIndex;
+			/* we store a list of events per point (projected on the monotonicity line)  */
 			std::vector<std::vector<Event*>> eventsPerPoint;
 			for(auto e : multiEventStack) {
 				Point p = data.pointOnMonotonicityLine(e->eventPoint);
 
-				/* finding extreme points to favourize in processing */
-				//if(isLowerChain(chain)       && e->eventPoint.y() < extremePoint.y()) {extremePoint = e->eventPoint;}
-				//else if(!isLowerChain(chain) && e->eventPoint.y() > extremePoint.y()) {extremePoint = e->eventPoint;}
+				LOG(INFO) << "eventpoint: " << e->eventPoint << " proj: " <<p;
 
 				/* build map point -> list of events */
 				auto it = pointToIndex.find(p);
@@ -151,34 +150,72 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 					eventsPerPoint[it->second].push_back(e);
 				} else {
 					pointToIndex.insert(std::pair<Point,uint>(p,eventsPerPoint.size()));
-					eventsPerPoint.push_back( {{e}} );
+					std::vector<Event*> list = {e};
+					eventsPerPoint.push_back( list );
 				}
 			}
 
+			for(auto eventList : eventsPerPoint) {
+				HandleMultiEvent(chain,skeleton,eventList);
+			}
 
-
-
-			// TDOO: handle multiple events (equal point)
 		} else {
 			/********************************************************************************/
 			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
 			/********************************************************************************/
-
-			/* build skeleton from event */
-			addNewNodefromEvent(*event,skeleton);
-
-			/* check neighbors for new events, and back into the queue */
-			/* edges B,C are the two edges left, right of the event edge,
-			 * A,D their respective neighbors */
-			updateNeighborEdgeEvents(*event,chain);
-
-			/* remove this edge from the chain (wavefront) */
-			chain.erase(event->chainEdge);
-			disableEdge(event->mainEdge());
+			HandleSingleEdgeEvent(chain,skeleton,event);
 		}
 		return true;
 	}
 	return false;
+}
+
+
+
+/* due to the monotonicity we should only have two scenarios:
+ * (i) this amounts to exactly one point with multiple collapsing edges:
+ * --> then we continue with the bisector between the first and last involved
+ *     edge.
+ * (ii)  otherwise a vertical bisector line is involved, then we should have
+ *       exactly two points:
+ * --> after adding both points (connected with a vertical segment) we apply
+ *     (i) for the 'upper' (or higher) point. */
+void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList) {
+	if(eventList.size() == 1) {
+		LOG(INFO) << "size 1 ";
+		HandleSingleEdgeEvent(chain,skeleton,eventList[0]);
+	} else {
+		std::set<Point> points;
+		std::set<int> eventEdges;
+		for(auto e : eventList) {
+			points.insert(e->eventPoint);
+			eventEdges.insert(e->edges[0]);
+			eventEdges.insert(e->edges[1]);
+			eventEdges.insert(e->edges[2]);
+		}
+
+		if(points.size() > 1) {
+			/* scenario (ii) */
+			LOG(INFO) << "TODO: scenario (ii)";
+		} else {
+			/* scenario (i) */
+			LOG(INFO) << "TODO: scenario (i)";
+		}
+	}
+}
+
+void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event) {
+	/* build skeleton from event */
+	addNewNodefromEvent(*event,skeleton);
+
+	/* check neighbors for new events, and back into the queue */
+	/* edges B,C are the two edges left, right of the event edge,
+	 * A,D their respective neighbors */
+	updateNeighborEdgeEvents(*event,chain);
+
+	/* remove this edge from the chain (wavefront) */
+	chain.erase(event->chainEdge);
+	disableEdge(event->mainEdge());
 }
 
 bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {

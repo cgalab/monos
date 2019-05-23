@@ -56,6 +56,8 @@ public:
 	bool FinishSkeleton(Chain& chain, PartialSkeleton& skeleton);
 
 	bool ComputeSingleSkeletonEvent(bool lower);
+	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event);
+	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList);
 
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();

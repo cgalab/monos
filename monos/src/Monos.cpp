@@ -44,8 +44,10 @@ void Monos::constructorInit(bool gui) {
 	data->initialize(config);
 	LOG(INFO) << "input loaded";
 
-	if(config.verbose) {data->printInput();}
-	LOG(INFO) << "print input done";
+	if(config.verbose) {
+		data->printInput();
+		LOG(INFO) << "print input done";
+	}
 
 	wf = new Wavefront(*data);
 	s  = new Skeleton(*data,*wf);
