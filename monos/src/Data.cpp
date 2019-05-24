@@ -41,7 +41,7 @@ Edge Data::getEdge(const uint& idx) const {
 }
 
 Edge Data::getEdge(const EdgeIterator& it) const {
-	return Edge( eA((*it)[0]), eB((*it)[1]) );
+	return getEdge(it - polygon.begin());
 }
 
 bool Data::isEdgeCollinear(const uint& i, const uint& j) const {
@@ -240,7 +240,7 @@ bool Data::ensureMonotonicity() {
 		vA = vB;
 		vB = getEdge(edgeIt).to_vector();
 		corner = v(edgeA[1]);
-
+		LOG(INFO) << ": " << vB;
 		/* ensure the vertex is reflex */
 		if(CGAL::right_turn(corner-vA,corner,corner+vB)) {
 			MonotoneVector a(vA,MonotoneType::START, idCnt);
@@ -273,16 +273,16 @@ bool Data::ensureMonotonicity() {
 	std::vector<bool> activeIntervals(intervals.size(),false);
 
 	for(;it != intervals.end(); ++it) {
-		if(it->type == MonotoneType::START) {
-			if(!activeIntervals[it->id]) {
-				activeIntervals[it->id] = true;
-				++activeCnt;
-			}
-		}
 		if(it->type == MonotoneType::END) {
 			if(activeIntervals[it->id]) {
 				activeIntervals[it->id] = false;
 				--activeCnt;
+			}
+		}
+		if(it->type == MonotoneType::START) {
+			if(!activeIntervals[it->id]) {
+				activeIntervals[it->id] = true;
+				++activeCnt;
 			}
 		}
 	}
@@ -294,23 +294,22 @@ bool Data::ensureMonotonicity() {
 		success = true;
 	} else {
 		do {
-			if(it->type == MonotoneType::START) {
-				if(!activeIntervals[it->id]) {
-					activeIntervals[it->id] = true;
-					++activeCnt;
-				}
-			}
 			if(it->type == MonotoneType::END) {
 				if(activeIntervals[it->id]) {
 					activeIntervals[it->id] = false;
 					--activeCnt;
 				}
 			}
-
 			/* we found a window*/
 			if(activeCnt == 0) {
 				success = true;
+			} else if(it->type == MonotoneType::START) {
+				if(!activeIntervals[it->id]) {
+					activeIntervals[it->id] = true;
+					++activeCnt;
+				}
 			}
+
 		} while(!success && ++it != intervals.end());
 	}
 
@@ -404,10 +403,23 @@ void Data::printInput() const {
 		std::cout << "(" << point.x() << "," << point.y() << ") ";
 	}
 	std::cout << std::endl << "Input Polygon: " << std::endl;
+	uint cnt = 0;
 	for(auto edge : polygon) {
-		std::cout  << "(" << edge[0] << "," << edge[1] << ") ";
+		std::cout  << "(" << edge[0] << "," << edge[1] << ")N[" << getEdge(cnt++).to_vector() << "] ";
 	}
 	std::cout << std::endl;
+}
+
+
+/*** true if a lies above b relative to monotonicity line */
+bool Data::isAbove(const Point& a, const Point &b) const {
+	bool aAbove = monotonicityLine.has_on_positive_side(a);
+	bool bAbove = monotonicityLine.has_on_positive_side(b);
+	auto distA = CGAL::squared_distance(monotonicityLine,a);
+	auto distB = CGAL::squared_distance(monotonicityLine,b);
+	return ( aAbove && !bAbove) ||
+		   ( aAbove &&  bAbove && distA > distB) ||
+		   (!aAbove && !bAbove && distA < distB);
 }
 
 

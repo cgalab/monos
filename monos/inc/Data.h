@@ -52,10 +52,22 @@ struct MonotoneVector {
 };
 
 struct MonVectCmp {
-	bool operator()(const MonotoneVector &second, const MonotoneVector &first) const {
-		return !CGAL::right_turn(ORIGIN-first.vector,ORIGIN,ORIGIN+second.vector);
+	bool operator()(const MonotoneVector &first, const MonotoneVector &second) const {
+		Point A = ORIGIN + first.vector;
+		Point B = ORIGIN + second.vector;
+
+		return   CGAL::left_turn(A,ORIGIN,B) ||
+				(CGAL::collinear(A,ORIGIN,B) && A.x() < ORIGIN.x() && B.x() > ORIGIN.x()) ||
+				(CGAL::collinear(A,ORIGIN,B) && A.y() < ORIGIN.y() && B.y() > ORIGIN.y()) ||
+				(CGAL::collinear(A,ORIGIN,B) &&
+						( (A.x() < ORIGIN.x() && B.x() < ORIGIN.x()) ||
+						  (A.x() > ORIGIN.x() && B.x() > ORIGIN.x()) ||
+						  (A.y() < ORIGIN.y() && B.y() < ORIGIN.y()) ||
+						  (A.y() > ORIGIN.y() && B.y() > ORIGIN.y()) ) &&
+						first.type == MonotoneType::END);
 	}
 };
+
 
 
 class Data {
@@ -100,7 +112,7 @@ public:
 	/* verify if the input polygon is monotone, if required we rotate
 	 * the vertices such that x-monotonicity holds for P */
 	bool ensureMonotonicity();
-
+	bool isAbove(const Point& a, const Point &b) const;
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 	bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const;
 	bool rayPointsLeft(const Ray& ray) const;

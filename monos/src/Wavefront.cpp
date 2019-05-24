@@ -66,8 +66,8 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 }
 
 bool Wavefront::ComputeSkeleton(bool lower) {
-	auto chain     = (lower) ? getLowerChain()	: getUpperChain();
-	auto skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
+	auto& chain     = (lower) ? getLowerChain()	: getUpperChain();
+	auto& skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
 	/** compute all finite edge events
 	 *  iterate along lower chain and find event time for each edge
 	 **/
@@ -100,8 +100,8 @@ bool Wavefront::ComputeSkeleton(bool lower) {
  * returns false if queue is empty
  * */
 bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
-	auto chain     = (lower) ? getLowerChain()	: getUpperChain();
-	auto skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
+	auto& chain     = (lower) ? getLowerChain()	: getUpperChain();
+	auto& skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
 
 	while(!eventTimes.empty() && !SingleDequeue(chain,skeleton));
 
@@ -186,8 +186,10 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 		HandleSingleEdgeEvent(chain,skeleton,eventList[0]);
 	} else {
 		std::set<Point> points;
-		std::set<int> eventEdges;
+		std::set<int,std::less<int> > eventEdges;
+		LOG(INFO) << "events:";
 		for(auto e : eventList) {
+			LOG(INFO) << *e;
 			points.insert(e->eventPoint);
 			eventEdges.insert(e->edges[0]);
 			eventEdges.insert(e->edges[1]);
@@ -195,22 +197,113 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 		}
 
 		if(points.size() > 1) {
-			/* scenario (ii) */
-			LOG(INFO) << "TODO: scenario (ii)";
+			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE! */
+			assert(points.size() < 3);
+
+			/* ensure A is the lower point in resp. to monot. line */
+			auto it = points.begin();
+			Point A = *it; ++it;
+			Point B = *it;
+
+			LOG(INFO) << "A: " << A << ", B: " << B;
+
+			std::cout << std::boolalpha << data.isAbove(A,B);
+			std::cout << std::boolalpha << isLowerChain(chain);
+
+			if( ( data.isAbove(A,B) &&  isLowerChain(chain)) ||
+				(!data.isAbove(A,B) && !isLowerChain(chain))) {
+				std::swap(A,B);
+			}
+
+			LOG(INFO) << "A: " << A << ", B: " << B;
+
+			std::vector<Event*> partEventListA, partEventListB;
+			for(auto e : eventList) {
+				if(e->eventPoint == B) {
+					partEventListB.push_back(e);
+				} else {
+					partEventListA.push_back(e);
+				}
+			}
+
+			assert(partEventListA.size() == 1);
+			HandleSingleEdgeEvent(chain,skeleton,partEventListA[0]);
+
+
+			/* we start by handling 'A', i.e., the 'lower' node */
+			/* find event with no parallel bisector, the 'normal' edge event at A */
+//			for(auto e : partEventListB) {
+//				if(!hasParallelBisector(*e)) {
+//					LOG(INFO) << "event (no parall): " << *e;
+//					HandleSingleEdgeEvent(chain,skeleton,e);
+//				} else {
+//					LOG(INFO) << "event (parallel ): " << *e;
+//					/* TODO! */
+//				}
+//			}
+//
+//			/* we end by handling 'B', i.e., the 'higher' node */
+//			LOG(INFO) << "scenario (ii-B)";
+//			HandleMultiEdgeEvent(chain,skeleton,partEventListB);
 		} else {
 			/* scenario (i) */
-			LOG(INFO) << "TODO: scenario (i)";
+			LOG(INFO) << "scenario (i)";
+			HandleMultiEdgeEvent(chain,skeleton,eventList);
 		}
 	}
 }
+
+void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList) {
+	LOG(INFO) << "HandleMultiEdgeEvent!";
+	std::set<int,std::less<int> > eventEdges;
+	for(auto e : eventList) {
+		eventEdges.insert(e->edges[0]);
+		eventEdges.insert(e->edges[1]);
+		eventEdges.insert(e->edges[2]);
+	}
+
+	/* must be the first and last index of eventEdges plus one of before,after them */
+	auto edgeIt = eventEdges.begin();
+	auto idxA = *edgeIt;
+	edgeIt = eventEdges.end(); --edgeIt;
+	auto idxC = *edgeIt;
+
+	auto nodeIdx = nodes.size();
+	for(auto event : eventList) {
+		auto idx = event->mainEdge();
+		auto paths = pathFinder[idx];
+		addArc(paths[0],nodeIdx,event->leftEdge(),event->mainEdge());
+
+		/* update path finder for left and right edge */
+		pathFinder[idx][1] = nodeIdx;
+		pathFinder[idx][0] = nodeIdx;
+	}
+	auto lastEvent = eventList[eventList.size()-1];
+	addArc(pathFinder[lastEvent->mainEdge()][1],nodeIdx,lastEvent->mainEdge(),lastEvent->rightEdge());
+
+	/* add the single node */
+	Node* node = new Node(NodeType::NORMAL,lastEvent->eventPoint,lastEvent->eventTime);
+	nodes.push_back(*node);
+	skeleton.push_back(nodeIdx);
+
+	updateNeighborEdgeEvents(*eventList[0],chain);
+	updateNeighborEdgeEvents(*lastEvent,chain);
+
+	for(auto event : eventList) {
+		/* remove this edges from the chain (wavefront) */
+		chain.erase(event->chainEdge);
+		disableEdge(event->mainEdge());
+	}
+}
+
 
 void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event) {
 	/* build skeleton from event */
 	addNewNodefromEvent(*event,skeleton);
 
-	/* check neighbors for new events, and back into the queue */
+	/* check neighbours for new events, and back into the queue */
 	/* edges B,C are the two edges left, right of the event edge,
-	 * A,D their respective neighbors */
+	 * A,D their respective neighbours */
 	updateNeighborEdgeEvents(*event,chain);
 
 	/* remove this edge from the chain (wavefront) */
@@ -326,6 +419,12 @@ void Wavefront::updateInsertEvent(const Event& event) {
 	}
 }
 
+bool Wavefront::hasParallelBisector(const Event& event) const {
+	auto lA = data.getEdge(event.leftEdge()).supporting_line();
+	auto lB = data.getEdge(event.mainEdge()).supporting_line();
+	auto lC = data.getEdge(event.rightEdge()).supporting_line();
+	return CGAL::parallel(lA,lB) || CGAL::parallel(lB,lC) || CGAL::parallel(lA,lC);
+}
 
 Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx, const ChainRef& it) const {
 	Event e;

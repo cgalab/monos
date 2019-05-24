@@ -121,7 +121,7 @@ bool Monos::init() {
 	data->bbox = data->computeBoundingBox();
 
 	/* debug */
-	LOG(INFO) << "monotonicity line: " << data->monotonicityLine;
+	LOG(INFO) << "monotonicity line: " << data->monotonicityLine.to_vector();
 //	Point p = data->v(data->bbox.monotoneMinIdx);
 //	Edge e(p,p+data->monotonicityLine.to_vector()); // = data->confineRayToBBox(Ray(p,data->monotonicityLine.to_vector()));
 //	data->lines.push_back(e);

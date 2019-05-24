@@ -57,6 +57,7 @@ public:
 
 	bool ComputeSingleSkeletonEvent(bool lower);
 	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event);
+	void HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList);
 	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList);
 
 	void InitializeEventsAndPathsPerEdge();
@@ -127,7 +128,8 @@ public:
 	void initPathForEdge(const bool upper, const uint edgeIdx);
 	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
 
-	bool isLowerChain(const Chain& chain) const { return chain == lowerChain; }
+	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
+	bool hasParallelBisector(const Event& event) const;
 
 	/* the chain skeleton and the final skeleton is stored in nodes and arcList */
 	Nodes				nodes;
