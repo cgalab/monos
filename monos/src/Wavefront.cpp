@@ -497,8 +497,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Point pBis = bisLine.point();
 			Ray bis(intersectionA,pBis);
 
-			if( !a.has_on_positive_side(pBis) ||
-					!b.has_on_positive_side(pBis) ) {
+			if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
 				bis = bis.opposite();
 			}
 			return Bisector(bis);
@@ -531,18 +530,6 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Line aOffsetLine    = Line( bP + aN , a.direction() );
 			Line bOffsetLine    = Line( bP + bN , b.direction() );
 			Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
-
-			// DEBUG draw the line in the GUI
-//			if(data.gui) {
-//			Edge a1 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , aOffsetLine.direction() ) );
-//			Edge a2 = data.confineRayToBBox( Ray( aOffsetLine.projection(data.getEdge(aIdx).source()) , -aOffsetLine.direction() ) );
-//			Edge b1 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , bOffsetLine.direction() ) );
-//			Edge b2 = data.confineRayToBBox( Ray( bOffsetLine.projection(data.getEdge(bIdx).source()) , -bOffsetLine.direction() ) );
-//			data.lines.push_back(a1);
-//			data.lines.push_back(a2);
-//			data.lines.push_back(b1);
-//			data.lines.push_back(b2);
-//			}
 
 			return Bisector(Ray(intersectionA,intersectionB));
 

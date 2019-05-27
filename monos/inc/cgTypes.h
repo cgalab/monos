@@ -182,6 +182,7 @@ struct Node {
 
 	void disable() {type = NodeType::DISABLED;}
 	bool isDisabled() const { return type == NodeType::DISABLED;}
+	bool isTerminal() const { return type == NodeType::TERMINAL;}
 
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));

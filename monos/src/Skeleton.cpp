@@ -43,42 +43,58 @@ void Skeleton::MergeUpperLowerSkeleton() {
  * Executes a single merge step along the merge line, return false if merge is finished
  * */
 bool Skeleton::SingleMergeStep() {
+	std::cout << "--";
+	fflush(stdout);
 	LOG(INFO) << "START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex;
+	fflush(stdout);
 
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
 	auto bisRes = wf.constructBisector(upperChainIndex,lowerChainIndex);
+	LOG(INFO) << "-- Bisector(A): " << bisRes.ray.to_vector() << " / " << bisRes.line.to_vector();
+	fflush(stdout);
 
 	Ray bis;
 
-	if( wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL && (bisRes.direction() != data.perpMonotonDir
-			|| bisRes.direction() != -data.perpMonotonDir) ) {
+	if( !wf.nodes[sourceNodeIdx].isTerminal()
+//			&& ( bisRes.direction() != data.perpMonotonDir || bisRes.direction() != -data.perpMonotonDir )
+	) {
 		auto lastArcNodeIdx = (wf.getLastArc()->firstNodeIdx != sourceNodeIdx) ? wf.getLastArc()->firstNodeIdx : wf.getLastArc()->secondNodeIdx;
 		auto pointOnLastArc = wf.nodes[lastArcNodeIdx].point;
 		auto pointOnLastArcProjected = bisRes.supporting_line().projection(pointOnLastArc);
 
+		std::cout << "X (TODO) perp. bisectors!"; fflush(stdout);
+
 		bis = Ray(sourceNode->point, sourceNode->point - pointOnLastArcProjected);
 
-	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL) {
-		/* bisector is vertical in respect to monotonicity line */
-		Point P;
-		for(auto e : {data.bbox.bottom,data.bbox.right,data.bbox.top,data.bbox.left}) {
-			if(bisRes.isRay()) {
-				P = intersectElements(bisRes.ray,e);
-			} else {
-				P = intersectElements(bisRes.line,e);
-			}
-			if (P != INFPOINT) {
-				break;
-			}
-		}
-		if (P == INFPOINT) {
-			LOG(ERROR) << "There must be some intersection!";
-			assert(false);
-		}
-		bis = Ray(P,-bisRes.direction());
-
-		LOG(INFO) << "bisector is vertical!";
+//	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL) {
+//std::cout << "Y";
+//		/* bisector is vertical in respect to monotonicity line */
+//		Point P;
+//		for(auto e : {data.bbox.bottom,data.bbox.right,data.bbox.top,data.bbox.left}) {
+//			if(bisRes.isRay()) {
+//				P = intersectElements(bisRes.ray,e);
+//			} else {
+//				P = intersectElements(bisRes.line,e);
+//			}
+//			if (P != INFPOINT) {
+//				break;
+//			}
+//		}
+//		if (P == INFPOINT) {
+//			LOG(ERROR) << "There must be some intersection!";
+//			assert(false);
+//		}
+//		bis = Ray(P,-bisRes.direction());
+//
+//		LOG(INFO) << "bisector is vertical!";
+	} else {
+		/* we have a TERMINAL node */
+		assert(wf.nodes[sourceNodeIdx].type == NodeType::TERMINAL);
+		bis = Ray(sourceNode->point,bisRes.direction());
 	}
+
+	LOG(INFO) << "-- Bisector(B): " << bis.to_vector();
+	fflush(stdout);
 
 	/* debug */
 	if(data.gui) {
@@ -111,6 +127,10 @@ bool Skeleton::SingleMergeStep() {
 	} else {
 		LOG(INFO) << "After findNextIntersectingArc: arcs ARE empty!";
 	}
+
+	std::cout << std::endl;
+	LOG(INFO) << "############################################## END STEP ###########################";
+	std::cout << std::endl;
 
 	return !EndOfBothChains();
 }

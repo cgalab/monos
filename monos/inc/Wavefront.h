@@ -15,6 +15,7 @@ public:
 	const Line    line;
 
 	bool isRay() const { return type == BisType::RAY; }
+	bool isLine() const { return !isRay();}
 	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
 	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
 	Point point(uint i = 0) const { return supporting_line().point(i); }
