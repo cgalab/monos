@@ -148,6 +148,8 @@ public:
 
 	/* MISC */
 	void reset(); /* for GUI version only, to redo the computation without restart */
+	void printChain(const Chain& chain) const;
+	void printEvents() const;
 
 private:
 	/* EVENT QUEUE --------------------------------------------------------------------

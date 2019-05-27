@@ -109,12 +109,14 @@ bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
 }
 
 bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
+	std::cout << "SingleDequeue :: ";
 	auto etIt  = eventTimes.begin();
 	auto event = &events[etIt->edgeIdx];
 	auto eventTime = etIt->time;
 	eventTimes.erase(etIt);
 
 	if(currentTime <= eventTime) {
+
 		currentTime = eventTime;
 
 		std::vector<Event*> multiEventStack;
@@ -125,24 +127,19 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			event = &events[etCheck->edgeIdx];
 			multiEventStack.push_back(event);
 			eventTimes.erase(etCheck);
-			LOG(INFO) << "multiple events with time " << etCheck->time;
 		}
-
 
 		if(multiEventStack.size() > 1) {
 			/********************************************************************************/
 			/* ---------------------------- MULTI EVENTS HERE ------------------------------*/
 			/********************************************************************************/
 
-			Point extremePoint = event->eventPoint;
 			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
 			std::map<Point,uint> pointToIndex;
 			/* we store a list of events per point (projected on the monotonicity line)  */
 			std::vector<std::vector<Event*>> eventsPerPoint;
 			for(auto e : multiEventStack) {
 				Point p = data.pointOnMonotonicityLine(e->eventPoint);
-
-				LOG(INFO) << "eventpoint: " << e->eventPoint << " proj: " <<p;
 
 				/* build map point -> list of events */
 				auto it = pointToIndex.find(p);
@@ -156,6 +153,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			}
 
 			for(auto eventList : eventsPerPoint) {
+				LOG(INFO) << "ME " << *event;
 				HandleMultiEvent(chain,skeleton,eventList);
 			}
 
@@ -163,8 +161,10 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			/********************************************************************************/
 			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
 			/********************************************************************************/
+			LOG(INFO) << "SE " << *event;
 			HandleSingleEdgeEvent(chain,skeleton,event);
 		}
+
 		return true;
 	}
 	return false;
@@ -197,15 +197,16 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 		}
 
 		if(points.size() > 1) {
-			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE! */
+			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE!
+			 * this scenario implies a vertical segment, i.e., perpendicular to the
+			 * monotonicity line. This means only two event moints can occur on this
+			 * line, otherwise the polygon can not be monotone */
 			assert(points.size() < 3);
 
 			/* ensure A is the lower point in resp. to monot. line */
 			auto it = points.begin();
 			Point A = *it; ++it;
 			Point B = *it;
-
-			LOG(INFO) << "A: " << A << ", B: " << B;
 
 			std::cout << std::boolalpha << data.isAbove(A,B);
 			std::cout << std::boolalpha << isLowerChain(chain);
@@ -214,8 +215,6 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 				(!data.isAbove(A,B) && !isLowerChain(chain))) {
 				std::swap(A,B);
 			}
-
-			LOG(INFO) << "A: " << A << ", B: " << B;
 
 			std::vector<Event*> partEventListA, partEventListB;
 			for(auto e : eventList) {
@@ -227,24 +226,10 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			}
 
 			assert(partEventListA.size() == 1);
+
+			/* handling the 'lower' eventpoint changes the other event, thus
+			 * we only handle this lower event */
 			HandleSingleEdgeEvent(chain,skeleton,partEventListA[0]);
-
-
-			/* we start by handling 'A', i.e., the 'lower' node */
-			/* find event with no parallel bisector, the 'normal' edge event at A */
-//			for(auto e : partEventListB) {
-//				if(!hasParallelBisector(*e)) {
-//					LOG(INFO) << "event (no parall): " << *e;
-//					HandleSingleEdgeEvent(chain,skeleton,e);
-//				} else {
-//					LOG(INFO) << "event (parallel ): " << *e;
-//					/* TODO! */
-//				}
-//			}
-//
-//			/* we end by handling 'B', i.e., the 'higher' node */
-//			LOG(INFO) << "scenario (ii-B)";
-//			HandleMultiEdgeEvent(chain,skeleton,partEventListB);
 		} else {
 			/* scenario (i) */
 			LOG(INFO) << "scenario (i)";
@@ -254,7 +239,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 }
 
 void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList) {
-	LOG(INFO) << "HandleMultiEdgeEvent!";
+	LOG(INFO) << "HandleMultiEdgeEvent! (TO-BE-TESTED!)";
 	std::set<int,std::less<int> > eventEdges;
 	for(auto e : eventList) {
 		eventEdges.insert(e->edges[0]);
@@ -407,7 +392,9 @@ void Wavefront::updateInsertEvent(const Event& event) {
 		/* find remove timeslot from event times */
 		auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge());
 		auto item  = eventTimes.lower_bound(teOld);
-		eventTimes.erase(item);
+		if(item != eventTimes.end() && item->edgeIdx == event.mainEdge()) {
+			eventTimes.erase(item);
+		}
 	}
 
 	assert(event.mainEdge() == *event.chainEdge);
@@ -982,6 +969,22 @@ void Wavefront::SortArcsOnNodes() {
 		std::cout << std::endl;
 		/*	-- DEBUG ONLY --*/
 		++i;
+	}
+}
+
+void Wavefront::printChain(const Chain& chain) const {
+	std::cout << "chain links: ";
+	for(auto l : chain) {
+		std::cout << l << " ";
+	}
+	std::cout << std::endl;
+}
+
+void Wavefront::printEvents() const {
+	std::cout << "eventlist: " << std::endl;
+	for(auto t : eventTimes) {
+		auto e = events[t.edgeIdx];
+		std::cout << e << std::endl;
 	}
 }
 
