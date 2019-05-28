@@ -5,22 +5,6 @@
 #include "Data.h"
 
 
-class Bisector {
-public:
-	Bisector(Ray r) :type(BisType::RAY), ray(r)  {}
-	Bisector(Line l):type(BisType::LINE),line(l) {}
-
-	const BisType type;
-	const Ray     ray;
-	const Line    line;
-
-	bool isRay() const { return type == BisType::RAY; }
-	bool isLine() const { return !isRay();}
-	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
-	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
-	Point point(uint i = 0) const { return supporting_line().point(i); }
-};
-
 class MonotonePathTraversal {
 public:
 	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0, bool upperChain=true)
@@ -75,6 +59,7 @@ public:
 	Chain& getLowerChain() { return lowerChain; }
 
 	Bisector constructBisector(const uint& aIdx, const uint& bIdx) const;
+	Bisector getBisectorWRTMonotonicityLine(Bisector& bisector) const;
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
 
 	/* call simplification from monos class */

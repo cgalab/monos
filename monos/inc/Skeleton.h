@@ -37,10 +37,10 @@ public:
 	void writeOBJ(const Config& cfg) const;
 
 private:
-	void findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint);
+	void findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint);
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
-	uint handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis);
+	uint handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Bisector& bis);
 	void updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	uint nextUpperChainIndex(const uint& idx) const;

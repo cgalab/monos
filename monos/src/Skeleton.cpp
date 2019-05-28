@@ -49,56 +49,16 @@ bool Skeleton::SingleMergeStep() {
 	fflush(stdout);
 
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
-	auto bisRes = wf.constructBisector(upperChainIndex,lowerChainIndex);
-	LOG(INFO) << "-- Bisector(A): " << bisRes.ray.to_vector() << " / " << bisRes.line.to_vector();
-	fflush(stdout);
-
-	Ray bis;
-
-	if( !wf.nodes[sourceNodeIdx].isTerminal()
-//			&& ( bisRes.direction() != data.perpMonotonDir || bisRes.direction() != -data.perpMonotonDir )
-	) {
-		auto lastArcNodeIdx = (wf.getLastArc()->firstNodeIdx != sourceNodeIdx) ? wf.getLastArc()->firstNodeIdx : wf.getLastArc()->secondNodeIdx;
-		auto pointOnLastArc = wf.nodes[lastArcNodeIdx].point;
-		auto pointOnLastArcProjected = bisRes.supporting_line().projection(pointOnLastArc);
-
-		std::cout << "X (TODO) perp. bisectors!"; fflush(stdout);
-
-		bis = Ray(sourceNode->point, sourceNode->point - pointOnLastArcProjected);
-
-//	} else if(wf.nodes[sourceNodeIdx].type != NodeType::TERMINAL) {
-//std::cout << "Y";
-//		/* bisector is vertical in respect to monotonicity line */
-//		Point P;
-//		for(auto e : {data.bbox.bottom,data.bbox.right,data.bbox.top,data.bbox.left}) {
-//			if(bisRes.isRay()) {
-//				P = intersectElements(bisRes.ray,e);
-//			} else {
-//				P = intersectElements(bisRes.line,e);
-//			}
-//			if (P != INFPOINT) {
-//				break;
-//			}
-//		}
-//		if (P == INFPOINT) {
-//			LOG(ERROR) << "There must be some intersection!";
-//			assert(false);
-//		}
-//		bis = Ray(P,-bisRes.direction());
-//
-//		LOG(INFO) << "bisector is vertical!";
-	} else {
-		/* we have a TERMINAL node */
-		assert(wf.nodes[sourceNodeIdx].type == NodeType::TERMINAL);
-		bis = Ray(sourceNode->point,bisRes.direction());
-	}
+	auto bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
+	auto bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);
+	bis.newSource(sourceNode->point);
 
 	LOG(INFO) << "-- Bisector(B): " << bis.to_vector();
 	fflush(stdout);
 
 	/* debug */
 	if(data.gui) {
-		Edge visBis(bis.source(),bis.source()+10*bis.to_vector());
+		Edge visBis(sourceNode->point,sourceNode->point+10*bis.to_vector());
 		if(!data.lines.empty()) {data.lines.pop_back();}
 		data.lines.push_back(visBis);
 	}
@@ -137,7 +97,7 @@ bool Skeleton::SingleMergeStep() {
 
 /* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
  * in respect to the 'monotonicityLine' */
-void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, bool& setUpperChain, Point& newPoint) {
+void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, bool& setUpperChain, Point& newPoint) {
 	assert(sourceNode != nullptr);
 
 	/* new intersection point must be to the right of 'currentPoint' in respect to the monotonicity line */
@@ -168,8 +128,20 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 		std::cout << "BEFORE path: " << *path << std::endl;
 		fflush(stdout);
 
+		if(bis.perpendicular) {
+			auto vb = bis.to_vector();
+			Point pML = data.monotonicityLine.point(0) + vb;
+			bool positiveSide = data.monotonicityLine.has_on_positive_side(pML);
+			if((positiveSide && localOnUpperChain) || (!positiveSide && !localOnUpperChain) ) {
+				bis.changeDirection();
+			}
+			bis.setRay(Ray(sourceNode->point,bis.direction()));
+		}
+
+		LOG(INFO) << "bisector after perp check: " << bis.to_vector();
+
 		if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
-			Pi = intersectRayArc(bis,*arc);
+			Pi = intersectBisectorArc(bis,*arc);
 			LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 			if(data.monotoneSmaller(currentPoint,Pi)) {
 				LOG(INFO) << "success";
@@ -209,7 +181,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 			arc = wf.getArc(*path);
 
 			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
-				Pi_2 = intersectRayArc(bis,*arc);
+				Pi_2 = intersectBisectorArc(bis,*arc);
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 				if(data.monotoneSmaller(currentPoint,Pi_2)) {
 					if(data.monotoneSmaller(Pi_2,Pi)) {
@@ -268,7 +240,7 @@ void Skeleton::findNextIntersectingArc(const Ray& bis, std::vector<uint>& arcs, 
 	LOG(INFO) << "findNextIntersectingArc END"; fflush(stdout);
 }
 
-uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Ray& bis) {
+uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Bisector& bis) {
 	auto sourceNode = &wf.nodes[sourceNodeIdx];
 
 	auto distA = data.normalDistance(edgeIdxA,sourceNode->point);

@@ -573,7 +573,21 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 		}
 	}
 }
+Bisector Wavefront::getBisectorWRTMonotonicityLine(Bisector& bisector) const {
+	Bisector bis(bisector);
 
+	Line lp(ORIGIN,data.perpMonotonDir);
+	Point p(ORIGIN+bis.to_vector());
+
+	if(lp.has_on_positive_side(p)) {
+		bis.changeDirection();
+	} else if(lp.has_on_boundary(p)) {
+		bis.perpendicular = true;
+		LOG(WARNING) << "WARNUNG: ... bisector is perpendicular to montonicity line.";
+	}
+
+	return bis;
+}
 
 void Wavefront::ChainDecomposition() {
 	Chain lc, uc;

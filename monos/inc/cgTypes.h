@@ -66,6 +66,44 @@ using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 
 static Point ORIGIN = Point(0,0);
 
+class Bisector {
+public:
+	Bisector(Ray r) :type(BisType::RAY), ray(r)  {}
+	Bisector(Line l):type(BisType::LINE),line(l) {}
+
+	BisType type;
+	Ray     ray;
+	Line    line;
+
+	/* true if perpendicular to monotonicity line */
+	bool perpendicular = false;
+
+	bool isRay() const { return type == BisType::RAY; }
+	bool isLine() const { return !isRay();}
+
+	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
+	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
+	Point point(uint i = 0) const { return supporting_line().point(i); }
+	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
+
+	void setRay(const Ray r) {ray=r; type = BisType::RAY;}
+
+	void changeDirection() {
+		if(isRay()) {
+			ray = ray.opposite();
+		} else {
+			line = line.opposite();
+		}
+	}
+
+	void newSource(const Point& s) {
+		if(isRay()) {
+			ray = Ray(s,direction());
+		}
+	}
+};
+
+
 /** stores the indices of the three input points that define max/min x/y*/
 struct BBox {
 	BBox(uint _xMinIdx = 0, uint _xMaxIdx = 0, uint _yMinIdx = 0, uint _yMaxIdx = 0,
@@ -230,12 +268,14 @@ Point intersectElements(const T& a, const U& b) {
 }
 
 Point intersectRayArc(const Ray& ray, const Arc& arc);
+Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
 
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
 	return CGAL::parallel(Line(a),Line(b));
 }
 
-bool do_intersect(const Ray& ray, const Arc& arc);
+bool do_intersect(const Bisector& ray, const Arc& arc);
+bool do_intersect(const Bisector& ray, const Edge& edge);
 
 #endif /* CGALTYPES_H_ */

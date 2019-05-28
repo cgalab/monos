@@ -46,16 +46,37 @@ Exact normalDistance(const Line& l, const Point& p) {
 	return CGAL::squared_distance(l,p);
 }
 
-bool do_intersect(const Ray& ray, const Arc& arc) {
+bool do_intersect(const Bisector& bis, const Edge& edge) {
+	return (bis.isRay()) ? CGAL::do_intersect(bis.ray,edge) : CGAL::do_intersect(bis.line,edge);
+}
+
+bool do_intersect(const Bisector& bis, const Arc& arc) {
 	switch(arc.type) {
-	case ArcType::NORMAL: return CGAL::do_intersect(ray,arc.edge);
-	case ArcType::RAY: return CGAL::do_intersect(ray,arc.ray);
+	case ArcType::NORMAL: 	if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.edge);}
+							else {return CGAL::do_intersect(bis.line,arc.edge);}
+	case ArcType::RAY: 		if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.ray);}
+							else {return CGAL::do_intersect(bis.line,arc.ray);}
 
 	case ArcType::DISABLED:
 	default: LOG(WARNING) << "Not supposed to happen!"; return false;
 	}
 }
 
+Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
+	if(arc.type == ArcType::NORMAL) {
+		if(bis.isRay()) {
+			return intersectElements(bis.ray,arc.edge);
+		} else {
+			return intersectElements(bis.line,arc.edge);
+		}
+	} else {
+		if(bis.isRay()) {
+			return intersectElements(bis.ray,arc.ray);
+		} else {
+			return intersectElements(bis.line,arc.ray);
+		}
+	}
+}
 Point intersectRayArc(const Ray& ray, const Arc& arc) {
 	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
 }
