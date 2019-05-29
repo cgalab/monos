@@ -43,26 +43,37 @@ void Skeleton::MergeUpperLowerSkeleton() {
  * Executes a single merge step along the merge line, return false if merge is finished
  * */
 bool Skeleton::SingleMergeStep() {
-	std::cout << "--";
-	fflush(stdout);
-	LOG(INFO) << "START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex;
+	LOG(INFO) << "-- START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex;
 	fflush(stdout);
 
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
-	auto bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
-	auto bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);
-	bis.newSource(sourceNode->point);
+	Bisector bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
+	std::cout << "-"; fflush(stdout);
+	std::cout << bisGeneral.direction(); fflush(stdout);
+	Bisector bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);
+	std::cout << "/"; fflush(stdout);
+	std::cout << "|"; fflush(stdout);
+	std::cout << bis.direction(); fflush(stdout);
+	std::cout << "p: "; fflush(stdout);
+	std::cout << sourceNode->point; fflush(stdout);
+	if(bis.isLine() && !bis.perpendicular) {
+		bis.setRay(Ray(sourceNode->point,bis.direction()));
+		std::cout << "\\"; fflush(stdout);
+	} else {
+		bis.newSource(sourceNode->point);
+	}
+	LOG(INFO) << "-- Bisector(B): "; fflush(stdout);
+	std::cout << bis; //.to_vector(); fflush(stdout);
+	LOG(INFO) << "-- Bisector(B): "; fflush(stdout);
 
-	LOG(INFO) << "-- Bisector(B): " << bis.to_vector();
-	fflush(stdout);
-
-	/* debug */
+	/* visualize next bisector via dashed line-segment */
 	if(data.gui) {
-		Edge visBis(sourceNode->point,sourceNode->point+10*bis.to_vector());
+		Edge visBis( bis.point(0) , bis.point(0) + (10*bis.to_vector()) );
 		if(!data.lines.empty()) {data.lines.pop_back();}
 		data.lines.push_back(visBis);
 	}
 
+	/* setup intersection call */
 	std::vector<uint> arcs;
 	Point newPoint = INFPOINT;
 	bool  onUpperChain = true;
@@ -107,6 +118,15 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 	MonotonePathTraversal* path;
 	Arc *arc, *arc_u, *arc_l;
 
+	bool bisOnPositiveSide = true, bisUpdateOnce = false;
+	if(bis.perpendicular && bis.isRay()) {
+		auto vb   = bis.to_vector();
+		Point pML = data.monotonicityLine.point(0) + vb;
+		bisOnPositiveSide = data.monotonicityLine.has_on_positive_side(pML);
+		bisUpdateOnce 	  = true;
+		LOG(INFO) << "Bisector is perpendicular and a ray!";
+	}
+
 	LOG(INFO) << "findNextIntersectingArc start"; fflush(stdout);
 	while(!EndOfBothChains() && !success) {
 		std::cout << ".";
@@ -128,23 +148,18 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		std::cout << "BEFORE path: " << *path << std::endl;
 		fflush(stdout);
 
-		if(bis.perpendicular) {
-			auto vb = bis.to_vector();
-			Point pML = data.monotonicityLine.point(0) + vb;
-			bool positiveSide = data.monotonicityLine.has_on_positive_side(pML);
-			if((positiveSide && localOnUpperChain) || (!positiveSide && !localOnUpperChain) ) {
+		if(bis.perpendicular && bisUpdateOnce) {
+			if((bisOnPositiveSide && localOnUpperChain) || (!bisOnPositiveSide && !localOnUpperChain) ) {
 				bis.changeDirection();
 			}
-			bis.setRay(Ray(sourceNode->point,bis.direction()));
+			bisUpdateOnce = false;
 		}
 
-		LOG(INFO) << "bisector after perp check: " << bis.to_vector();
-
-		if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
+		if(isValidArc(path->currentArcIdx)) { //&& do_intersect(bis,*arc)) {
+			LOG(INFO) << "calling bis.direction/.supporting_line/.to_vector() gets very stuck! WHY?!?";
 			Pi = intersectBisectorArc(bis,*arc);
-			LOG(INFO) << "Intersection found with " << path->currentArcIdx;
-			if(data.monotoneSmaller(currentPoint,Pi)) {
-				LOG(INFO) << "success";
+			if(Pi != INFPOINT) {
+				LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
 				success = true;
 			}
 		}
@@ -181,20 +196,40 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			arc = wf.getArc(*path);
 
 			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
+				piReached = true;
+
 				Pi_2 = intersectBisectorArc(bis,*arc);
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx;
-				if(data.monotoneSmaller(currentPoint,Pi_2)) {
-					if(data.monotoneSmaller(Pi_2,Pi)) {
-						LOG(INFO) << "success";
-						piReached = true;
-						Pi = Pi_2;
-						localOnUpperChain = !localOnUpperChain;
+
+				bool choosePi;
+
+				/* we found two points Pi and Pi_2, one on each chain */
+				if(bis.perpendicular) {
+					auto dPi   = normalDistance(data.monotonicityLine,Pi);
+					auto dPi_2 = normalDistance(data.monotonicityLine,Pi_2);
+					if(dPi < dPi_2) {
+						choosePi = true;
 					} else {
-						piReached = true;
-						path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+						choosePi = false;
+					}
+				} else {
+					if(data.monotoneSmaller(Pi,Pi_2)) {
+						choosePi = true;
+					} else {
+						choosePi = false;
 					}
 				}
+
+				if(choosePi) {
+					LOG(INFO) << "success (Pi)";
+					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+				} else {
+					LOG(INFO) << "success (Pi_2)";
+					Pi = Pi_2;
+					localOnUpperChain = !localOnUpperChain;
+				}
 			}
+
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
 				// TODO: think about this, it is not correct
@@ -251,7 +286,7 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 
 	/* distinguish in which direction the ray points and add the arc accordingly */
 	uint newArcIdx = 0;
-	if(distA < distB) {
+	if(bis.isLine() || distA < distB) {
 		newArcIdx  = wf.addArc(sourceNodeIdx,newNodeIdx,edgeIdxA,edgeIdxB);
 	} else {
 		newArcIdx  = wf.addArc(newNodeIdx,sourceNodeIdx,edgeIdxB,edgeIdxA);
@@ -278,8 +313,6 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const in
 	if(arc->type == ArcType::NORMAL) {
 		removePath(arcIdx, edgeIdx);
 	}
-
-	std::cout << "arc 10: " << wf.arcList[10] << std::endl;
 
 	auto newNode = &wf.nodes[secondNodeIdx];
 	if(arc->type == ArcType::RAY) {

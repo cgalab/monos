@@ -502,16 +502,13 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			}
 			return Bisector(bis);
 		} else {
-			Line bisLine = CGAL::bisector(a,b.opposite());
-//			Point P = intersectElements(bisLine,data.bbox.left);
-//			if(P == INFPOINT) {
-//				P = intersectElements(bisLine,data.bbox.top);
-//			}
-//			Ray bis(P,bisLine.direction());
-//			if(data.bbox.outside(P + bisLine.to_vector())) {
-//				bis = Ray(P,-bisLine.direction());
-//			}
-			return Bisector(bisLine);
+			if(CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
+				return Bisector(Ray(a.point(0),a.perpendicular(a.point(0)).to_vector()));
+			} else {
+				Line bisLine = CGAL::bisector(a,b.opposite());
+				std::cout << bisLine; fflush(stdout);
+				return Bisector(bisLine);
+			}
 		}
 	} else {
 		/* weighted bisector */
@@ -573,7 +570,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 		}
 	}
 }
-Bisector Wavefront::getBisectorWRTMonotonicityLine(Bisector& bisector) const {
+Bisector Wavefront::getBisectorWRTMonotonicityLine(const Bisector& bisector) const {
 	Bisector bis(bisector);
 
 	Line lp(ORIGIN,data.perpMonotonDir);
@@ -583,7 +580,7 @@ Bisector Wavefront::getBisectorWRTMonotonicityLine(Bisector& bisector) const {
 		bis.changeDirection();
 	} else if(lp.has_on_boundary(p)) {
 		bis.perpendicular = true;
-		LOG(WARNING) << "WARNUNG: ... bisector is perpendicular to montonicity line.";
+		LOG(WARNING) << "WARNUNG: ... bisector is perpendicular to monotonicity line.";
 	}
 
 	return bis;

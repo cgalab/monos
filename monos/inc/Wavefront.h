@@ -59,7 +59,7 @@ public:
 	Chain& getLowerChain() { return lowerChain; }
 
 	Bisector constructBisector(const uint& aIdx, const uint& bIdx) const;
-	Bisector getBisectorWRTMonotonicityLine(Bisector& bisector) const;
+	Bisector getBisectorWRTMonotonicityLine(const Bisector& bisector) const;
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
 
 	/* call simplification from monos class */

@@ -30,6 +30,7 @@
 
 #include "Definitions.h"
 
+
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Aff_transformation_2.h>
@@ -78,15 +79,15 @@ public:
 	/* true if perpendicular to monotonicity line */
 	bool perpendicular = false;
 
-	bool isRay() const { return type == BisType::RAY; }
-	bool isLine() const { return !isRay();}
+	bool isRay()  const { return type == BisType::RAY; }
+	bool isLine() const { return type == BisType::LINE;}
 
 	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
 	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
 	Point point(uint i = 0) const { return supporting_line().point(i); }
 	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
 
-	void setRay(const Ray r) {ray=r; type = BisType::RAY;}
+	void setRay(const Ray r) {ray=Ray(r); line=Line(); type = BisType::RAY;}
 
 	void changeDirection() {
 		if(isRay()) {
@@ -96,11 +97,15 @@ public:
 		}
 	}
 
-	void newSource(const Point& s) {
+	void newSource(const Point s) {
 		if(isRay()) {
 			ray = Ray(s,direction());
+		} else {
+			line = Line(s,direction());
 		}
 	}
+
+	friend std::ostream& operator<< (std::ostream& os, const Bisector& bis);
 };
 
 
@@ -248,8 +253,8 @@ Point intersectElements(const T& a, const U& b) {
 //		LOG(INFO) << "Elements parallel (not intersecting)!";
 //		return intersectionPoint;
 //	}
-	std::cout << "("; fflush(stdout);
-	if(CGAL::do_intersect(a,b)){
+	std::cout << "(" << a << " -- " << b; fflush(stdout);
+//	if(CGAL::do_intersect(a,b)){
 	std::cout << "-"; fflush(stdout);
 		auto result = CGAL::intersection(a, b);
 		std::cout << ")"; fflush(stdout);
@@ -263,7 +268,7 @@ Point intersectElements(const T& a, const U& b) {
 				return intersectionPoint;
 			}
 		}
-	}
+//	}
 	return intersectionPoint;
 }
 

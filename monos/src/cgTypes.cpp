@@ -20,6 +20,15 @@
 #include "cgTypes.h"
 
 
+std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
+	if(bis.isRay()) {
+		os << bis.ray;
+	} else {
+		os << bis.line;
+	}
+    return os;
+}
+
 std::ostream& operator<< (std::ostream& os, const Event& event) {
     os << "(" << event.eventTime.doubleValue() << " : " << event.eventPoint << ")["
     		<< event.edges[0] << ","
@@ -77,6 +86,7 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 		}
 	}
 }
+
 Point intersectRayArc(const Ray& ray, const Arc& arc) {
 	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
 }
