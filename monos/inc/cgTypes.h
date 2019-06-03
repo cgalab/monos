@@ -87,7 +87,7 @@ public:
 	Point point(uint i = 0) const { return supporting_line().point(i); }
 	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
 
-	void setRay(const Ray r) {ray=Ray(r); line=Line(); type = BisType::RAY;}
+	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
 
 	void changeDirection() {
 		if(isRay()) {

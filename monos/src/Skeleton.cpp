@@ -56,22 +56,45 @@ bool Skeleton::SingleMergeStep() {
 	std::cout << bis.direction(); fflush(stdout);
 	std::cout << "p: "; fflush(stdout);
 	std::cout << sourceNode->point; fflush(stdout);
+	std::cout << ", dir: "; fflush(stdout);
+	std::cout << bis.direction(); fflush(stdout);
 	if(bis.isLine() && !bis.perpendicular) {
-		bis.setRay(Ray(sourceNode->point,bis.direction()));
-		std::cout << "\\"; fflush(stdout);
+//		auto d = bis.direction();
+//		Ray r = Ray(sourceNode->point, d);
+//		bis = Bisector(r);
+//		std::cout << " set ray, from new source: "; fflush(stdout);
+//		std::cout << *r; fflush(stdout);
+//		std::cout << " dir: "; fflush(stdout);
+//		std::cout << d; fflush(stdout);
+//		std::cout << " ray p0: "; fflush(stdout);
+//		std::cout << r->source(); fflush(stdout);
+//		std::cout << " ray p1: "; fflush(stdout);
+//		std::cout << r->point(1); fflush(stdout);
+//		std::cout << " ray-dir: "; fflush(stdout);
+//		std::cout << std::boolalpha << bis.line.is_horizontal();
+//		std::cout << r->direction(); fflush(stdout);
+		bis.newSource(sourceNode->point);
+//		bis.setRay(*r);
 	} else {
+		std::cout << " new source: "; fflush(stdout);
+		std::cout << sourceNode->point; fflush(stdout);
 		bis.newSource(sourceNode->point);
 	}
-	LOG(INFO) << "-- Bisector(B): "; fflush(stdout);
-	std::cout << bis; //.to_vector(); fflush(stdout);
-	LOG(INFO) << "-- Bisector(B): "; fflush(stdout);
+
+	std::cout << std::endl << "-- "; fflush(stdout);
+	LOG(INFO) << "Bisector: " << bis; //.to_vector(); fflush(stdout);
+	std::cout << "-- "; fflush(stdout);
+	LOG(INFO) << "Bisector-dir: " << bis.direction(); //.to_vector(); fflush(stdout);
 
 	/* visualize next bisector via dashed line-segment */
-	if(data.gui) {
-		Edge visBis( bis.point(0) , bis.point(0) + (10*bis.to_vector()) );
-		if(!data.lines.empty()) {data.lines.pop_back();}
-		data.lines.push_back(visBis);
-	}
+//	if(data.gui) {
+//		Point A(sourceNode->point);
+//		Point B(A + (10*bis.to_vector()));
+//		Edge visBis( Point(A.x().doubleValue(),A.y().doubleValue()) ,
+//			      	 Point(B.x().doubleValue(),B.y().doubleValue()) );
+//		if(!data.lines.empty()) {data.lines.pop_back();}
+//		data.lines.push_back(visBis);
+//	}
 
 	/* setup intersection call */
 	std::vector<uint> arcs;
@@ -82,7 +105,7 @@ bool Skeleton::SingleMergeStep() {
 	findNextIntersectingArc(bis,arcs,onUpperChain,newPoint);
 
 	if(!arcs.empty()) {
-		LOG(INFO) << "After findNextIntersectingArc: arcs NOT empty!";
+		LOG(INFO) << "After findNextIntersectingArc: arcs NOT empty!" << newPoint;
 		newNodeIdx = handleMerge(arcs,upperChainIndex,lowerChainIndex,newPoint,bis);
 
 		Arc* modifiedArc = &wf.arcList[arcs.front()];
@@ -93,6 +116,9 @@ bool Skeleton::SingleMergeStep() {
 			lowerChainIndex = (modifiedArc->leftEdgeIdx != lowerChainIndex) ? modifiedArc->leftEdgeIdx : modifiedArc->rightEdgeIdx;
 			wf.initPathForEdge(false,lowerChainIndex);
 		}
+
+		LOG(INFO) << "changing idx from old: " << sourceNodeIdx << " to " << newNodeIdx;
+
 		sourceNodeIdx = newNodeIdx;
 		sourceNode = &wf.nodes[sourceNodeIdx];
 	} else {
@@ -148,15 +174,18 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		std::cout << "BEFORE path: " << *path << std::endl;
 		fflush(stdout);
 
+		LOG(INFO) << "Test if perp and update clause!";
 		if(bis.perpendicular && bisUpdateOnce) {
 			if((bisOnPositiveSide && localOnUpperChain) || (!bisOnPositiveSide && !localOnUpperChain) ) {
+				LOG(INFO) << "findNextIntersectingArc() -- change direction";
 				bis.changeDirection();
 			}
 			bisUpdateOnce = false;
 		}
 
+		LOG(INFO) << "testing arc: " << *arc;
+
 		if(isValidArc(path->currentArcIdx)) { //&& do_intersect(bis,*arc)) {
-			LOG(INFO) << "calling bis.direction/.supporting_line/.to_vector() gets very stuck! WHY?!?";
 			Pi = intersectBisectorArc(bis,*arc);
 			if(Pi != INFPOINT) {
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
@@ -269,7 +298,6 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		setUpperChain = localOnUpperChain;
 	} else {
 		LOG(ERROR) << "NO INTERSECTION FOUND!!!";
-		assert(false);
 	}
 
 	LOG(INFO) << "findNextIntersectingArc END"; fflush(stdout);
@@ -283,6 +311,8 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 
 	auto newNodeIdx = wf.addNode(p,distB);
 	auto newNode    = &wf.nodes[newNodeIdx];
+
+	LOG(INFO) << " NEW IDX: " << newNodeIdx << "/" << wf.nodes.size();
 
 	/* distinguish in which direction the ray points and add the arc accordingly */
 	uint newArcIdx = 0;
@@ -362,8 +392,8 @@ bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {
 			return false;
 		}
 
-		if(arcs->size() < 3) {
-			/* degree two means that only one path is left */
+		if(arcs->size() < 2) {
+			/* degree one means that only one path is left */
 			bool nextArcFound = false;
 			for(auto a : *arcs) {
 				if(a != arcIdxIt) {

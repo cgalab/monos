@@ -60,6 +60,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 		bEdgeIdx = cEdgeIdx;
 	} while(chainIterator != chain.end());
 
+
 	currentTime = 0;
 
 	return true;
