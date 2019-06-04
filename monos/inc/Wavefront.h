@@ -98,9 +98,10 @@ public:
 
 	Node& getTerminalNodeForVertex(const uint& vertexIdx)  {return nodes[vertexIdx];}
 	void SortArcsOnNodes();
-
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
+
 	Arc* getArc(const MonotonePathTraversal& path) {return &arcList[path.currentArcIdx];}
+	uint getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const;
 
 	/* -- monotone path traversal -- */
 	/* for the merge we have to traverse the faces of a chain-skeleton from 'left to right'

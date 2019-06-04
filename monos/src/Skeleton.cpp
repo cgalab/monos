@@ -48,53 +48,23 @@ bool Skeleton::SingleMergeStep() {
 
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
 	Bisector bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
-	std::cout << "-"; fflush(stdout);
-	std::cout << bisGeneral.direction(); fflush(stdout);
 	Bisector bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);
-	std::cout << "/"; fflush(stdout);
-	std::cout << "|"; fflush(stdout);
-	std::cout << bis.direction(); fflush(stdout);
-	std::cout << "p: "; fflush(stdout);
-	std::cout << sourceNode->point; fflush(stdout);
-	std::cout << ", dir: "; fflush(stdout);
-	std::cout << bis.direction(); fflush(stdout);
-	if(bis.isLine() && !bis.perpendicular) {
-//		auto d = bis.direction();
-//		Ray r = Ray(sourceNode->point, d);
-//		bis = Bisector(r);
-//		std::cout << " set ray, from new source: "; fflush(stdout);
-//		std::cout << *r; fflush(stdout);
-//		std::cout << " dir: "; fflush(stdout);
-//		std::cout << d; fflush(stdout);
-//		std::cout << " ray p0: "; fflush(stdout);
-//		std::cout << r->source(); fflush(stdout);
-//		std::cout << " ray p1: "; fflush(stdout);
-//		std::cout << r->point(1); fflush(stdout);
-//		std::cout << " ray-dir: "; fflush(stdout);
-//		std::cout << std::boolalpha << bis.line.is_horizontal();
-//		std::cout << r->direction(); fflush(stdout);
-		bis.newSource(sourceNode->point);
-//		bis.setRay(*r);
-	} else {
-		std::cout << " new source: "; fflush(stdout);
-		std::cout << sourceNode->point; fflush(stdout);
-		bis.newSource(sourceNode->point);
-	}
+	bis.newSource(sourceNode->point);
 
 	std::cout << std::endl << "-- "; fflush(stdout);
-	LOG(INFO) << "Bisector: " << bis; //.to_vector(); fflush(stdout);
+	LOG(INFO) << "Bisector: " << bis;
 	std::cout << "-- "; fflush(stdout);
-	LOG(INFO) << "Bisector-dir: " << bis.direction(); //.to_vector(); fflush(stdout);
+	LOG(INFO) << "Bisector-dir: " << bis.direction(); fflush(stdout);
 
 	/* visualize next bisector via dashed line-segment */
-//	if(data.gui) {
-//		Point A(sourceNode->point);
-//		Point B(A + (10*bis.to_vector()));
-//		Edge visBis( Point(A.x().doubleValue(),A.y().doubleValue()) ,
-//			      	 Point(B.x().doubleValue(),B.y().doubleValue()) );
-//		if(!data.lines.empty()) {data.lines.pop_back();}
-//		data.lines.push_back(visBis);
-//	}
+	if(data.gui) {
+		Point A(sourceNode->point), B(A + (10*bis.to_vector()));
+		Edge visBis( Point(A.x().doubleValue(),A.y().doubleValue()) ,
+			      	 Point(B.x().doubleValue(),B.y().doubleValue()) );
+
+		if(!data.lines.empty()) {data.lines.pop_back();}
+		data.lines.push_back(visBis);
+	}
 
 	/* setup intersection call */
 	std::vector<uint> arcs;
@@ -139,8 +109,8 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 	/* new intersection point must be to the right of 'currentPoint' in respect to the monotonicity line */
 	auto& currentPoint = sourceNode->point;
-	bool success = false, localOnUpperChain;
-	Point Pi = INFPOINT;
+	bool success = false, localOnUpperChain, switchSides = false;
+	Point Pi = INFPOINT, Pi_2 = INFPOINT;
 	MonotonePathTraversal* path;
 	Arc *arc, *arc_u, *arc_l;
 
@@ -167,6 +137,11 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		} else {
 			localOnUpperChain = (wf.isArcLeftOfArc(*arc_l,*arc_u)) ? false : true;
 		}
+
+		if(switchSides) {
+			localOnUpperChain = !localOnUpperChain;
+		}
+
 		path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		arc  = (localOnUpperChain) ? arc_u         : arc_l;
 
@@ -194,15 +169,40 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		}
 
 		if(!success) {
-			if(!wf.nextMonotoneArcOfPath(*path)) {
-				if(localOnUpperChain) {
-					upperChainIndex = nextUpperChainIndex(upperChainIndex);
-					wf.initPathForEdge(true,upperChainIndex);
+			/* before we iterate on path we have to check the other chain! */
+			/* if rightmost node of the 'other' arc is to the right of the rightmost node
+			 * of 'this' arc we should continue on the other chain! */
+
+			/* check if next arc of current path is still 'left of' the opposite path */
+
+			MonotonePathTraversal next = *path;
+			if(wf.nextMonotoneArcOfPath(next)) {
+				LOG(INFO) << *path;
+				LOG(INFO) << next;
+
+				auto nextArc = wf.getArc(next.currentArcIdx);
+				auto oppositePathArc = (localOnUpperChain) ? arc_l : arc_u;
+
+				if(wf.isArcLeftOfArc(*oppositePathArc,*nextArc)) {
+					switchSides = true;
 				} else {
-					lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-					wf.initPathForEdge(false,lowerChainIndex);
+					switchSides = false;
 				}
-				LOG(WARNING) << "next chain index";
+			} else {
+				switchSides = false;
+			}
+
+			if(!switchSides) {
+				if(!wf.nextMonotoneArcOfPath(*path)) {
+					if(localOnUpperChain) {
+						upperChainIndex = nextUpperChainIndex(upperChainIndex);
+						wf.initPathForEdge(true,upperChainIndex);
+					} else {
+						lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
+						wf.initPathForEdge(false,lowerChainIndex);
+					}
+					LOG(WARNING) << "next chain index";
+				}
 			}
 		}
 
@@ -214,14 +214,15 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		 * the face on the opposite side until we reach the height of the intersecting
 		 * arc, i.r.t. the monotonicity line
 		 ***/
+
 		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		Arc* arc;
 
 		bool piReached = false;
-		Point Pi_2 = INFPOINT;
+		Pi_2 = INFPOINT;
 
 		while(!EndOfChain(path->isUpperChain()) && !piReached) {
-			std::cout << std::endl << "updateing 2nd  path: " << *path << std::endl; fflush(stdout);
+			std::cout << std::endl << "updating 2nd path: " << *path << std::endl; fflush(stdout);
 			arc = wf.getArc(*path);
 
 			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
@@ -261,12 +262,12 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
-				// TODO: think about this, it is not correct
 				if(data.monotoneSmaller(Pi,Pr)) {
 					piReached = true;
 					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 				}
 			}
+
 			if(!piReached) {
 				/* check input edge intersection first */
 				Edge e = data.getEdge(path->edgeIdx);
