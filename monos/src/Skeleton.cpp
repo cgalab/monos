@@ -161,6 +161,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis; fflush(stdout);
 
 		if(isValidArc(path->currentArcIdx)) { //&& do_intersect(bis,*arc)) {
+			LOG(WARNING) << "TODO: check endpoints and why this does not terminate!?!";
 			Pi = intersectBisectorArc(bis,*arc);
 			if(Pi != INFPOINT) {
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
@@ -194,14 +195,14 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		 * arc, i.r.t. the monotonicity line
 		 ***/
 
-		/* check and reset if we walked to far on other chain */
-		auto& pathOpposite = (localOnUpperChain) ? wf.lowerPath : wf.upperPath;
-		auto pathBackup = (localOnUpperChain) ? pathBackupLower : pathBackupUpper;
-		CheckAndResetPath(pathOpposite, pathBackup, Pi);
-		LOG(INFO) << "After Backup " << pathOpposite;
 
 		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		Arc* arc;
+
+		/* check and reset if we walked to far on other chain */
+		auto pathBackup = (!localOnUpperChain) ? pathBackupUpper : pathBackupLower;
+		CheckAndResetPath(*path, pathBackup, Pi);
+		LOG(INFO) << "After Backup " << *path;
 
 		bool piReached = false;
 		Pi_2 = INFPOINT;
@@ -213,6 +214,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
 				piReached = true;
 
+				std::cout << "should intersect."; fflush(stdout);
 				Pi_2 = intersectBisectorArc(bis,*arc);
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 
@@ -325,8 +327,10 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 	return newNodeIdx;
 }
 
+/* we may have walked one arc to far on one path */
 void Skeleton::CheckAndResetPath(MonotonePathTraversal& path, const MonotonePathTraversal& pathBackup, const Point& p) {
-		/* we may have walked one arc to far on one path */
+		if(path.currentArcIdx == MAX) {return;}
+
 		auto checkArc = wf.getArc(path);
 		uint leftNodeArcUdx = wf.getLeftmostNodeIdxOfArc(*checkArc);
 
@@ -346,15 +350,23 @@ void Skeleton::CheckAndResetPath(MonotonePathTraversal& path, const MonotonePath
 			LOG(INFO) << "current: " << *arcA << ", opposite: " << *arcB;
 			LOG(INFO) << std::boolalpha << "disabled: current " << arcA->isDisable() << " opposite: " << arcB->isDisable();
 
-			if(!arcA->isDisable() && !arcB->isDisable() && pathBackup.currentArcIdx == 15 && pathBackup.edgeIdx == 17 && pathBackup.oppositeArcIdx == 10) {
-				/* reset the other path with pathBackup */
-				path.set(pathBackup);
-				if(path.upperChain) {
-					upperChainIndex = path.edgeIdx;
+			if(!arcA->isDisable() && !arcB->isDisable()) {
+
+				/* for debugging! */
+//				if (pathBackup.currentArcIdx == 15 && pathBackup.edgeIdx == 17 && pathBackup.oppositeArcIdx == 10) {
+//				if (pathBackup.edgeIdx == path.edgeIdx) {
+
+					/* reset the other path with pathBackup */
+					path.set(pathBackup);
+					if(path.upperChain) {
+						upperChainIndex = path.edgeIdx;
+					} else {
+						lowerChainIndex = path.edgeIdx;
+					}
 				} else {
-					lowerChainIndex = path.edgeIdx;
+					LOG(INFO) << "we would have to walk back an input edge, why does this not work?";
 				}
-			}
+//			}
 		}
 }
 
