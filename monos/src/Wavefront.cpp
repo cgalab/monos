@@ -829,8 +829,6 @@ bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arc
 
 		bool rayAPointsLeft = data.rayPointsLeft(arcA.ray);
 		bool rayBPointsLeft = data.rayPointsLeft(arcB.ray);
-//		std::cout << std::boolalpha << "acute angels: " << rayAPointsLeft << " " << rayBPointsLeft << std::endl;
-//		std::cout << "x of vects: " << arcA.ray.to_vector().x().doubleValue() << "   " << arcB.ray.to_vector().x().doubleValue() << "   ";
 
 		if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
 			return pointAmonotoneSmaller;
@@ -891,7 +889,7 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
 		} else {
 			Arc&  distantArc    = arcList[distantArcIdx];
-			path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
+			path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx,upper) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
 		}
 	} else {
 		path = MonotonePathTraversal(edgeIdx,MAX,MAX,upper);

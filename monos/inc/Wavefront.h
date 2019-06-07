@@ -19,6 +19,13 @@ public:
 	bool isAnIndex(const uint idx) const { return idx == currentArcIdx || idx == oppositeArcIdx; }
 	void swap() { std::swap(currentArcIdx, oppositeArcIdx); }
 
+	void set(const MonotonePathTraversal& reset) {
+		edgeIdx 		= reset.edgeIdx;
+		currentArcIdx 	= reset.currentArcIdx;
+		oppositeArcIdx 	= reset.oppositeArcIdx;
+		upperChain 		= reset.upperChain;
+	}
+
 	uint edgeIdx;
 	uint currentArcIdx, oppositeArcIdx;
 	bool upperChain;
@@ -100,6 +107,7 @@ public:
 	void SortArcsOnNodes();
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 
+	Arc* getArc(const uint& idx) {return &arcList[idx];}
 	Arc* getArc(const MonotonePathTraversal& path) {return &arcList[path.currentArcIdx];}
 	uint getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const;
 

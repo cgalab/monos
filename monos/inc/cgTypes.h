@@ -140,8 +140,8 @@ public:
 		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {}
 
 	bool isEvent()   const { return eventPoint != INFPOINT;}
-	uint mainEdge()  const { return edges[1]; }
 	uint leftEdge()  const { return edges[0]; }
+	uint mainEdge()  const { return edges[1]; }
 	uint rightEdge() const { return edges[2]; }
 
 	Exact         	eventTime;
@@ -177,6 +177,7 @@ public:
 		edge(e),ray(Ray()) {}
 
 	void disable() {type=ArcType::DISABLED;}
+	bool isDisable() {return type == ArcType::DISABLED;}
 
 	bool adjacent(const Arc& arc) const {
 		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
@@ -249,26 +250,19 @@ template<class T, class U>
 Point intersectElements(const T& a, const U& b) {
 	Point intersectionPoint = INFPOINT;
 
-//	if(CGAL::parallel(Line(a), Line(b))) {
-//		LOG(INFO) << "Elements parallel (not intersecting)!";
-//		return intersectionPoint;
-//	}
 	std::cout << "(" << a << " -- " << b; fflush(stdout);
-//	if(CGAL::do_intersect(a,b)){
-	std::cout << "-"; fflush(stdout);
-		auto result = CGAL::intersection(a, b);
-		std::cout << ")"; fflush(stdout);
-		if (result) {
-			if (const Point* p = boost::get<Point>(&*result)) {
-				return Point(*p);
-			} else {
-				LOG(WARNING) << "Intersection forms a segment/ray/line";
-				const Edge* s = boost::get<Edge>(&*result);
-				std::cout << *s << std::endl;
-				return intersectionPoint;
-			}
+	auto result = CGAL::intersection(a, b);
+	std::cout << ")" << std::endl; fflush(stdout);
+	if (result) {
+		if (const Point* p = boost::get<Point>(&*result)) {
+			return Point(*p);
+		} else {
+			LOG(WARNING) << "Intersection forms a segment/ray/line";
+			const Edge* s = boost::get<Edge>(&*result);
+			std::cout << *s << std::endl;
+			return intersectionPoint;
 		}
-//	}
+	}
 	return intersectionPoint;
 }
 

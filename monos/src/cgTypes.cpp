@@ -22,9 +22,9 @@
 
 std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
 	if(bis.isRay()) {
-		os << bis.ray;
+		os << "r " << bis.ray;
 	} else {
-		os << bis.line;
+		os << "l " << bis.line;
 	}
     return os;
 }
@@ -44,8 +44,8 @@ std::ostream& operator<< (std::ostream& os, const Arc& arc) {
     		<< " E(" << arc.leftEdgeIdx << "," << arc.rightEdgeIdx << ")";
     switch(arc.type) {
     case ArcType::DISABLED : os << " disabled"; break;
-    case ArcType::RAY : os << " ray"; break;
-    case ArcType::NORMAL : os << " edge"; break;
+    case ArcType::RAY : os << " ray: " << arc.ray; break;
+    case ArcType::NORMAL : os << " edge: " << arc.edge; break;
     }
     return os;
 }

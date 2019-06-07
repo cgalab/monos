@@ -109,9 +109,10 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 	/* new intersection point must be to the right of 'currentPoint' in respect to the monotonicity line */
 	auto& currentPoint = sourceNode->point;
-	bool success = false, localOnUpperChain, switchSides = false;
+	bool success = false, localOnUpperChain;
 	Point Pi = INFPOINT, Pi_2 = INFPOINT;
 	MonotonePathTraversal* path;
+	MonotonePathTraversal pathBackupLower, pathBackupUpper;
 	Arc *arc, *arc_u, *arc_l;
 
 	bool bisOnPositiveSide = true, bisUpdateOnce = false;
@@ -123,9 +124,12 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		LOG(INFO) << "Bisector is perpendicular and a ray!";
 	}
 
+	/* while iterate we may iterate one arc to far, this is an easy way to step back */
+	pathBackupLower = wf.lowerPath;
+	pathBackupUpper = wf.upperPath;
+
 	LOG(INFO) << "findNextIntersectingArc start"; fflush(stdout);
 	while(!EndOfBothChains() && !success) {
-		std::cout << ".";
 		arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
 		arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
 
@@ -136,10 +140,6 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			localOnUpperChain = false;
 		} else {
 			localOnUpperChain = (wf.isArcLeftOfArc(*arc_l,*arc_u)) ? false : true;
-		}
-
-		if(switchSides) {
-			localOnUpperChain = !localOnUpperChain;
 		}
 
 		path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
@@ -158,7 +158,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			bisUpdateOnce = false;
 		}
 
-		LOG(INFO) << "testing arc: " << *arc;
+		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis; fflush(stdout);
 
 		if(isValidArc(path->currentArcIdx)) { //&& do_intersect(bis,*arc)) {
 			Pi = intersectBisectorArc(bis,*arc);
@@ -169,44 +169,23 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		}
 
 		if(!success) {
-			/* before we iterate on path we have to check the other chain! */
-			/* if rightmost node of the 'other' arc is to the right of the rightmost node
-			 * of 'this' arc we should continue on the other chain! */
+			/* while iterate we may iterate one arc to far, this is an easy way to step back */
+			pathBackupLower = wf.lowerPath;
+			pathBackupUpper = wf.upperPath;
 
-			/* check if next arc of current path is still 'left of' the opposite path */
-
-			MonotonePathTraversal next = *path;
-			if(wf.nextMonotoneArcOfPath(next)) {
-				LOG(INFO) << *path;
-				LOG(INFO) << next;
-
-				auto nextArc = wf.getArc(next.currentArcIdx);
-				auto oppositePathArc = (localOnUpperChain) ? arc_l : arc_u;
-
-				if(wf.isArcLeftOfArc(*oppositePathArc,*nextArc)) {
-					switchSides = true;
+			if(!wf.nextMonotoneArcOfPath(*path)) {
+				if(localOnUpperChain) {
+					upperChainIndex = nextUpperChainIndex(upperChainIndex);
+					wf.initPathForEdge(true,upperChainIndex);
 				} else {
-					switchSides = false;
+					lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
+					wf.initPathForEdge(false,lowerChainIndex);
 				}
-			} else {
-				switchSides = false;
-			}
-
-			if(!switchSides) {
-				if(!wf.nextMonotoneArcOfPath(*path)) {
-					if(localOnUpperChain) {
-						upperChainIndex = nextUpperChainIndex(upperChainIndex);
-						wf.initPathForEdge(true,upperChainIndex);
-					} else {
-						lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
-						wf.initPathForEdge(false,lowerChainIndex);
-					}
-					LOG(WARNING) << "next chain index";
-				}
+				LOG(WARNING) << "next chain index";fflush(stdout);
 			}
 		}
 
-		std::cout << std::endl << "AFTER  path: " << *path << std::endl; fflush(stdout);
+		std::cout << std::endl << std::boolalpha << "AFTER success: " << success << ", path: " << *path << std::endl; fflush(stdout);
 	}
 
 	if(success) {
@@ -214,6 +193,12 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		 * the face on the opposite side until we reach the height of the intersecting
 		 * arc, i.r.t. the monotonicity line
 		 ***/
+
+		/* check and reset if we walked to far on other chain */
+		auto& pathOpposite = (localOnUpperChain) ? wf.lowerPath : wf.upperPath;
+		auto pathBackup = (localOnUpperChain) ? pathBackupLower : pathBackupUpper;
+		CheckAndResetPath(pathOpposite, pathBackup, Pi);
+		LOG(INFO) << "After Backup " << pathOpposite;
 
 		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		Arc* arc;
@@ -224,30 +209,22 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		while(!EndOfChain(path->isUpperChain()) && !piReached) {
 			std::cout << std::endl << "updating 2nd path: " << *path << std::endl; fflush(stdout);
 			arc = wf.getArc(*path);
-
+			std::cout << "intersect " << *arc << ", and bis: " << bis << std::endl; fflush(stdout);
 			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
 				piReached = true;
 
 				Pi_2 = intersectBisectorArc(bis,*arc);
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 
-				bool choosePi;
-
+				bool choosePi = false;
 				/* we found two points Pi and Pi_2, one on each chain */
 				if(bis.perpendicular) {
-					auto dPi   = normalDistance(data.monotonicityLine,Pi);
-					auto dPi_2 = normalDistance(data.monotonicityLine,Pi_2);
-					if(dPi < dPi_2) {
-						choosePi = true;
-					} else {
-						choosePi = false;
-					}
+					Line lRef(sourceNode->point,data.monotonicityLine.direction());
+					auto dPi   = normalDistance(lRef,Pi);
+					auto dPi_2 = normalDistance(lRef,Pi_2);
+					choosePi = (dPi < dPi_2) ? true : false;
 				} else {
-					if(data.monotoneSmaller(Pi,Pi_2)) {
-						choosePi = true;
-					} else {
-						choosePi = false;
-					}
+					choosePi = (data.monotoneSmaller(Pi,Pi_2)) ? true : false;
 				}
 
 				if(choosePi) {
@@ -262,7 +239,14 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
-				if(data.monotoneSmaller(Pi,Pr)) {
+				Arc* arcOpposite = wf.getArc(path->oppositeArcIdx);
+				Point Pr2 = wf.nodes[wf.getRightmostNodeIdxOfArc(*arcOpposite)].point;
+
+				LOG(INFO) << "!piReached: arc:" << *arc << ", opposite Arc: "<< *arcOpposite;
+
+				if( (data.monotoneSmaller(Pi,Pr) && data.monotoneSmaller(Pi,Pr2)) ||
+					(arcOpposite->isRay() && !data.rayPointsLeft(arcOpposite->ray)) ) { // && data.monotoneSmaller(Pi,Pr2)) {
+					LOG(INFO) << "no 2nd intersection but height of Pi reached";
 					piReached = true;
 					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 				}
@@ -271,6 +255,13 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			if(!piReached) {
 				/* check input edge intersection first */
 				Edge e = data.getEdge(path->edgeIdx);
+
+				if(localOnUpperChain) {
+					pathBackupUpper = wf.upperPath;
+				} else {
+					pathBackupLower = wf.lowerPath;
+				}
+
 				if(do_intersect(bis,e)) {
 					LOG(INFO) << " intersecting input edge!";
 					piReached = true;
@@ -334,7 +325,38 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 	return newNodeIdx;
 }
 
+void Skeleton::CheckAndResetPath(MonotonePathTraversal& path, const MonotonePathTraversal& pathBackup, const Point& p) {
+		/* we may have walked one arc to far on one path */
+		auto checkArc = wf.getArc(path);
+		uint leftNodeArcUdx = wf.getLeftmostNodeIdxOfArc(*checkArc);
 
+		LOG(INFO) << wf.upperPath;
+		LOG(INFO) << wf.lowerPath;
+
+		Point leftPointArc = wf.nodes[leftNodeArcUdx].point;
+
+		if( data.monotoneSmaller(p,leftPointArc) &&
+				( !checkArc->isRay() ||
+				(  checkArc->isRay() && !data.rayPointsLeft(checkArc->ray)) )
+		) {
+			auto arcA = wf.getArc(pathBackup.currentArcIdx);
+			auto arcB = wf.getArc(pathBackup.oppositeArcIdx);
+
+			LOG(INFO) << "check backup path: " << pathBackup;
+			LOG(INFO) << "current: " << *arcA << ", opposite: " << *arcB;
+			LOG(INFO) << std::boolalpha << "disabled: current " << arcA->isDisable() << " opposite: " << arcB->isDisable();
+
+			if(!arcA->isDisable() && !arcB->isDisable() && pathBackup.currentArcIdx == 15 && pathBackup.edgeIdx == 17 && pathBackup.oppositeArcIdx == 10) {
+				/* reset the other path with pathBackup */
+				path.set(pathBackup);
+				if(path.upperChain) {
+					upperChainIndex = path.edgeIdx;
+				} else {
+					lowerChainIndex = path.edgeIdx;
+				}
+			}
+		}
+}
 
 void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint) {
 	auto arc = &wf.arcList[arcIdx];
