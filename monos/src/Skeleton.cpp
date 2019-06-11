@@ -160,9 +160,26 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis; fflush(stdout);
 
-		if(isValidArc(path->currentArcIdx)) { //&& do_intersect(bis,*arc)) {
+		if(isValidArc(path->currentArcIdx)) { // && do_intersect(bis.supporting_line(),arc->supporting_line())) {
 			LOG(WARNING) << "TODO: check endpoints and why this does not terminate!?!";
-			Pi = intersectBisectorArc(bis,*arc);
+
+
+			auto lRef = bis.supporting_line();
+			if(arc->isEdge()) {
+				Point a = arc->edge.point(0);
+				Point b = arc->edge.point(1);
+
+				if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+				    (lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+				) {
+					// no intersection
+				} else {
+					Pi = intersectBisectorArc(bis,*arc);
+				}
+			} else {
+				Pi = intersectBisectorArc(bis,*arc);
+			}
+
 			if(Pi != INFPOINT) {
 				LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
 				success = true;
@@ -201,8 +218,8 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 		/* check and reset if we walked to far on other chain */
 		auto pathBackup = (!localOnUpperChain) ? pathBackupUpper : pathBackupLower;
-		CheckAndResetPath(*path, pathBackup, Pi);
-		LOG(INFO) << "After Backup " << *path;
+		CheckAndResetPath(path, pathBackup, Pi);
+
 
 		bool piReached = false;
 		Pi_2 = INFPOINT;
@@ -211,31 +228,52 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			std::cout << std::endl << "updating 2nd path: " << *path << std::endl; fflush(stdout);
 			arc = wf.getArc(*path);
 			std::cout << "intersect " << *arc << ", and bis: " << bis << std::endl; fflush(stdout);
-			if(isValidArc(path->currentArcIdx) && do_intersect(bis,*arc)) {
-				piReached = true;
+			if(isValidArc(path->currentArcIdx)) { // && do_intersect(bis,*arc)) {
 
-				std::cout << "should intersect."; fflush(stdout);
-				Pi_2 = intersectBisectorArc(bis,*arc);
-				LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 
-				bool choosePi = false;
-				/* we found two points Pi and Pi_2, one on each chain */
-				if(bis.perpendicular) {
-					Line lRef(sourceNode->point,data.monotonicityLine.direction());
-					auto dPi   = normalDistance(lRef,Pi);
-					auto dPi_2 = normalDistance(lRef,Pi_2);
-					choosePi = (dPi < dPi_2) ? true : false;
+				auto lRef = bis.supporting_line();
+				if(arc->isEdge()) {
+					Point a = arc->edge.point(0);
+					Point b = arc->edge.point(1);
+
+					if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+							(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+					) {
+						// no intersection
+					} else {
+						Pi_2 = intersectBisectorArc(bis,*arc);
+					}
 				} else {
-					choosePi = (data.monotoneSmaller(Pi,Pi_2)) ? true : false;
+					Pi_2 = intersectBisectorArc(bis,*arc);
 				}
 
-				if(choosePi) {
-					LOG(INFO) << "success (Pi)";
-					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-				} else {
-					LOG(INFO) << "success (Pi_2)";
-					Pi = Pi_2;
-					localOnUpperChain = !localOnUpperChain;
+
+				if(Pi_2 != INFPOINT) {
+
+					piReached = true;
+//					std::cout << "should intersect."; fflush(stdout);
+//					Pi_2 = intersectBisectorArc(bis,*arc);
+//					LOG(INFO) << "Intersection found with " << path->currentArcIdx;
+
+					bool choosePi = false;
+					/* we found two points Pi and Pi_2, one on each chain */
+					if(bis.perpendicular) {
+						Line lRef(sourceNode->point,data.monotonicityLine.direction());
+						auto dPi   = normalDistance(lRef,Pi);
+						auto dPi_2 = normalDistance(lRef,Pi_2);
+						choosePi = (dPi < dPi_2) ? true : false;
+					} else {
+						choosePi = (data.monotoneSmaller(Pi,Pi_2)) ? true : false;
+					}
+
+					if(choosePi) {
+						LOG(INFO) << "success (Pi)";
+						path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+					} else {
+						LOG(INFO) << "success (Pi_2)";
+						Pi = Pi_2;
+						localOnUpperChain = !localOnUpperChain;
+					}
 				}
 			}
 
@@ -328,10 +366,10 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 }
 
 /* we may have walked one arc to far on one path */
-void Skeleton::CheckAndResetPath(MonotonePathTraversal& path, const MonotonePathTraversal& pathBackup, const Point& p) {
-		if(path.currentArcIdx == MAX) {return;}
+void Skeleton::CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p) {
+		if(path->currentArcIdx == MAX) {return;}
 
-		auto checkArc = wf.getArc(path);
+		auto checkArc = wf.getArc(*path);
 		uint leftNodeArcUdx = wf.getLeftmostNodeIdxOfArc(*checkArc);
 
 		LOG(INFO) << wf.upperPath;
@@ -357,12 +395,13 @@ void Skeleton::CheckAndResetPath(MonotonePathTraversal& path, const MonotonePath
 //				if (pathBackup.edgeIdx == path.edgeIdx) {
 
 					/* reset the other path with pathBackup */
-					path.set(pathBackup);
-					if(path.upperChain) {
-						upperChainIndex = path.edgeIdx;
+					path->set(pathBackup);
+					if(path->upperChain) {
+						upperChainIndex = path->edgeIdx;
 					} else {
-						lowerChainIndex = path.edgeIdx;
+						lowerChainIndex = path->edgeIdx;
 					}
+					LOG(WARNING) << "After Backup " << *path;
 				} else {
 					LOG(INFO) << "we would have to walk back an input edge, why does this not work?";
 				}

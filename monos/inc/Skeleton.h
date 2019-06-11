@@ -63,7 +63,7 @@ private:
 	bool EndOfLowerChain() const {return lowerChainIndex == wf.endLowerEdgeIdx;  }
 	bool EndOfChain(bool upper) { return (upper) ? EndOfUpperChain() : EndOfLowerChain();}
 
-	void CheckAndResetPath(MonotonePathTraversal& path, const MonotonePathTraversal& pathBackup, const Point& p);
+	void CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p);
 
 //	const Data& data;
 	Data& data;

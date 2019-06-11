@@ -186,6 +186,8 @@ public:
 
 	uint getSecondNodeIdx(const uint idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
 
+	Line supporting_line() const {return (isEdge()) ? edge.supporting_line() : ray.supporting_line();}
+
 	bool isRay() const { return type == ArcType::RAY; }
 	bool isEdge() const { return type == ArcType::NORMAL; }
 
