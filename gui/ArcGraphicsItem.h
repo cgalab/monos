@@ -39,8 +39,10 @@ class ArcGraphicsItem :
     ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs, const std::vector<Edge> * lines);
 
     QRectF boundingRect() const { return bounding_rect; };
+    void setBoundingRect(const QRectF& br) {bounding_rect = br;}
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+
 
     void setVerticesPen(const QPen& pen) { vertices_pen = pen; };
     void setSegmentsPen(const QPen& pen) { segments_pen = pen; };

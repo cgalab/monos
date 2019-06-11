@@ -682,7 +682,6 @@ uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& e
 }
 
 void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleton) {
-	Node* node = new Node(NodeType::NORMAL,event.eventPoint,event.eventTime);
 	uint nodeIdx = nodes.size();
 	auto paths 	 = pathFinder[event.mainEdge()];
 
@@ -691,17 +690,16 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		nodeIdx = paths[0];
 	} else if(nodes[paths[0]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the right side */
-		node    = &nodes[paths[0]];
 		nodeIdx = paths[0];
 		addArc(paths[1],nodeIdx,event.mainEdge(),event.rightEdge());
 	} else if(nodes[paths[1]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the left side */
-		node    = &nodes[paths[1]];
 		nodeIdx = paths[1];
 		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());
 	} else {
 		/* a classical event to be handled */
-		nodes.push_back(*node);
+		auto node = Node(NodeType::NORMAL,event.eventPoint,event.eventTime);
+		nodes.push_back(node);
 		skeleton.push_back(nodeIdx);
 
 		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());

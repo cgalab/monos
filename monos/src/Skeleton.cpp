@@ -58,10 +58,7 @@ bool Skeleton::SingleMergeStep() {
 
 	/* visualize next bisector via dashed line-segment */
 	if(data.gui) {
-		Point A(sourceNode->point), B(A + (10*bis.to_vector()));
-		Edge visBis( Point(A.x().doubleValue(),A.y().doubleValue()) ,
-			      	 Point(B.x().doubleValue(),B.y().doubleValue()) );
-
+		Edge visBis(sourceNode->point,sourceNode->point+bis.to_vector());
 		if(!data.lines.empty()) {data.lines.pop_back();}
 		data.lines.push_back(visBis);
 	}
@@ -237,7 +234,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 					Point b = arc->edge.point(1);
 
 					if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-							(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+						(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
 					) {
 						// no intersection
 					} else {

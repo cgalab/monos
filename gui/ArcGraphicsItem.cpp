@@ -123,13 +123,13 @@ updateBoundingBox() {
     return;
   }
 
-  auto bb = (*nodes->begin()).point.bbox();
-  for (auto v : *nodes) {
-    bb += v.point.bbox();
-  }
-
-  //std::cout << "bb " << bb << std::endl;
-  bounding_rect = convert(bb);
+//  auto bb = (*nodes->begin()).point.bbox();
+//  for (auto v : *nodes) {
+//	  if(!v.isDisabled() && v.point != INFPOINT) {
+//		  bb += v.point.bbox();
+//	  }
+//  }
+//  bounding_rect = convert(bb);
 }
 
 void

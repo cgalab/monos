@@ -154,6 +154,7 @@ void MainWindow::update_time_label() {
 
 void MainWindow::time_changed() {
 	skeleton_gi->modelChanged();
+	skeleton_gi->setBoundingRect(input_gi->boundingRect());
 	update_time_label();
 }
 
