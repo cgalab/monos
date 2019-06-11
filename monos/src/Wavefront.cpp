@@ -241,45 +241,60 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 
 void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList) {
 	LOG(INFO) << "HandleMultiEdgeEvent! (TO-BE-TESTED!)";
-	std::set<int,std::less<int> > eventEdges;
-	for(auto e : eventList) {
-		eventEdges.insert(e->edges[0]);
-		eventEdges.insert(e->edges[1]);
-		eventEdges.insert(e->edges[2]);
-	}
-
-	/* must be the first and last index of eventEdges plus one of before,after them */
-	auto edgeIt = eventEdges.begin();
-	auto idxA = *edgeIt;
-	edgeIt = eventEdges.end(); --edgeIt;
-	auto idxC = *edgeIt;
 
 	auto nodeIdx = nodes.size();
+	auto anEvent = eventList[0];
+
+	/* add the single node, all arcs connect to this node */
+	auto node = Node(NodeType::NORMAL,anEvent->eventPoint,anEvent->eventTime);
+	nodes.push_back(node);
+	skeleton.push_back(nodeIdx);
+
+	bool singleLeft = true;
 	for(auto event : eventList) {
 		auto idx = event->mainEdge();
 		auto paths = pathFinder[idx];
-		addArc(paths[0],nodeIdx,event->leftEdge(),event->mainEdge());
+		if(singleLeft) {
+			addArc(paths[0],nodeIdx,event->leftEdge(),event->mainEdge());
+			singleLeft = false;
+		}
+		addArc(paths[1],nodeIdx,event->mainEdge(),event->rightEdge());
 
 		/* update path finder for left and right edge */
 		pathFinder[idx][1] = nodeIdx;
 		pathFinder[idx][0] = nodeIdx;
 	}
-	auto lastEvent = eventList[eventList.size()-1];
-	addArc(pathFinder[lastEvent->mainEdge()][1],nodeIdx,lastEvent->mainEdge(),lastEvent->rightEdge());
 
-	/* add the single node */
-	Node* node = new Node(NodeType::NORMAL,lastEvent->eventPoint,lastEvent->eventTime);
-	nodes.push_back(*node);
-	skeleton.push_back(nodeIdx);
-
-	updateNeighborEdgeEvents(*eventList[0],chain);
-	updateNeighborEdgeEvents(*lastEvent,chain);
-
+//	updateNeighborEdgeEvents(*eventList[0],chain);
+//	updateNeighborEdgeEvents(*lastEvent,chain);
+	auto chainIt = chain.begin();
 	for(auto event : eventList) {
 		/* remove this edges from the chain (wavefront) */
-		chain.erase(event->chainEdge);
+		chainIt = chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge());
 	}
+	--chainIt;
+
+	auto idxA = *(--chainIt);
+	auto idxB = *(++chainIt);
+	auto idxC = *(++chainIt);
+	auto idxD = *(++chainIt);
+	--chainIt;
+	--chainIt;
+	ChainRef it1 = ChainRef(chainIt);
+	ChainRef it2 = ChainRef(++chainIt);
+	auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
+	auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
+
+	LOG(INFO) << idxA << " " << idxB << " " << idxC << " " << idxD;
+	LOG(INFO) << e1;
+	LOG(INFO) << e2;
+
+	pathFinder[idxB][1] = nodeIdx;
+	pathFinder[idxC][0] = nodeIdx;
+
+	updateInsertEvent(e1);
+	updateInsertEvent(e2);
 }
 
 

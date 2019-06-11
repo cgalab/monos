@@ -126,6 +126,7 @@ public:
 	Line			monotonicityLine;
 	Direction		perpMonotonDir;
 	bool 			gui;
+	bool			isMonotone = false;
 
 	// gui debug
 	std::vector<Edge> lines;

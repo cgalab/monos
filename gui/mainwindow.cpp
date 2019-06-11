@@ -161,6 +161,7 @@ void MainWindow::time_changed() {
 
 void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 	if(!monos.config.isValid()) {return;}
+	if(!monos.data->isMonotone) {return;}
 
 	while(!lowerChainDone || !upperChainDone) {
 		on_actionEventStep_triggered();
@@ -172,6 +173,7 @@ void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 
 void MainWindow::on_actionFinishComputation_triggered() {
 	if(!monos.config.isValid()) {return;}
+	if(!monos.data->isMonotone) {return;}
 
 	on_actionTimeForwardAfterChains_triggered();
 
@@ -185,6 +187,7 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 void MainWindow::on_actionEventStep_triggered() {
 	if(!monos.config.isValid()) {return;}
+	if(!monos.data->isMonotone) {return;}
 
 	if(firstStart) {
 		if (!monos.initSkeletonQueue(onLowerChain)) {
@@ -219,6 +222,9 @@ void MainWindow::on_actionEventStep_triggered() {
 		if(!monos.s->SingleMergeStep()) {
 			monos.s->finishMerge();
 			mergeDone = true;
+			if(!monos.data->lines.empty()) {
+				monos.data->lines.clear();
+			}
 		}
 	}
 

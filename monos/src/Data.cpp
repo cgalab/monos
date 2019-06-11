@@ -22,7 +22,7 @@
 #include "tools.h"
 
 std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
-	os << mv.vector << "," << mv.id;
+	os << mv.vector << " id(" << mv.id << ")";
 	return os;
 }
 
@@ -260,11 +260,24 @@ bool Data::ensureMonotonicity() {
 	if(intervals.empty()) {
 		/* polygon is convex, let us choose the x-axis */
 		monotonicityLine = Line(ORIGIN, ORIGIN + Vector(1,0));
+		isMonotone = true;
 		return true;
 	}
 
+	for(auto i : intervals) {
+		std::cout << i << std::endl;
+	}
+	std::cout << std::endl;
+
 	/* sort all vectors in interval in CCW order */
 	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
+	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
+
+	std::cout << "after sort: " << std::endl;
+	for(auto i : intervals) {
+		std::cout << i << std::endl;
+	}
+	std::cout << std::endl;
 
 	/* iterate to first START vector */
 	auto itStart  = intervals.begin();
@@ -326,6 +339,7 @@ bool Data::ensureMonotonicity() {
 			monotonicityLine = monotonicityLine.opposite();
 		}
 		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
+		isMonotone = true;
 		return true;
 	} else { /* polygon is not monotone */
 		LOG(WARNING) << "Polygon not monotone!";

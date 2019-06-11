@@ -58,7 +58,7 @@ bool Skeleton::SingleMergeStep() {
 
 	/* visualize next bisector via dashed line-segment */
 	if(data.gui) {
-		Edge visBis(sourceNode->point,sourceNode->point+bis.to_vector());
+		Edge visBis(sourceNode->point,sourceNode->point+(5*bis.to_vector()) );
 		if(!data.lines.empty()) {data.lines.pop_back();}
 		data.lines.push_back(visBis);
 	}
@@ -276,13 +276,11 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
-				Arc* arcOpposite = wf.getArc(path->oppositeArcIdx);
-				Point Pr2 = wf.nodes[wf.getRightmostNodeIdxOfArc(*arcOpposite)].point;
 
-				LOG(INFO) << "!piReached: arc:" << *arc << ", opposite Arc: "<< *arcOpposite;
+				LOG(INFO) << "!piReached: arc:" << *arc;
 
-				if( (data.monotoneSmaller(Pi,Pr) && data.monotoneSmaller(Pi,Pr2)) ||
-					(arcOpposite->isRay() && !data.rayPointsLeft(arcOpposite->ray)) ) { // && data.monotoneSmaller(Pi,Pr2)) {
+				if( (data.monotoneSmaller(Pi,Pr)) ||
+					(arc->isRay() && !data.rayPointsLeft(arc->ray)) ) { // && data.monotoneSmaller(Pi,Pr2)) {
 					LOG(INFO) << "no 2nd intersection but height of Pi reached";
 					piReached = true;
 					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
