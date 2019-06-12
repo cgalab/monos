@@ -157,9 +157,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis; fflush(stdout);
 
-		if(isValidArc(path->currentArcIdx)) { // && do_intersect(bis.supporting_line(),arc->supporting_line())) {
-			LOG(WARNING) << "TODO: check endpoints and why this does not terminate!?!";
-
+		if(isValidArc(path->currentArcIdx)) {
 
 			auto lRef = bis.supporting_line();
 			if(arc->isEdge()) {
@@ -277,7 +275,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
 
-				LOG(INFO) << "!piReached: arc:" << *arc;
+				LOG(INFO) << "pi not reached, arc:" << *arc;
 
 				if( (data.monotoneSmaller(Pi,Pr)) ||
 					(arc->isRay() && !data.rayPointsLeft(arc->ray)) ) { // && data.monotoneSmaller(Pi,Pr2)) {
@@ -384,23 +382,17 @@ void Skeleton::CheckAndResetPath(MonotonePathTraversal* path, const MonotonePath
 			LOG(INFO) << std::boolalpha << "disabled: current " << arcA->isDisable() << " opposite: " << arcB->isDisable();
 
 			if(!arcA->isDisable() && !arcB->isDisable()) {
-
-				/* for debugging! */
-//				if (pathBackup.currentArcIdx == 15 && pathBackup.edgeIdx == 17 && pathBackup.oppositeArcIdx == 10) {
-//				if (pathBackup.edgeIdx == path.edgeIdx) {
-
-					/* reset the other path with pathBackup */
-					path->set(pathBackup);
-					if(path->upperChain) {
-						upperChainIndex = path->edgeIdx;
-					} else {
-						lowerChainIndex = path->edgeIdx;
-					}
-					LOG(WARNING) << "After Backup " << *path;
+				/* reset the other path with pathBackup */
+				path->set(pathBackup);
+				if(path->upperChain) {
+					upperChainIndex = path->edgeIdx;
 				} else {
-					LOG(INFO) << "we would have to walk back an input edge, why does this not work?";
+					lowerChainIndex = path->edgeIdx;
 				}
-//			}
+				LOG(WARNING) << "After Backup: " << *path;
+			} else {
+				LOG(INFO) << "CheckAndResetPath: disabled arc involved (not restoring).";
+			}
 		}
 }
 

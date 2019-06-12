@@ -522,8 +522,10 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				return Bisector(Ray(a.point(0),a.perpendicular(a.point(0)).to_vector()));
 			} else {
 				Line bisLine = CGAL::bisector(a,b.opposite());
+				auto bis = Bisector(bisLine);
+				bis.setPerpendicular();
 				std::cout << bisLine; fflush(stdout);
-				return Bisector(bisLine);
+				return bis;
 			}
 		}
 	} else {
@@ -579,7 +581,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				bis = Ray(e.target(),wMidPoint);
 				return Bisector(bis);
 			} else {
-				LOG(ERROR) << "collinear edges -> ghost vertex (TODO)!";
+				LOG(ERROR) << "parallel edges -> (TODO)!";
 				assert(false);
 				return Bisector(Ray());
 			}

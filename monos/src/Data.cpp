@@ -348,12 +348,10 @@ bool Data::ensureMonotonicity() {
 }
 
 bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-	assert(a!=b);
-	if(a == b) {
-		return false;
-	}
-	Line perpL = Line(a,perpMonotonDir);
-	return !perpL.has_on_positive_side(b);
+	assert(a != b);
+
+	Line perpL = Line(b,perpMonotonDir);
+	return perpL.has_on_positive_side(a);
 }
 
 bool Data::monotoneSmaller(const Point& a, const Point& b) const {

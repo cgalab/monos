@@ -76,9 +76,6 @@ public:
 	Ray     ray;
 	Line    line;
 
-	/* true if perpendicular to monotonicity line */
-	bool perpendicular = false;
-
 	bool isRay()  const { return type == BisType::RAY; }
 	bool isLine() const { return type == BisType::LINE;}
 
@@ -88,6 +85,9 @@ public:
 	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
 
 	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
+
+	void setPerpendicular() {perpendicular = true;}
+	bool isPerpendicular() const {return perpendicular;}
 
 	void changeDirection() {
 		if(isRay()) {
@@ -104,6 +104,10 @@ public:
 			line = Line(s,direction());
 		}
 	}
+
+private:
+	/* true if perpendicular to monotonicity line */
+	bool perpendicular = false;
 
 	friend std::ostream& operator<< (std::ostream& os, const Bisector& bis);
 };
@@ -191,12 +195,18 @@ public:
 	bool isRay() const { return type == ArcType::RAY; }
 	bool isEdge() const { return type == ArcType::NORMAL; }
 
+	void setPerpendicular() {perpendicular = true;}
+	bool isPerpendicular() const { return perpendicular; }
+
 	ArcType type;
 	uint firstNodeIdx, secondNodeIdx;
 	uint leftEdgeIdx,  rightEdgeIdx;
 
 	Edge edge;
 	Ray  ray;
+
+private:
+	bool perpendicular = false;
 
 	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };
