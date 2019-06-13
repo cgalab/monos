@@ -63,7 +63,10 @@ private:
 	bool EndOfLowerChain() const {return lowerChainIndex == wf.endLowerEdgeIdx;  }
 	bool EndOfChain(bool upper) { return (upper) ? EndOfUpperChain() : EndOfLowerChain();}
 
+	bool hasCollinearEdges(const Arc& arcA, const Arc& arcB) const;
 	void CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p);
+
+	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
 
 //	const Data& data;
 	Data& data;

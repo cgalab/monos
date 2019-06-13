@@ -30,7 +30,6 @@
 
 #include "Definitions.h"
 
-
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Aff_transformation_2.h>
@@ -38,19 +37,18 @@
 #include <CGAL/intersections.h>
 #include <CGAL/squared_distance_2.h>
 
-using K 			 = CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
+using K 			 	= CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
 
-using Vector         = K::Vector_2;
-using Point          = K::Point_2;
-using Line           = K::Line_2;
-using Ray            = K::Ray_2;
-using Circle         = K::Circle_2;
-using Direction      = K::Direction_2;
-using Edge       	 = K::Segment_2;
-using Intersect		 = K::Intersect_2;
-using Transformation = CGAL::Aff_transformation_2<K>;
-using Exact          = K::FT;
-
+using Vector         	= K::Vector_2;
+using Point          	= K::Point_2;
+using Line           	= K::Line_2;
+using Ray            	= K::Ray_2;
+using Circle         	= K::Circle_2;
+using Direction      	= K::Direction_2;
+using Edge       	 	= K::Segment_2;
+using Intersect		 	= K::Intersect_2;
+using Transformation 	= CGAL::Aff_transformation_2<K>;
+using Exact          	= K::FT;
 
 using InputPoints   	= std::vector<Point>;
 using InputWeights  	= std::vector<Exact>;
@@ -86,7 +84,7 @@ public:
 
 	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
 
-	void setPerpendicular() {perpendicular = true;}
+	void setPerpendicular(bool p) {perpendicular = p;}
 	bool isPerpendicular() const {return perpendicular;}
 
 	void changeDirection() {
@@ -192,11 +190,10 @@ public:
 
 	Line supporting_line() const {return (isEdge()) ? edge.supporting_line() : ray.supporting_line();}
 
-	bool isRay() const { return type == ArcType::RAY; }
+	bool isRay()  const { return type == ArcType::RAY;    }
 	bool isEdge() const { return type == ArcType::NORMAL; }
 
-	void setPerpendicular() {perpendicular = true;}
-	bool isPerpendicular() const { return perpendicular; }
+	Point point(int i) const {return (isEdge()) ? edge.point(i) : ray.point(i);}
 
 	ArcType type;
 	uint firstNodeIdx, secondNodeIdx;
@@ -204,9 +201,6 @@ public:
 
 	Edge edge;
 	Ray  ray;
-
-private:
-	bool perpendicular = false;
 
 	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };

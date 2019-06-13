@@ -51,6 +51,11 @@ bool Skeleton::SingleMergeStep() {
 	Bisector bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);
 	bis.newSource(sourceNode->point);
 
+//	/* identify possible ghost arc scenario on start */
+//	if(data.isEdgesCollinear(upperChainIndex,lowerChainIndex)) {
+//		LOG(WARNING) << "Collienar input edges " << upperChainIndex << ", " << lowerChainIndex;
+//	}
+
 	std::cout << std::endl << "-- "; fflush(stdout);
 	LOG(INFO) << "Bisector: " << bis;
 	std::cout << "-- "; fflush(stdout);
@@ -113,7 +118,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 	Arc *arc, *arc_u, *arc_l;
 
 	bool bisOnPositiveSide = true, bisUpdateOnce = false;
-	if(bis.perpendicular && bis.isRay()) {
+	if(bis.isPerpendicular() && bis.isRay()) {
 		auto vb   = bis.to_vector();
 		Point pML = data.monotonicityLine.point(0) + vb;
 		bisOnPositiveSide = data.monotonicityLine.has_on_positive_side(pML);
@@ -147,7 +152,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		fflush(stdout);
 
 		LOG(INFO) << "Test if perp and update clause!";
-		if(bis.perpendicular && bisUpdateOnce) {
+		if(bis.isPerpendicular() && bisUpdateOnce) {
 			if((bisOnPositiveSide && localOnUpperChain) || (!bisOnPositiveSide && !localOnUpperChain) ) {
 				LOG(INFO) << "findNextIntersectingArc() -- change direction";
 				bis.changeDirection();
@@ -207,14 +212,21 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		 * arc, i.r.t. the monotonicity line
 		 ***/
 
-
 		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-		Arc* arc;
+		Arc* arc = wf.getArc(*path);
 
-		/* check and reset if we walked to far on other chain */
-		auto pathBackup = (!localOnUpperChain) ? pathBackupUpper : pathBackupLower;
-		CheckAndResetPath(path, pathBackup, Pi);
-
+		/* check for possible upcomming ghost arc */
+		if(hasCollinearEdges(*arc_u,*arc_l)) {
+			LOG(INFO) << "parallel input edges, TODO: deal with weights";
+			if(wf.isArcPerpendicular((*arc_u)) || wf.isArcPerpendicular((*arc_u))) {
+				LOG(INFO) << "...and vertical arc(s).";
+			}
+		} else {
+			/* skip if edges are collinear  */
+			/* check and reset if we walked to far on the other chain */
+			auto pathBackup = (!localOnUpperChain) ? pathBackupUpper : pathBackupLower;
+			CheckAndResetPath(path, pathBackup, Pi);
+		}
 
 		bool piReached = false;
 		Pi_2 = INFPOINT;
@@ -223,8 +235,8 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			std::cout << std::endl << "updating 2nd path: " << *path << std::endl; fflush(stdout);
 			arc = wf.getArc(*path);
 			std::cout << "intersect " << *arc << ", and bis: " << bis << std::endl; fflush(stdout);
-			if(isValidArc(path->currentArcIdx)) { // && do_intersect(bis,*arc)) {
 
+			if(isValidArc(path->currentArcIdx)) {
 
 				auto lRef = bis.supporting_line();
 				if(arc->isEdge()) {
@@ -244,15 +256,11 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 
 				if(Pi_2 != INFPOINT) {
-
 					piReached = true;
-//					std::cout << "should intersect."; fflush(stdout);
-//					Pi_2 = intersectBisectorArc(bis,*arc);
-//					LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 
-					bool choosePi = false;
 					/* we found two points Pi and Pi_2, one on each chain */
-					if(bis.perpendicular) {
+					bool choosePi = false;
+					if(bis.isPerpendicular()) {
 						Line lRef(sourceNode->point,data.monotonicityLine.direction());
 						auto dPi   = normalDistance(lRef,Pi);
 						auto dPi_2 = normalDistance(lRef,Pi_2);
@@ -275,10 +283,26 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
 
-				LOG(INFO) << "pi not reached, arc:" << *arc;
 
-				if( (data.monotoneSmaller(Pi,Pr)) ||
-					(arc->isRay() && !data.rayPointsLeft(arc->ray)) ) { // && data.monotoneSmaller(Pi,Pr2)) {
+				bool classicalSweep = true;
+				auto arcOpposite = (arc == arc_l) ? arc_u : arc_l;
+				LOG(INFO) << "no intersection found with arc:" << *arc << ", arc on other chain: " << *arcOpposite;
+
+				/*********************************************************/
+				/*    check for possible upcoming ghost arc scenario     */
+				/*********************************************************/
+				if(wf.isArcPerpendicular(*arc_l) || wf.isArcPerpendicular(*arc_u)) {
+					if(hasCollinearEdges(*arc,*arcOpposite)) {
+						classicalSweep = false;
+						LOG(INFO) << "collinear input edges!";
+					}
+					LOG(INFO) << "possible ghost arc ahead!"; fflush(stdout);
+				}
+
+				LOG(INFO) << "comparing points: " << Pi << " and " << Pr;
+
+				if( !classicalSweep || ((data.monotoneSmaller(Pi,Pr)) ||
+					(arc->isRay() && !data.rayPointsLeft(arc->ray))) ) {
 					LOG(INFO) << "no 2nd intersection but height of Pi reached";
 					piReached = true;
 					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
@@ -358,42 +382,48 @@ uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edge
 	return newNodeIdx;
 }
 
+bool Skeleton::hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const {
+	auto arc = wf.getArc(path);
+	uint leftNodeArcIdx = wf.getLeftmostNodeIdxOfArc(*arc);
+
+	LOG(INFO) << wf.upperPath;
+	LOG(INFO) << wf.lowerPath;
+
+	Point pointArc = wf.nodes[leftNodeArcIdx].point;
+
+	Point pArcProj = data.monotonicityLine.projection(pointArc);
+	Point pProj    = data.monotonicityLine.projection(P);
+//	return pArcProj != pProj && data.monotoneSmaller(P,pointArc) &&
+//		   ( !arc->isRay() || ( arc->isRay() && !data.rayPointsLeft(arc->ray) ) );
+	return data.monotoneSmaller(P,pointArc) &&
+		   ( !arc->isRay() || ( arc->isRay() && !data.rayPointsLeft(arc->ray) ) );
+}
+
 /* we may have walked one arc to far on one path */
 void Skeleton::CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p) {
-		if(path->currentArcIdx == MAX) {return;}
+	if(path->currentArcIdx == MAX) {return;}
 
-		auto checkArc = wf.getArc(*path);
-		uint leftNodeArcUdx = wf.getLeftmostNodeIdxOfArc(*checkArc);
+	if(hasPathReachedPoint(*path,p)) {
+		auto arcA = wf.getArc(pathBackup.currentArcIdx);
+		auto arcB = wf.getArc(pathBackup.oppositeArcIdx);
 
-		LOG(INFO) << wf.upperPath;
-		LOG(INFO) << wf.lowerPath;
+		LOG(INFO) << "check backup path: " << pathBackup;
+		LOG(INFO) << "current: " << *arcA << ", opposite: " << *arcB;
+		LOG(INFO) << std::boolalpha << "disabled: current " << arcA->isDisable() << " opposite: " << arcB->isDisable();
 
-		Point leftPointArc = wf.nodes[leftNodeArcUdx].point;
-
-		if( data.monotoneSmaller(p,leftPointArc) &&
-				( !checkArc->isRay() ||
-				(  checkArc->isRay() && !data.rayPointsLeft(checkArc->ray)) )
-		) {
-			auto arcA = wf.getArc(pathBackup.currentArcIdx);
-			auto arcB = wf.getArc(pathBackup.oppositeArcIdx);
-
-			LOG(INFO) << "check backup path: " << pathBackup;
-			LOG(INFO) << "current: " << *arcA << ", opposite: " << *arcB;
-			LOG(INFO) << std::boolalpha << "disabled: current " << arcA->isDisable() << " opposite: " << arcB->isDisable();
-
-			if(!arcA->isDisable() && !arcB->isDisable()) {
-				/* reset the other path with pathBackup */
-				path->set(pathBackup);
-				if(path->upperChain) {
-					upperChainIndex = path->edgeIdx;
-				} else {
-					lowerChainIndex = path->edgeIdx;
-				}
-				LOG(WARNING) << "After Backup: " << *path;
+		if(!arcA->isDisable() && !arcB->isDisable()) {
+			/* reset the other path with pathBackup */
+			path->set(pathBackup);
+			if(path->upperChain) {
+				upperChainIndex = path->edgeIdx;
 			} else {
-				LOG(INFO) << "CheckAndResetPath: disabled arc involved (not restoring).";
+				lowerChainIndex = path->edgeIdx;
 			}
+			LOG(WARNING) << "After Backup: " << *path;
+		} else {
+			LOG(INFO) << "CheckAndResetPath: disabled arc involved (not restoring).";
 		}
+	}
 }
 
 void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint) {
@@ -417,6 +447,12 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const in
 
 	arc->secondNodeIdx = secondNodeIdx;
 	newNode->arcs.push_back(arcIdx);
+}
+
+bool Skeleton::hasCollinearEdges(const Arc& arcA, const Arc& arcB) const {
+	auto idxA = (upperChainIndex == arcA.leftEdgeIdx || lowerChainIndex == arcA.leftEdgeIdx) ? arcA.rightEdgeIdx : arcA.leftEdgeIdx;
+	auto idxB = (upperChainIndex == arcB.leftEdgeIdx || lowerChainIndex == arcB.leftEdgeIdx) ? arcB.rightEdgeIdx : arcB.leftEdgeIdx;
+	return data.isEdgeCollinear(idxA,idxB);
 }
 
 bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {

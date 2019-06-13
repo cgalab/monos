@@ -96,6 +96,7 @@ public:
 		return nodes.size() - 1;
 	}
 
+	bool isArcPerpendicular(const Arc& arc) const;
 	bool isArcInSkeleton(const uint& arcIdx) const;
 	inline bool liesOnFace(const Arc& arc, const uint edgeIdx) const {
 		return arc.leftEdgeIdx == edgeIdx || arc.rightEdgeIdx == edgeIdx;

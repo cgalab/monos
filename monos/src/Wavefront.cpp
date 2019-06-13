@@ -523,7 +523,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			} else {
 				Line bisLine = CGAL::bisector(a,b.opposite());
 				auto bis = Bisector(bisLine);
-				bis.setPerpendicular();
+				bis.setPerpendicular(true);
 				std::cout << bisLine; fflush(stdout);
 				return bis;
 			}
@@ -597,7 +597,7 @@ Bisector Wavefront::getBisectorWRTMonotonicityLine(const Bisector& bisector) con
 	if(lp.has_on_positive_side(p)) {
 		bis.changeDirection();
 	} else if(lp.has_on_boundary(p)) {
-		bis.perpendicular = true;
+		bis.setPerpendicular(true);
 		LOG(WARNING) << "WARNUNG: ... bisector is perpendicular to monotonicity line.";
 	}
 
@@ -933,6 +933,11 @@ uint Wavefront::getPossibleRayIdx(const Node& node, uint edgeIdx) const {
 }
 
 
+bool Wavefront::isArcPerpendicular(const Arc& arc) const {
+	Point Aproj = data.monotonicityLine.projection(arc.point(0));
+	Point Bproj = data.monotonicityLine.projection(arc.point(1));
+	return Aproj == Bproj;
+}
 
 /* used for the output, an arc loses its index in its firstNode when the merge is done */
 bool Wavefront::isArcInSkeleton(const uint& arcIdx) const {

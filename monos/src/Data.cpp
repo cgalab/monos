@@ -45,8 +45,9 @@ Edge Data::getEdge(const EdgeIterator& it) const {
 }
 
 bool Data::isEdgeCollinear(const uint& i, const uint& j) const {
-	return CGAL::collinear(eA(i),eB(i),eA(j)) &&
-		   CGAL::collinear(eA(i),eB(i),eB(j));
+	auto eA = getEdge(i);
+	auto eB = getEdge(j);
+	return CGAL::parallel(eA,eB) && CGAL::collinear(eA.point(0),eA.point(1),eB.point(0));
 }
 
 bool Data::loadFile(const std::string& fileName) {
@@ -210,7 +211,6 @@ bool Data::parseGML(std::istream &istream) {
 
 	return !inputVertices.empty() && !polygon.empty();
 }
-
 
 bool Data::ensureMonotonicity() {
 	assert(polygon.size() > 2);
