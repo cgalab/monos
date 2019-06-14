@@ -162,8 +162,11 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis; fflush(stdout);
 
-		if(isValidArc(path->currentArcIdx)) {
+		/* detect and handle possible ghost vertex */
+		Pi = handleGhostVertex(*path,*arc,bis);
 
+		/* classical intersection detection on current paths arc */
+		if(Pi == INFPOINT && isValidArc(path->currentArcIdx)) {
 			auto lRef = bis.supporting_line();
 			if(arc->isEdge()) {
 				Point a = arc->edge.point(0);
@@ -179,11 +182,11 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			} else {
 				Pi = intersectBisectorArc(bis,*arc);
 			}
+		}
 
-			if(Pi != INFPOINT) {
-				LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
-				success = true;
-			}
+		if(Pi != INFPOINT) {
+			LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
+			success = true;
 		}
 
 		if(!success) {
@@ -215,7 +218,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		Arc* arc = wf.getArc(*path);
 
-		/* check for possible upcomming ghost arc */
+		/* check for possible upcoming ghost arc */
 		if(hasCollinearEdges(*arc_u,*arc_l)) {
 			LOG(INFO) << "parallel input edges, TODO: deal with weights";
 			if(wf.isArcPerpendicular((*arc_u)) || wf.isArcPerpendicular((*arc_u))) {
@@ -236,24 +239,29 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			arc = wf.getArc(*path);
 			std::cout << "intersect " << *arc << ", and bis: " << bis << std::endl; fflush(stdout);
 
+			/* classical intersection detection on current paths arc */
 			if(isValidArc(path->currentArcIdx)) {
 
-				auto lRef = bis.supporting_line();
-				if(arc->isEdge()) {
-					Point a = arc->edge.point(0);
-					Point b = arc->edge.point(1);
+				/* detect and handle possible ghost vertex */
+				Pi_2 = handleGhostVertex(*path,*arc,bis);
 
-					if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-						(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
-					) {
-						// no intersection
+				if(Pi_2 == INFPOINT) {
+					auto lRef = bis.supporting_line();
+					if(arc->isEdge()) {
+						Point a = arc->edge.point(0);
+						Point b = arc->edge.point(1);
+
+						if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+								(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+						) {
+							// no intersection
+						} else {
+							Pi_2 = intersectBisectorArc(bis,*arc);
+						}
 					} else {
 						Pi_2 = intersectBisectorArc(bis,*arc);
 					}
-				} else {
-					Pi_2 = intersectBisectorArc(bis,*arc);
 				}
-
 
 				if(Pi_2 != INFPOINT) {
 					piReached = true;
@@ -393,8 +401,6 @@ bool Skeleton::hasPathReachedPoint(const MonotonePathTraversal& path, const Poin
 
 	Point pArcProj = data.monotonicityLine.projection(pointArc);
 	Point pProj    = data.monotonicityLine.projection(P);
-//	return pArcProj != pProj && data.monotoneSmaller(P,pointArc) &&
-//		   ( !arc->isRay() || ( arc->isRay() && !data.rayPointsLeft(arc->ray) ) );
 	return data.monotoneSmaller(P,pointArc) &&
 		   ( !arc->isRay() || ( arc->isRay() && !data.rayPointsLeft(arc->ray) ) );
 }
@@ -403,7 +409,7 @@ bool Skeleton::hasPathReachedPoint(const MonotonePathTraversal& path, const Poin
 void Skeleton::CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p) {
 	if(path->currentArcIdx == MAX) {return;}
 
-	if(hasPathReachedPoint(*path,p)) {
+	if(*path != pathBackup && hasPathReachedPoint(*path,p)) {
 		auto arcA = wf.getArc(pathBackup.currentArcIdx);
 		auto arcB = wf.getArc(pathBackup.oppositeArcIdx);
 
@@ -424,6 +430,58 @@ void Skeleton::CheckAndResetPath(MonotonePathTraversal* path, const MonotonePath
 			LOG(INFO) << "CheckAndResetPath: disabled arc involved (not restoring).";
 		}
 	}
+}
+
+bool Skeleton::hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const {
+	std::set<uint> edgeIndicesSet = {arc.leftEdgeIdx,arc.rightEdgeIdx,bis.eIdxA,bis.eIdxB};
+	std::vector<uint> edgeIndices(edgeIndicesSet.begin(),edgeIndicesSet.end());
+	std::vector<Edge> edges;
+	for(auto idx : edgeIndices) {
+		edges.push_back(data.getEdge(idx));
+	}
+	std::vector<std::array<int,2>> idxPairs = {{{0,1}},{{0,2}},{{1,2}}};
+	Exact dist = Exact(-1);
+	std::vector<Exact> distances;
+	for(auto ip : idxPairs) {
+		if(!data.isEdgeCollinear(ip[0],ip[1]) && isLinesParallel(edges[ip[0]],edges[ip[1]])) {
+			dist = CGAL::squared_distance(edges[ip[0]].supporting_line(),edges[ip[1]].supporting_line());
+			if(dist > Exact(0)) {
+				distances.push_back(dist);
+			}
+		}
+	}
+
+	if(distances.size() > 0) {
+		LOG(INFO) << "number of computed distances: " << distances.size();
+		assert(distances.size() > 1);
+		return distances[0] == distances[1];
+	}
+
+	return false;
+}
+
+Point Skeleton::handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) {
+	if(bis.isPerpendicular() && (wf.isArcPerpendicular(arc))) {
+		/* if we have collinear bisectors/arcs then three input edges must be equidistant */
+		if(hasEquidistantInputEdges(path,arc,bis)) {
+			LOG(WARNING) << "possible ghost arc ahead!";
+			/* we add a ghost node that lies between the last added node and the closest endpoint of arc */
+			/* we move this point later when we know where it lies */
+			Point pA = arc.point(0);
+			Point pB = arc.point(1);
+			Point pS = sourceNode->point;
+			LOG(INFO) << "point A " << pA << " B " << pB << " S " << pS; fflush(stdout);
+			Point closestPoint = INFPOINT;
+			if(data.monotonicityLine.to_vector().x() > Exact(0)) {
+				closestPoint = (CGAL::abs(pS.y()-pA.y()) <= CGAL::abs(pS.y()-pB.y())) ? pA : pB;
+			} else {
+				closestPoint = (CGAL::abs(pS.x()-pA.x()) <= CGAL::abs(pS.x()-pB.x())) ? pA : pB;
+			}
+			return CGAL::midpoint(pS,closestPoint);
+		}
+	}
+
+	return INFPOINT;
 }
 
 void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint) {

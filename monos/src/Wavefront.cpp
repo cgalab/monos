@@ -516,13 +516,13 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
 				bis = bis.opposite();
 			}
-			return Bisector(bis);
+			return Bisector(bis,aIdx,bIdx);
 		} else {
 			if(CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
-				return Bisector(Ray(a.point(0),a.perpendicular(a.point(0)).to_vector()));
+				return Bisector(Ray(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
 			} else {
 				Line bisLine = CGAL::bisector(a,b.opposite());
-				auto bis = Bisector(bisLine);
+				auto bis = Bisector(bisLine,aIdx,bIdx);
 				bis.setPerpendicular(true);
 				std::cout << bisLine; fflush(stdout);
 				return bis;
@@ -546,7 +546,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Line bOffsetLine    = Line( bP + bN , b.direction() );
 			Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
 
-			return Bisector(Ray(intersectionA,intersectionB));
+			return Bisector(Ray(intersectionA,intersectionB),aIdx,bIdx);
 
 		} else {
 			LOG(INFO) << "parallel weighted bisector (TODO)!";
@@ -579,11 +579,11 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				Edge e = data.confineRayToBBox(bis);
 
 				bis = Ray(e.target(),wMidPoint);
-				return Bisector(bis);
+				return Bisector(bis,aIdx,bIdx);
 			} else {
 				LOG(ERROR) << "parallel edges -> (TODO)!";
 				assert(false);
-				return Bisector(Ray());
+				return Bisector(Ray(),aIdx,bIdx);
 			}
 		}
 	}

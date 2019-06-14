@@ -30,6 +30,13 @@ public:
 	uint currentArcIdx, oppositeArcIdx;
 	bool upperChain;
 
+	bool operator==(const MonotonePathTraversal& rhs) const {
+		return this->currentArcIdx == rhs.currentArcIdx && this->edgeIdx == rhs.edgeIdx && this->oppositeArcIdx == rhs.oppositeArcIdx && this->upperChain == rhs.upperChain;
+	}
+	bool operator!=(const MonotonePathTraversal& rhs) const {
+		return !(*this == rhs);
+	}
+
 	friend std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path);
 };
 

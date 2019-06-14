@@ -67,12 +67,14 @@ static Point ORIGIN = Point(0,0);
 
 class Bisector {
 public:
-	Bisector(Ray r) :type(BisType::RAY), ray(r)  {}
-	Bisector(Line l):type(BisType::LINE),line(l) {}
+	Bisector(Ray r,  uint idxA, uint idxB) :type(BisType::RAY), ray(r),  eIdxA(idxA), eIdxB(idxB)  {}
+	Bisector(Line l, uint idxA, uint idxB) :type(BisType::LINE),line(l), eIdxA(idxA), eIdxB(idxB) {}
 
 	BisType type;
 	Ray     ray;
 	Line    line;
+
+	uint eIdxA, eIdxB;
 
 	bool isRay()  const { return type == BisType::RAY; }
 	bool isLine() const { return type == BisType::LINE;}
@@ -226,6 +228,7 @@ struct Node {
 	NodeType 		type;
 	Point			point;
 	Exact			time;
+	bool			ghost = false;
 
 	/* all incident arcs, i.e., the indices to them */
 	std::vector<uint> 	arcs;
@@ -233,6 +236,9 @@ struct Node {
 	void disable() {type = NodeType::DISABLED;}
 	bool isDisabled() const { return type == NodeType::DISABLED;}
 	bool isTerminal() const { return type == NodeType::TERMINAL;}
+
+	bool isGhostNode() const { return ghost; }
+	void setGhost(bool g) {ghost = g;}
 
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));

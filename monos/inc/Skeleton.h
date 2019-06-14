@@ -68,7 +68,9 @@ private:
 
 	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
 
-//	const Data& data;
+	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
+	Point handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis);
+
 	Data& data;
 	Wavefront& 	wf;
 
