@@ -131,6 +131,8 @@ public:
 	void initPathForEdge(const bool upper, const uint edgeIdx);
 	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
 
+	void updateArcNewNode(const uint idx, const uint nodeIdx);
+
 	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 	bool hasParallelBisector(const Event& event) const;
 

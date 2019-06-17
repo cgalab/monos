@@ -519,8 +519,10 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			return Bisector(bis,aIdx,bIdx);
 		} else {
 			if(CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
-				return Bisector(Ray(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
+				LOG(INFO) << "constructBisector: ghost arc";
+				return Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
 			} else {
+				LOG(INFO) << "constructBisector: parallel bisector line";
 				Line bisLine = CGAL::bisector(a,b.opposite());
 				auto bis = Bisector(bisLine,aIdx,bIdx);
 				bis.setPerpendicular(true);
@@ -766,6 +768,23 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		} else {
 			LOG(ERROR) << "No next arc found!";
 			return false;
+		}
+	}
+}
+
+void Wavefront::updateArcNewNode(const uint idx, const uint nodeIdx) {
+	auto arc = getArc(idx);
+	Node* node = &nodes[nodeIdx];
+	if(arc->isEdge()) {
+		if(arc->firstNodeIdx == nodeIdx) {
+			arc->edge = Edge(node->point,arc->edge.target());
+		} else if(arc->secondNodeIdx == nodeIdx) {
+			arc->edge = Edge(arc->edge.source(),node->point);
+		}
+	} else /* arc is ray */ {
+		LOG(WARNING) << "updateArcNewNode: all arcs should be bounded by now!";
+		if(arc->firstNodeIdx == nodeIdx) {
+			arc->ray = Ray(node->point,arc->ray.direction());
 		}
 	}
 }

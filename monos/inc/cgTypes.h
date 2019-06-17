@@ -270,14 +270,15 @@ Point intersectElements(const T& a, const U& b) {
 			return Point(*p);
 		} else {
 			LOG(WARNING) << "Intersection forms a segment/ray/line";
-			const Edge* s = boost::get<Edge>(&*result);
-			std::cout << *s << std::endl;
+//			const Edge* s = boost::get<Edge>(&*result);
+//			std::cout << *s << std::endl;
 			return intersectionPoint;
 		}
 	}
 	return intersectionPoint;
 }
 
+Point intersectArcArc(const Arc& arcA, const Arc& arcB);
 Point intersectRayArc(const Ray& ray, const Arc& arc);
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
 

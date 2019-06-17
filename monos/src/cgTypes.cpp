@@ -87,6 +87,22 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 	}
 }
 
+Point intersectArcArc(const Arc& arcA, const Arc& arcB) {
+	if(arcA.isEdge()) {
+		if(arcB.isEdge()) {
+			return intersectElements(arcB.edge,arcA.edge);
+		} else {
+			return intersectElements(arcB.ray,arcA.edge);
+		}
+	} else {
+		if(arcB.isEdge()) {
+			return intersectElements(arcB.edge,arcA.ray);
+		} else {
+			return intersectElements(arcB.ray,arcA.ray);
+		}
+	}
+}
+
 Point intersectRayArc(const Ray& ray, const Arc& arc) {
 	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
 }

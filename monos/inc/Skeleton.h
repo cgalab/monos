@@ -69,7 +69,8 @@ private:
 	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
 
 	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
-	Point handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis);
+	Point handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, Bisector& bis);
+	bool handleSourceGhostNode(Bisector& bis, std::vector<uint>& arcs, Point& newPoint);
 
 	Data& data;
 	Wavefront& 	wf;
@@ -77,6 +78,9 @@ private:
 	Node* sourceNode = nullptr;
 	uint sourceNodeIdx = 0, newNodeIdx = 0;
 	uint startIdxMergeNodes = 0;
+
+	/* adding ghost node */
+	bool addGhostNode = false;
 
 	uint upperChainIndex = 0, lowerChainIndex = 0;
 };
