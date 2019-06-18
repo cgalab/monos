@@ -250,6 +250,8 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	nodes.push_back(node);
 	skeleton.push_back(nodeIdx);
 
+	LOG(INFO) << "adding node: " << node;
+
 	bool singleLeft = true;
 	for(auto event : eventList) {
 		auto idx = event->mainEdge();
@@ -283,15 +285,16 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	--chainIt;
 	ChainRef it1 = ChainRef(chainIt);
 	ChainRef it2 = ChainRef(++chainIt);
-	auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
-	auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
-
-	LOG(INFO) << idxA << " " << idxB << " " << idxC << " " << idxD;
-	LOG(INFO) << e1;
-	LOG(INFO) << e2;
 
 	pathFinder[idxB][1] = nodeIdx;
 	pathFinder[idxC][0] = nodeIdx;
+
+	auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
+	auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
+
+	LOG(INFO) << "indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
+	LOG(INFO) << e1;
+	LOG(INFO) << e2;
 
 	updateInsertEvent(e1);
 	updateInsertEvent(e2);
@@ -339,6 +342,12 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 
 			/* compute bisector between the two edges */
 			auto bisRet = constructBisector(aEdgeIdx,bEdgeIdx);
+
+			if(bisRet.isGhost()) {
+				auto n = nodes[pathFinder[bisRet.eIdxA][1]];
+				bisRet.newSource(n.point);
+			}
+
 			if(bisRet.type == BisType::RAY) {
 				bis = Ray(node->point,bisRet.ray.direction());
 			} else {
@@ -437,43 +446,29 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 	auto abBis = constructBisector(aIdx, bIdx);
 	auto bcBis = constructBisector(bIdx, cIdx);
 
-//	/* in case of rays all is good,
-//	 * if we get lines as bisectors we construct rays by using 'bIdx' as the 'edge in the middle'
-//	 * */
-//	auto pAB = nodes[pathFinder[aIdx][1]].point;
-//	if(abBis.type == BisType::RAY) {
-//		abRay = Ray(pAB,abBis.ray.direction());
-//	} else {
-//		Line l(bcBis.line);
-//		Line refLine(data.getEdge(bIdx).supporting_line());
-//		if(normalDistance(refLine,pAB) > normalDistance(refLine,pAB+l.to_vector())) {
-//			l = l.opposite();
-//			bcRay = Ray(pAB,l.direction());
-//		} {
-//			bcRay = Ray(pAB,l.direction());
-//		}
-//	}
-//
-//	auto pBC = nodes[pathFinder[bIdx][1]].point;
-//	if(bcBis.type == BisType::RAY) {
-//		bcRay = Ray(pBC,bcBis.ray.direction());
-//	} else {
-//		Line l(bcBis.line);
-//		Line refLine(data.getEdge(bIdx).supporting_line());
-//		if(normalDistance(refLine,pBC) > normalDistance(refLine,pBC+l.to_vector())) {
-//			l = l.opposite();
-//			bcRay = Ray(pBC,l.direction());
-//		} {
-//			bcRay = Ray(pBC,l.direction());
-//		}
-//	}
+	LOG(INFO) << "bisectors before correction " << aIdx << "/" << bIdx;
+	LOG(INFO) << abBis;
+	LOG(INFO) << "bisectors before correction " << bIdx << "/" << cIdx;
+	LOG(INFO) << bcBis;
+
+	/* in case of 'ghost' bisectors we have to determine where the start */
+	for(auto b : {&abBis,&bcBis}) {
+		if(b->isGhost()) {
+			auto n = nodes[pathFinder[b->eIdxA][1]];
+			b->newSource(n.point);
+			LOG(INFO) << "ghost bis, set new sourcepoint: " << n.point;
+		}
+	}
+	LOG(INFO) << "bisectors after correction";
+	LOG(INFO) << abBis;
+	LOG(INFO) << bcBis;
 
 
 	/* compute bisector intersection, this is the collapse
 	 * time of the middle edge (b) 'edge-event' for b  */
 	std::cout << "bi " << std::endl; fflush(stdout);
 	auto intersection = intersectElements(abBis.supporting_line(), bcBis.supporting_line());
-	std::cout << "ai " << std::endl; fflush(stdout);
+	std::cout << "ai " << intersection  << std::endl; fflush(stdout);
 
 	Line b(data.getEdge(bIdx).supporting_line());
 	if(intersection != INFPOINT && b.has_on_positive_side(intersection)) {
@@ -501,6 +496,8 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 
 	Point intersectionA = intersectElements(a, b);
 
+	std::cout << " bis " << aIdx << "/" << bIdx << "  ";
+
 	/* classical bisector (unweighted) */
 	if( data.w(aIdx) == 1 && data.w(bIdx) == 1) {
 		if(intersectionA != INFPOINT) {
@@ -520,12 +517,21 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 		} else {
 			if(CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
 				LOG(INFO) << "constructBisector: ghost arc";
-				return Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
+
+				auto bis = Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
+
+				if(pathFinder[aIdx][1] != MAX) {
+					auto n = nodes[pathFinder[aIdx][1]];
+					bis.newSource(n.point);
+				}
+
+				bis.setGhost(true);
+				return bis;
 			} else {
 				LOG(INFO) << "constructBisector: parallel bisector line";
 				Line bisLine = CGAL::bisector(a,b.opposite());
 				auto bis = Bisector(bisLine,aIdx,bIdx);
-				bis.setPerpendicular(true);
+				bis.setParallel(true);
 				std::cout << bisLine; fflush(stdout);
 				return bis;
 			}
@@ -548,7 +554,8 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Line bOffsetLine    = Line( bP + bN , b.direction() );
 			Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
 
-			return Bisector(Ray(intersectionA,intersectionB),aIdx,bIdx);
+			auto bis = Bisector(Ray(intersectionA,intersectionB),aIdx,bIdx);
+			return bis;
 
 		} else {
 			LOG(INFO) << "parallel weighted bisector (TODO)!";
@@ -581,7 +588,9 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				Edge e = data.confineRayToBBox(bis);
 
 				bis = Ray(e.target(),wMidPoint);
-				return Bisector(bis,aIdx,bIdx);
+				auto b = Bisector(bis,aIdx,bIdx);
+				b.setGhost(true);
+				return b;
 			} else {
 				LOG(ERROR) << "parallel edges -> (TODO)!";
 				assert(false);
@@ -599,7 +608,7 @@ Bisector Wavefront::getBisectorWRTMonotonicityLine(const Bisector& bisector) con
 	if(lp.has_on_positive_side(p)) {
 		bis.changeDirection();
 	} else if(lp.has_on_boundary(p)) {
-		bis.setPerpendicular(true);
+		bis.setParallel(true);
 		LOG(WARNING) << "WARNUNG: ... bisector is perpendicular to monotonicity line.";
 	}
 
@@ -717,6 +726,7 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());
 	} else {
 		/* a classical event to be handled */
+		LOG(INFO) << "event point before adding node " << event.eventPoint;
 		auto node = Node(NodeType::NORMAL,event.eventPoint,event.eventTime);
 		nodes.push_back(node);
 		skeleton.push_back(nodeIdx);

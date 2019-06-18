@@ -136,7 +136,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 	Arc *arc, *arc_u, *arc_l;
 
 	bool bisOnPositiveSide = true, bisUpdateOnce = false;
-	if(bis.isPerpendicular() && bis.isRay()) {
+	if(bis.isParallel() && bis.isRay()) {
 		auto vb   = bis.to_vector();
 		Point pML = data.monotonicityLine.point(0) + vb;
 		bisOnPositiveSide = data.monotonicityLine.has_on_positive_side(pML);
@@ -170,7 +170,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		fflush(stdout);
 
 		LOG(INFO) << "Test if perp and update clause!";
-		if(bis.isPerpendicular() && bisUpdateOnce) {
+		if(bis.isParallel() && bisUpdateOnce) {
 			if((bisOnPositiveSide && localOnUpperChain) || (!bisOnPositiveSide && !localOnUpperChain) ) {
 				LOG(INFO) << "findNextIntersectingArc() -- change direction";
 				bis.changeDirection();
@@ -296,7 +296,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 					/* we found two points Pi and Pi_2, one on each chain */
 					bool choosePi = false;
-					if(bis.isPerpendicular()) {
+					if(bis.isParallel()) {
 						Line lRef(sourceNode->point,data.monotonicityLine.direction());
 						auto dPi   = normalDistance(lRef,Pi);
 						auto dPi_2 = normalDistance(lRef,Pi_2);
@@ -508,7 +508,7 @@ bool Skeleton::handleSourceGhostNode(Bisector& bis, std::vector<uint>& arcs, Poi
 			auto bisOfarcOfSN = wf.constructBisector(arcOfSN.leftEdgeIdx,arcOfSN.rightEdgeIdx);
 
 			Point pSN_new = INFPOINT;
-			if(bis.supporting_line().is_horizontal() && bisOfarcOfSN.isPerpendicular()) {
+			if(bis.supporting_line().is_horizontal() && bisOfarcOfSN.isParallel()) {
 				pSN_new = Point(arcOfSN.point(0).x(),bis.point(0).y());
 			} else {
 				pSN_new = intersectElements(bis.supporting_line(),arcOfSN.supporting_line());
@@ -538,7 +538,7 @@ bool Skeleton::handleSourceGhostNode(Bisector& bis, std::vector<uint>& arcs, Poi
 }
 
 Point Skeleton::handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, Bisector& bis) {
-	if(bis.isPerpendicular() && (wf.isArcPerpendicular(arc))) {
+	if(bis.isParallel() && (wf.isArcPerpendicular(arc))) {
 		/* if we have collinear bisectors/arcs then three input edges must be equidistant */
 		if(hasEquidistantInputEdges(path,arc,bis)) {
 			LOG(WARNING) << "possible ghost arc ahead!";

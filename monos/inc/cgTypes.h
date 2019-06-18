@@ -74,6 +74,7 @@ public:
 	Ray     ray;
 	Line    line;
 
+
 	uint eIdxA, eIdxB;
 
 	bool isRay()  const { return type == BisType::RAY; }
@@ -86,8 +87,10 @@ public:
 
 	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
 
-	void setPerpendicular(bool p) {perpendicular = p;}
-	bool isPerpendicular() const {return perpendicular;}
+	void setParallel(bool p) {parallel = p;}
+	bool isParallel() const {return parallel;}
+	void setGhost(bool g) {ghost = g;}
+	bool isGhost() const {return ghost;}
 
 	void changeDirection() {
 		if(isRay()) {
@@ -107,7 +110,8 @@ public:
 
 private:
 	/* true if perpendicular to monotonicity line */
-	bool perpendicular = false;
+	bool parallel = false;
+	bool ghost    = false;
 
 	friend std::ostream& operator<< (std::ostream& os, const Bisector& bis);
 };
@@ -243,6 +247,8 @@ struct Node {
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));
 	}
+
+	friend std::ostream& operator<< (std::ostream& os, const Node& node);
 };
 
 /* the inputPoints index equals the terminal node index,

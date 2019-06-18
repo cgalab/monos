@@ -22,10 +22,24 @@
 
 std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
 	if(bis.isRay()) {
-		os << "r " << bis.ray;
+		os << "r ";
 	} else {
-		os << "l " << bis.line;
+		os << "l ";
 	}
+	os << bis.point(0) << " dir: " << bis.direction();
+    return os;
+}
+
+std::ostream& operator<< (std::ostream& os, const Node& node) {
+	if(node.isTerminal()) {
+		os << "t ";
+	} else if(node.type == NodeType::NORMAL){
+		os << "n ";
+	} else {
+		os << "d ";
+	}
+	os << "time: " << node.time << ", point: " << node.point;
+	os << std::boolalpha << " g: " << node.ghost;
     return os;
 }
 
