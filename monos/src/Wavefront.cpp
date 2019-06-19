@@ -528,10 +528,15 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				bis.setGhost(true);
 				return bis;
 			} else {
-				LOG(INFO) << "constructBisector: parallel bisector line";
+				LOG(INFO) << "constructBisector: bisector of parallel input edges";
 				Line bisLine = CGAL::bisector(a,b.opposite());
 				auto bis = Bisector(bisLine,aIdx,bIdx);
-				bis.setParallel(true);
+
+				if(a.direction() == data.perpMonotonDir || a.opposite().direction() == data.perpMonotonDir) {
+					LOG(INFO) << "bisector perpendicular to monotonicity line";
+					bis.setParallel(true);
+				}
+
 				std::cout << bisLine; fflush(stdout);
 				return bis;
 			}

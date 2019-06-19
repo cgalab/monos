@@ -269,7 +269,6 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 				if(handleSourceGhostNode(bis,arcs,newPoint)) {
 					return;
 				}
-
 				/* detect and handle possible ghost vertex */
 				Pi_2 = handleGhostVertex(*path,*arc,bis);
 
@@ -305,7 +304,8 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 						/* equality check is difficult for bisector intersections, let us
 						 * check first if the next faces, i.e., the respective input edges
 						 * are collinear */
-						if(areNextInputEdgesCollinear()) {
+						if(!bis.isGhost() && areNextInputEdgesCollinear()) {
+							LOG(INFO) << "enter the next edges collinear clause";
 							/* in this case we want both arcs in the return set and finish 'here' */
 							choosePi  = true;
 							piReached = true;
@@ -505,18 +505,26 @@ bool Skeleton::hasEquidistantInputEdges(const MonotonePathTraversal& path, const
 }
 
 bool Skeleton::areNextInputEdgesCollinear() const {
+	if(EndOfUpperChain() || EndOfLowerChain()) {
+		return false;
+	}
+
 	auto arc_u = wf.getArc(wf.upperPath);
 	auto arc_l = wf.getArc(wf.lowerPath);
 	auto nextUpperEdgeIdx = (arc_u->leftEdgeIdx != upperChainIndex) ? arc_u->leftEdgeIdx : arc_u->rightEdgeIdx;
 	auto nextLowerEdgeIdx = (arc_l->leftEdgeIdx != lowerChainIndex) ? arc_l->leftEdgeIdx : arc_l->rightEdgeIdx;
 
+	LOG(INFO) << "next edge inidices: " <<nextUpperEdgeIdx  << " - " << nextLowerEdgeIdx;
+
 	auto upperEdge = data.getEdge(nextUpperEdgeIdx);
 	auto lowerEdge = data.getEdge(nextLowerEdgeIdx);
 	Point A = upperEdge.point(0);
 	Point B = upperEdge.point(1);
-	Point C = lowerEdge.point(0) + lowerEdge.to_vector();
+	Point C = (lowerEdge.point(1) + 2*lowerEdge.to_vector());
 
 	if(CGAL::collinear(A,B,C)) {
+		LOG(INFO) << "edges are collinear: " << upperEdge << " and " << lowerEdge;
+		LOG(INFO) << "Points: " << A << " " <<  B << " " << C;
 		return true;
 	}
 
