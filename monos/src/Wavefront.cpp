@@ -515,7 +515,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			}
 			return Bisector(bis,aIdx,bIdx);
 		} else {
-			if(CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
+			if(CGAL::collinear(a.point(0),a.point(1),b.point(0)+b.to_vector())) {
 				LOG(INFO) << "constructBisector: ghost arc";
 
 				auto bis = Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);

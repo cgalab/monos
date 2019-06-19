@@ -229,7 +229,8 @@ bool Data::ensureMonotonicity() {
 	intervalA = vA;
 	intervalB = vA;
 
-	std::vector<MonotoneVector> intervals;
+//	std::vector<MonotoneVector> intervals;
+	std::set<MonotoneVector,MonVectCmp> intervals;
 	uint idCnt = 0;
 
 	/* iterate over polygon and obtaining the 'monotonicity angle'
@@ -245,13 +246,17 @@ bool Data::ensureMonotonicity() {
 		if(CGAL::right_turn(corner-vA,corner,corner+vB)) {
 			MonotoneVector a(vA,MonotoneType::START, idCnt);
 			MonotoneVector b(vB,MonotoneType::END,   idCnt);
-			intervals.push_back(a);
-			intervals.push_back(b);
+//			intervals.push_back(a);
+//			intervals.push_back(b);
+			intervals.insert(a);
+			intervals.insert(b);
 
 			a = MonotoneVector(Vector(-vA.x(),-vA.y()),MonotoneType::START,  idCnt+1);
 			b = MonotoneVector(Vector(-vB.x(),-vB.y()),MonotoneType::END,    idCnt+1);
-			intervals.push_back(a);
-			intervals.push_back(b);
+//			intervals.push_back(a);
+//			intervals.push_back(b);
+			intervals.insert(a);
+			intervals.insert(b);
 
 			idCnt+=2;
 		}
@@ -270,8 +275,8 @@ bool Data::ensureMonotonicity() {
 	std::cout << std::endl;
 
 	/* sort all vectors in interval in CCW order */
-	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
-	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
+//	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
+//	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
 
 	std::cout << "after sort: " << std::endl;
 	for(auto i : intervals) {

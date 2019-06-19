@@ -91,7 +91,7 @@ bool Skeleton::SingleMergeStep() {
 			}
 		} else {
 			assert(arcs.size() == 2);
-
+			LOG(INFO) << "arcs " << arcs.front() << " and " << arcs.back() << " returned!";
 			Arc* modifiedArcU = &wf.arcList[arcs.front()];
 			upperChainIndex = (modifiedArcU->leftEdgeIdx != upperChainIndex) ? modifiedArcU->leftEdgeIdx : modifiedArcU->rightEdgeIdx;
 			wf.initPathForEdge(true,upperChainIndex);
@@ -302,7 +302,19 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 						auto dPi_2 = normalDistance(lRef,Pi_2);
 						choosePi = (dPi < dPi_2) ? true : false;
 					} else {
-						choosePi = (data.monotoneSmaller(Pi,Pi_2)) ? true : false;
+						/* equality check is difficult for bisector intersections, let us
+						 * check first if the next faces, i.e., the respective input edges
+						 * are collinear */
+						if(areNextInputEdgesCollinear()) {
+							/* in this case we want both arcs in the return set and finish 'here' */
+							choosePi  = true;
+							piReached = true;
+							path = (localOnUpperChain) ? &wf.lowerPath : &wf.upperPath;
+
+							arcs.push_back(path->currentArcIdx);
+						} else {
+							choosePi = (data.monotoneSmaller(Pi,Pi_2)) ? true : false;
+						}
 					}
 
 					if(choosePi) {
@@ -318,7 +330,6 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 			if(!piReached) {
 				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
-
 
 				bool classicalSweep = true;
 				auto arcOpposite = (arc == arc_l) ? arc_u : arc_l;
@@ -379,7 +390,12 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 		/* setting the 'newPoint' to the found intersection if 'success' */
 		newPoint = Pi;
-		arcs.push_back(path->currentArcIdx);
+
+		if(!arcs.empty() && localOnUpperChain) {
+			arcs.insert(arcs.begin(),path->currentArcIdx);
+		} else {
+			arcs.push_back(path->currentArcIdx);
+		}
 		setUpperChain = localOnUpperChain;
 	} else {
 		LOG(ERROR) << "NO INTERSECTION FOUND!!!";
@@ -483,6 +499,25 @@ bool Skeleton::hasEquidistantInputEdges(const MonotonePathTraversal& path, const
 		LOG(INFO) << "number of computed distances: " << distances.size();
 		assert(distances.size() > 1);
 		return distances[0] == distances[1];
+	}
+
+	return false;
+}
+
+bool Skeleton::areNextInputEdgesCollinear() const {
+	auto arc_u = wf.getArc(wf.upperPath);
+	auto arc_l = wf.getArc(wf.lowerPath);
+	auto nextUpperEdgeIdx = (arc_u->leftEdgeIdx != upperChainIndex) ? arc_u->leftEdgeIdx : arc_u->rightEdgeIdx;
+	auto nextLowerEdgeIdx = (arc_l->leftEdgeIdx != lowerChainIndex) ? arc_l->leftEdgeIdx : arc_l->rightEdgeIdx;
+
+	auto upperEdge = data.getEdge(nextUpperEdgeIdx);
+	auto lowerEdge = data.getEdge(nextLowerEdgeIdx);
+	Point A = upperEdge.point(0);
+	Point B = upperEdge.point(1);
+	Point C = lowerEdge.point(0) + lowerEdge.to_vector();
+
+	if(CGAL::collinear(A,B,C)) {
+		return true;
 	}
 
 	return false;

@@ -69,6 +69,7 @@ private:
 	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
 
 	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
+	bool areNextInputEdgesCollinear() const;
 	Point handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, Bisector& bis);
 	bool handleSourceGhostNode(Bisector& bis, std::vector<uint>& arcs, Point& newPoint);
 
