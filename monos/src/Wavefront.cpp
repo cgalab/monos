@@ -200,7 +200,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 		if(points.size() > 1) {
 			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE!
 			 * this scenario implies a vertical segment, i.e., perpendicular to the
-			 * monotonicity line. This means only two event moints can occur on this
+			 * monotonicity line. This means only two event points can occur on this
 			 * line, otherwise the polygon can not be monotone */
 			assert(points.size() < 3);
 
@@ -212,21 +212,23 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			std::cout << std::boolalpha << data.isAbove(A,B);
 			std::cout << std::boolalpha << isLowerChain(chain);
 
-			if( ( data.isAbove(A,B) &&  isLowerChain(chain)) ||
-				(!data.isAbove(A,B) && !isLowerChain(chain))) {
-				std::swap(A,B);
+			for(;it!=points.end();++it) {
+				B = *it;
+				if( ( data.isAbove(A,B) &&  isLowerChain(chain)) ||
+					(!data.isAbove(A,B) && !isLowerChain(chain))) {
+					std::swap(A,B);
+				}
 			}
-
 			std::vector<Event*> partEventListA, partEventListB;
 			for(auto e : eventList) {
-				if(e->eventPoint == B) {
-					partEventListB.push_back(e);
-				} else {
+				if(e->eventPoint == A) {
 					partEventListA.push_back(e);
+				} else {
+					partEventListB.push_back(e);
 				}
 			}
 
-			assert(partEventListA.size() == 1);
+			assert(partEventListA.size() >= 1);
 
 			/* handling the 'lower' eventpoint changes the other event, thus
 			 * we only handle this lower event */
@@ -625,6 +627,8 @@ void Wavefront::ChainDecomposition() {
 
 	uint minVertex = data.bbox.monotoneMinIdx;
 	uint maxVertex = data.bbox.monotoneMaxIdx;
+
+	LOG(INFO) << "min/max vertex: " << minVertex << " - " << maxVertex;
 
 	uint startLEI, endLEI;
 	uint startUEI, endUEI;

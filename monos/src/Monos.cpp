@@ -127,7 +127,7 @@ bool Monos::init() {
 //	data->lines.push_back(e);
 
 
-	/** input must be x-monotone */
+	/** input must be monotone */
 	wf->ChainDecomposition();
 	LOG(INFO) << "chain decomposition done";
 

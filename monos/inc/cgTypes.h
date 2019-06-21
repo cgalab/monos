@@ -119,11 +119,13 @@ private:
 
 /** stores the indices of the three input points that define max/min x/y*/
 struct BBox {
-	BBox(uint _xMinIdx = 0, uint _xMaxIdx = 0, uint _yMinIdx = 0, uint _yMaxIdx = 0,
-  		 Exact _xMin = 0, Exact _xMax = 0, Exact _yMin = 0, Exact _yMax = 0 ):
+	BBox(uint _xMinIdx = MAX, uint _xMaxIdx = MAX, uint _yMinIdx = MAX, uint _yMaxIdx = MAX,
+  		 Exact _xMin = 0, Exact _xMax = 0, Exact _yMin = 0, Exact _yMax = 0,
+		 uint _monMinIdx = 0, uint _monMaxIdx = 0, Point monMin=INFPOINT, Point monMax=INFPOINT):
 		 xMinIdx(_xMinIdx),xMaxIdx(_xMaxIdx), yMinIdx(_yMinIdx), yMaxIdx(_yMaxIdx),
 		 xMin(_xMin),xMax(_xMax),yMin(_yMin),yMax(_yMax),
-		 monotoneMinIdx(0),monotoneMaxIdx(0) {}
+		 monotoneMinIdx(_monMinIdx),monotoneMaxIdx(_monMaxIdx),
+		 monotoneMin(monMin), monotoneMax(monMax) {}
 
 	uint xMinIdx, xMaxIdx, yMinIdx, yMaxIdx;
 	Exact xMin, xMax, yMin, yMax;
@@ -138,6 +140,8 @@ struct BBox {
 	bool onBoundary(const Point& p) const {return inside(p) && (p.x() == xMin || xMax == p.x() ||
 			       	   	   	   	  p.y() == yMin || yMax == p.y());  }
 	bool inside(const Point& p) const {return !outside(p);}
+
+	friend std::ostream& operator<< (std::ostream& os, const BBox& box);
 };
 
 class Event {

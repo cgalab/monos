@@ -19,6 +19,13 @@
 
 #include "cgTypes.h"
 
+std::ostream& operator<< (std::ostream& os, const BBox& box) {
+	os << "box l,r [" << box.xMinIdx << "," << box.xMaxIdx << "]";
+	os << " b,t [" << box.yMinIdx << "," << box.yMaxIdx << "]";
+	os << " m-min,m-max [" << box.monotoneMaxIdx << "," << box.monotoneMaxIdx << "]";
+
+	return os;
+}
 
 std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
 	if(bis.isRay()) {

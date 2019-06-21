@@ -265,6 +265,7 @@ bool Data::ensureMonotonicity() {
 	if(intervals.empty()) {
 		/* polygon is convex, let us choose the x-axis */
 		monotonicityLine = Line(ORIGIN, ORIGIN + Vector(1,0));
+		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
 		isMonotone = true;
 		return true;
 	}
@@ -369,7 +370,7 @@ bool Data::rayPointsLeft(const Ray& ray) const {
 }
 
 BBox Data::computeBoundingBox() const {
-	auto box = BBox();
+	auto box = BBox(0,0,0,0,v(0).x(),v(0).x(),v(0).y(),v(0).y(),0,0,v(0),v(0));
 	for(uint i=0; i < inputVertices.size(); ++i) {
 		if(i!= box.xMinIdx && v(i).x() < v(box.xMinIdx).x()) {box.xMinIdx = i;}
 		if(i!= box.xMaxIdx && v(i).x() > v(box.xMaxIdx).x()) {box.xMaxIdx = i;}
@@ -396,6 +397,8 @@ BBox Data::computeBoundingBox() const {
 
 	box.monotoneMin = v(box.monotoneMinIdx);
 	box.monotoneMax = v(box.monotoneMaxIdx);
+
+	LOG(INFO) << box;
 
 	return box;
 }
