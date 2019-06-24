@@ -22,7 +22,7 @@
 std::ostream& operator<< (std::ostream& os, const BBox& box) {
 	os << "box l,r [" << box.xMinIdx << "," << box.xMaxIdx << "]";
 	os << " b,t [" << box.yMinIdx << "," << box.yMaxIdx << "]";
-	os << " m-min,m-max [" << box.monotoneMaxIdx << "," << box.monotoneMaxIdx << "]";
+	os << " m-min,m-max [" << box.monotoneMinIdx << "," << box.monotoneMaxIdx << "]";
 
 	return os;
 }

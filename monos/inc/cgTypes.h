@@ -162,6 +162,13 @@ public:
 
 	ChainRef 		chainEdge;
 
+//	bool operator==(const Event& rhs) const {
+//		return this->eventTime == rhs.eventTime
+//				&& this->eventPoint == rhs.eventPoint /*&& edges equal */;
+//	}
+//	bool operator!=(const Event& rhs) const {
+//		return !(*this == rhs);
+//	}
 	friend std::ostream& operator<< (std::ostream& os, const Event& event);
 };
 

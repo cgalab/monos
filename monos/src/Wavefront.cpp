@@ -190,7 +190,11 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 		std::set<int,std::less<int> > eventEdges;
 		LOG(INFO) << "events:";
 		for(auto e : eventList) {
+			if(e->mainEdge() == *(e->chainEdge))  {
+				LOG(INFO) << "event is still true!";
+			}
 			LOG(INFO) << *e;
+
 			points.insert(e->eventPoint);
 			eventEdges.insert(e->edges[0]);
 			eventEdges.insert(e->edges[1]);
@@ -277,29 +281,45 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		chainIt = chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge());
 	}
-	--chainIt;
 
-	auto idxA = *(--chainIt);
-	auto idxB = *(++chainIt);
-	auto idxC = *(++chainIt);
-	auto idxD = *(++chainIt);
-	--chainIt;
-	--chainIt;
-	ChainRef it1 = ChainRef(chainIt);
-	ChainRef it2 = ChainRef(++chainIt);
+	if(chainIt != chain.begin()) {
+		--chainIt;
 
-	pathFinder[idxB][1] = nodeIdx;
-	pathFinder[idxC][0] = nodeIdx;
 
-	auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
-	auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
 
-	LOG(INFO) << "indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
-	LOG(INFO) << e1;
-	LOG(INFO) << e2;
+		auto idxA = *(--chainIt);
+		auto idxB = *(++chainIt);
+		auto idxC = *(++chainIt);
+		auto idxD = *(++chainIt);
+		--chainIt;
+		--chainIt;
+		ChainRef it1 = ChainRef(chainIt);
+		ChainRef it2 = ChainRef(++chainIt);
 
-	updateInsertEvent(e1);
-	updateInsertEvent(e2);
+
+		if(idxA != idxB && idxB != idxC && idxC != idxD) {
+			/**/
+			LOG(INFO) << "TODO: only reference and add arcs if we are not before/after the chain ends!";
+
+			/* only if in current chain! */
+			pathFinder[idxB][1] = nodeIdx;
+			pathFinder[idxC][0] = nodeIdx;
+
+			auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
+			auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
+
+			LOG(INFO) << "indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
+			LOG(INFO) << e1;
+			LOG(INFO) << e2;
+
+			updateInsertEvent(e1);
+			updateInsertEvent(e2);
+		} else {
+			LOG(WARNING) << "EQUAL indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
+		}
+	} else {
+		LOG(INFO) << "chain is at beginning with size: " << chain.size();
+	}
 }
 
 
@@ -493,6 +513,7 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 }
 
 Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const {
+	assert(aIdx != bIdx);
 	Line a(data.getEdge(aIdx).supporting_line());
 	Line b(data.getEdge(bIdx).supporting_line());
 
