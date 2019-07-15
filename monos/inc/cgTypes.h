@@ -149,26 +149,33 @@ class Event {
 
 public:
 	Event(Exact time = 0, Point point = INFPOINT, uint edgeA = 0, uint edgeB = 0, uint edgeC = 0, ChainRef ref = ChainRef()):
-		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {}
+		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {
+			leftEdge  = edges[0];
+			mainEdge  = edges[1];
+			rightEdge = edges[2];
+			sortEdgeIndices();
+		}
 
 	bool isEvent()   const { return eventPoint != INFPOINT;}
-	uint leftEdge()  const { return edges[0]; }
-	uint mainEdge()  const { return edges[1]; }
-	uint rightEdge() const { return edges[2]; }
 
 	Exact         	eventTime;
 	Point  			eventPoint;
+
 	EventEdges		edges;
+	uint 			mainEdge, leftEdge, rightEdge;
 
 	ChainRef 		chainEdge;
 
-//	bool operator==(const Event& rhs) const {
-//		return this->eventTime == rhs.eventTime
-//				&& this->eventPoint == rhs.eventPoint /*&& edges equal */;
-//	}
-//	bool operator!=(const Event& rhs) const {
-//		return !(*this == rhs);
-//	}
+	void sortEdgeIndices() {std::sort(std::begin(edges), std::end(edges));}
+
+	bool operator==(const Event& rhs) const {
+		return this->edges[0] == rhs.edges[0]
+			&& this->edges[1] == rhs.edges[1]
+			&& this->edges[2] == rhs.edges[2];
+	}
+	bool operator!=(const Event& rhs) const {
+		return !(*this == rhs);
+	}
 	friend std::ostream& operator<< (std::ostream& os, const Event& event);
 };
 

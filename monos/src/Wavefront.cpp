@@ -47,8 +47,8 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 		/* create Event and add it to the queue */
 		auto event = getEdgeEvent(aEdgeIdx,bEdgeIdx,cEdgeIdx,it);
 		if(event.isEvent()) {
-			events[event.mainEdge()] = event;
-			auto te = TimeEdge(event.eventTime,event.mainEdge());
+			events[event.mainEdge] = event;
+			auto te = TimeEdge(event.eventTime,event.mainEdge);
 			eventTimes.insert(te);
 			std::cout << event << std::endl;
 		}
@@ -190,7 +190,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 		std::set<int,std::less<int> > eventEdges;
 		LOG(INFO) << "events:";
 		for(auto e : eventList) {
-			if(e->mainEdge() == *(e->chainEdge))  {
+			if(e->mainEdge == *(e->chainEdge))  {
 				LOG(INFO) << "event is still true!";
 			}
 			LOG(INFO) << *e;
@@ -207,7 +207,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			 * monotonicity line. This means only two event points can occur on this
 			 * line, otherwise the polygon can not be monotone */
 			assert(points.size() < 3);
-
+			LOG(INFO) << "scenario (ii)";
 			/* ensure A is the lower point in resp. to monot. line */
 			auto it = points.begin();
 			Point A = *it; ++it;
@@ -246,7 +246,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 }
 
 void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList) {
-	LOG(INFO) << "HandleMultiEdgeEvent! (TO-BE-TESTED!)";
+	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
 
 	auto nodeIdx = nodes.size();
 	auto anEvent = eventList[0];
@@ -255,18 +255,17 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	auto node = Node(NodeType::NORMAL,anEvent->eventPoint,anEvent->eventTime);
 	nodes.push_back(node);
 	skeleton.push_back(nodeIdx);
-
 	LOG(INFO) << "adding node: " << node;
 
 	bool singleLeft = true;
 	for(auto event : eventList) {
-		auto idx = event->mainEdge();
+		auto idx = event->mainEdge;
 		auto paths = pathFinder[idx];
 		if(singleLeft) {
-			addArc(paths[0],nodeIdx,event->leftEdge(),event->mainEdge());
+			addArc(paths[0],nodeIdx,event->leftEdge,event->mainEdge);
 			singleLeft = false;
 		}
-		addArc(paths[1],nodeIdx,event->mainEdge(),event->rightEdge());
+		addArc(paths[1],nodeIdx,event->mainEdge,event->rightEdge);
 
 		/* update path finder for left and right edge */
 		pathFinder[idx][1] = nodeIdx;
@@ -279,13 +278,11 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	for(auto event : eventList) {
 		/* remove this edges from the chain (wavefront) */
 		chainIt = chain.erase(event->chainEdge);
-		disableEdge(event->mainEdge());
+		disableEdge(event->mainEdge);
 	}
 
 	if(chainIt != chain.begin()) {
 		--chainIt;
-
-
 
 		auto idxA = *(--chainIt);
 		auto idxB = *(++chainIt);
@@ -312,8 +309,12 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 			LOG(INFO) << e1;
 			LOG(INFO) << e2;
 
-			updateInsertEvent(e1);
-			updateInsertEvent(e2);
+			if(idxB != chain.front()) {
+				updateInsertEvent(e1);
+			}
+			if(idxC != chain.back()) {
+				updateInsertEvent(e2);
+			}
 		} else {
 			LOG(WARNING) << "EQUAL indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
 		}
@@ -334,7 +335,7 @@ void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, E
 
 	/* remove this edge from the chain (wavefront) */
 	chain.erase(event->chainEdge);
-	disableEdge(event->mainEdge());
+	disableEdge(event->mainEdge);
 }
 
 bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
@@ -405,8 +406,8 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 
 void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain) {
 	uint edgeA, edgeB, edgeC, edgeD;
-	edgeB = event.leftEdge();
-	edgeC = event.rightEdge();
+	edgeB = event.leftEdge;
+	edgeC = event.rightEdge;
 	std::cout << event;
 	ChainRef it(event.chainEdge);
 	--it;
@@ -433,30 +434,30 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 
 void Wavefront::updateInsertEvent(const Event& event) {
 	/* check if edge has already an event in the queue */
-	auto currentEvent =  events[event.mainEdge()];
+	auto currentEvent =  events[event.mainEdge];
 
 	if(currentEvent.eventTime > 0) {
 		/* find remove timeslot from event times */
-		auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge());
+		auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge);
 		auto item  = eventTimes.lower_bound(teOld);
-		if(item != eventTimes.end() && item->edgeIdx == event.mainEdge()) {
+		if(item != eventTimes.end() && item->edgeIdx == event.mainEdge) {
 			eventTimes.erase(item);
 		}
 	}
 
-	assert(event.mainEdge() == *event.chainEdge);
+	assert(event.mainEdge == *event.chainEdge);
 
-	events[event.mainEdge()] = Event(event);
+	events[event.mainEdge] = Event(event);
 	if(event.eventPoint != INFPOINT) {
-		auto te = TimeEdge(event.eventTime,event.mainEdge());
+		auto te = TimeEdge(event.eventTime,event.mainEdge);
 		eventTimes.insert(te);
 	}
 }
 
 bool Wavefront::hasParallelBisector(const Event& event) const {
-	auto lA = data.getEdge(event.leftEdge()).supporting_line();
-	auto lB = data.getEdge(event.mainEdge()).supporting_line();
-	auto lC = data.getEdge(event.rightEdge()).supporting_line();
+	auto lA = data.getEdge(event.leftEdge).supporting_line();
+	auto lB = data.getEdge(event.mainEdge).supporting_line();
+	auto lC = data.getEdge(event.rightEdge).supporting_line();
 	return CGAL::parallel(lA,lB) || CGAL::parallel(lB,lC) || CGAL::parallel(lA,lC);
 }
 
@@ -509,6 +510,7 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 		}
 	}
 	std::cout << e << " ret event. "; fflush(stdout);
+
 	return e;
 }
 
@@ -741,7 +743,7 @@ uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& e
 
 void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleton) {
 	uint nodeIdx = nodes.size();
-	auto paths 	 = pathFinder[event.mainEdge()];
+	auto paths 	 = pathFinder[event.mainEdge];
 
 	/* if this is already done, i.e., left and/or right path ends at a node of the event */
 	if(nodes[paths[0]].point == event.eventPoint && nodes[paths[1]].point == event.eventPoint) {
@@ -749,11 +751,11 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	} else if(nodes[paths[0]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the right side */
 		nodeIdx = paths[0];
-		addArc(paths[1],nodeIdx,event.mainEdge(),event.rightEdge());
+		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge);
 	} else if(nodes[paths[1]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the left side */
 		nodeIdx = paths[1];
-		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());
+		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge);
 	} else {
 		/* a classical event to be handled */
 		LOG(INFO) << "event point before adding node " << event.eventPoint;
@@ -761,13 +763,13 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		nodes.push_back(node);
 		skeleton.push_back(nodeIdx);
 
-		addArc(paths[0],nodeIdx,event.leftEdge(),event.mainEdge());
-		addArc(paths[1],nodeIdx,event.mainEdge(),event.rightEdge());
+		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge);
+		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge);
 	}
 
 	/* update path finder for left and right edge */
-	pathFinder[event.leftEdge()][1]  = nodeIdx;
-	pathFinder[event.rightEdge()][0] = nodeIdx;
+	pathFinder[event.leftEdge][1]  = nodeIdx;
+	pathFinder[event.rightEdge][0] = nodeIdx;
 }
 
 bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {

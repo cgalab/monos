@@ -304,7 +304,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 						/* equality check is difficult for bisector intersections, let us
 						 * check first if the next faces, i.e., the respective input edges
 						 * are collinear */
-						if(!bis.isGhost() && areNextInputEdgesCollinear()) {
+						if((!bis.isGhost() && areNextInputEdgesCollinear()) || Pi == Pi_2) {
 							LOG(INFO) << "enter the next edges collinear clause";
 							/* in this case we want both arcs in the return set and finish 'here' */
 							choosePi  = true;
