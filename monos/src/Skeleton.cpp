@@ -26,6 +26,7 @@ void Skeleton::initMerge() {
 /* add last are, connect to end node! */
 void Skeleton::finishMerge() {
 	wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex);
+	computationFinished = true;
 	LOG(INFO) << "Merge Finished!";
 }
 

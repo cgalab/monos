@@ -36,6 +36,8 @@ public:
 	void printSkeleton() const;
 	void writeOBJ(const Config& cfg) const;
 
+	bool computationFinished = false;
+
 private:
 	void findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint);
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);

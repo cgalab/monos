@@ -94,7 +94,7 @@ void Monos::run() {
 }
 
 void Monos::write() {
-	if(config.outputType != OutputType::NONE) {
+	if(config.outputType != OutputType::NONE && s->computationFinished) {
 		s->writeOBJ(config);
 		data->addPolyToOBJ(config);
 		LOG(INFO) << "output written";
