@@ -52,7 +52,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 	for (const auto& e : *arcs) {
 		if(e.type != ArcType::DISABLED) {
 			if(e.type == ArcType::RAY) {
-				painterostream << Edge(e.ray.start(), e.ray.point(1));
+				painterostream << Edge(e.ray.start(), e.ray.point(1)+(50.0 * e.ray.to_vector()));
 			} else {
 				painterostream << e.edge;
 			}
