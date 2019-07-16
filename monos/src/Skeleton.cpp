@@ -57,7 +57,7 @@ bool Skeleton::SingleMergeStep() {
 //	}
 
 	std::cout << std::endl << "-- "; fflush(stdout);
-	LOG(INFO) << "Bisector: " << bis;
+//	LOG(INFO) << "Bisector: " << bis;
 	std::cout << "-- "; fflush(stdout);
 	LOG(INFO) << "Bisector-dir: " << bis.direction(); fflush(stdout);
 

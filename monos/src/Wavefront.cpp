@@ -535,9 +535,20 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Point pBis = bisLine.point();
 			Ray bis(intersectionA,pBis);
 
+			if(pBis == intersectionA) {
+				bis = Ray(pBis,bisLine.direction());
+			}
+
 			if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
 				bis = bis.opposite();
 			}
+
+			if(bis.is_degenerate() || bis.is_horizontal() || bis.is_vertical()) {
+				/* interesting BUG? If one of these conditions is true a Ray leads to
+				 * some side effects but a line still works... */
+				return Bisector(bis.supporting_line(),aIdx,bIdx);
+			}
+
 			return Bisector(bis,aIdx,bIdx);
 		} else {
 			if(CGAL::collinear(a.point(0),a.point(1),b.point(0)+b.to_vector())) {
