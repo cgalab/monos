@@ -594,41 +594,101 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			return bis;
 
 		} else {
-			LOG(INFO) << "parallel weighted bisector (TODO)!";
+			LOG(INFO) << "parallel weighted bisector!";
 
 			if(!CGAL::collinear(a.point(0),a.point(1),b.point(0))) {
-				Point Pa = a.point(0);
-				Line l = a.perpendicular(Pa);
-				Point Pb = intersectElements(l,b);
-				Vector aN = l.to_vector();
-				aN /= CGAL::sqrt(aN.squared_length());
-				Vector bN = -aN;
+				LOG(INFO) << "parallel edges!";
 
-				auto aDir = aN.perpendicular(CGAL::LEFT_TURN);
+				if(a.direction() == b.direction()) {
+					Point A  = a.point(0);
+					Point B  = intersectElements(a,b.perpendicular(A));
 
-				Point Pa_off = Pa + aDir;
-				Point Pb_off = Pb + aDir;
+					Vector v = a.to_vector().perpendicular(CGAL::LEFT_TURN);
 
-				aN *= data.w(aIdx);
-				bN *= data.w(bIdx);
+					Vector x( (A-B)/(data.w(bIdx)-data.w(aIdx)) );
 
-				Point Pa2 = Pa_off + aN;
-				Point Pb2 = Pb_off + bN;
+					auto b = Bisector(Line(A+x,a.direction()),aIdx,bIdx);
+					b.setParallel(true);
+					return b;
+				} else {
+					/* wavefront edges move towards each other (possibly) */
+					Point A  = a.point(0);
+					Line perpL = b.perpendicular(A);
+					Point B  = intersectElements(a,perpL);
 
-				Ray R1 = Ray(Pa,Pa2);
-				Ray R2 = Ray(Pa,Pa2);
+					Vector lv = perpL.to_vector();
+					Vector lvPerp = a.to_vector();
 
-				Point wMidPoint = intersectElements(R1,R2);
+					Point A2 = A + lvPerp + (data.w(aIdx)*lv);
+					Point B2 = B + lvPerp - (data.w(bIdx)*lv);
 
-				Ray bis(wMidPoint,-a.direction());
-				Edge e = data.confineRayToBBox(bis);
+					Line aSk = Line(A,A2);
+					Line bSk = Line(B,B2);
 
-				bis = Ray(e.target(),wMidPoint);
-				auto b = Bisector(bis,aIdx,bIdx);
-				b.setGhost(true);
-				return b;
+					Point pSkInt = intersectElements(aSk,bSk);
+
+					if(pSkInt != INFPOINT) {
+						auto b = Bisector(Line(pSkInt,a.direction()),aIdx,bIdx);
+						b.setParallel(true);
+						return b;
+					} else {
+						LOG(ERROR) << "skewed lines do not intersect?";
+						assert(false);
+					}
+				}
+
 			} else {
-				LOG(ERROR) << "parallel edges -> (TODO)!";
+				LOG(ERROR) << "collinear edges!?!";
+
+				/* This should not occur, two collinear edges with different weights can
+				 * not become adjacent in a wavefront except if they are adjacent on the
+				 * boundary of the polygon at time zero!*/
+
+				auto eA = data.e(aIdx);
+				auto eB = data.e(bIdx);
+
+				for(auto i : {eA[0],eA[1]}) {
+					for(auto j : {eB[0],eB[1]}) {
+						if(i == j) {
+							Point P = data.v(i);
+							Bisector b(Ray(P,a.direction()),aIdx,bIdx);
+							return b;
+						}
+					}
+				}
+
+//				Point Pa = a.point(0);
+//				Line l = a.perpendicular(Pa);
+//				Point Pb = intersectElements(l,b);
+//				Vector aN = l.to_vector();
+//				aN /= CGAL::sqrt(aN.squared_length());
+//				Vector bN = -aN;
+//
+//				auto aDir = aN.perpendicular(CGAL::LEFT_TURN);
+//
+//				Point Pa_off = Pa + aDir;
+//				Point Pb_off = Pb + aDir;
+//
+//				aN *= data.w(aIdx);
+//				bN *= data.w(bIdx);
+//
+//				Point Pa2 = Pa_off + aN;
+//				Point Pb2 = Pb_off + bN;
+//
+//				Ray R1 = Ray(Pa,Pa2);
+//				Ray R2 = Ray(Pa,Pa2);
+//
+//				Point wMidPoint = intersectElements(R1,R2);
+//
+//				Ray bis(wMidPoint,-a.direction());
+//				Edge e = data.confineRayToBBox(bis);
+//
+//				bis = Ray(e.target(),wMidPoint);
+//				auto b = Bisector(bis,aIdx,bIdx);
+//				b.setGhost(true);
+//
+//				return b;
+
 				assert(false);
 				return Bisector(Ray(),aIdx,bIdx);
 			}
