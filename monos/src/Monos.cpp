@@ -25,7 +25,7 @@
 #include "Data.h"
 
 
-Monos::Monos(std::list<std::string>& args, bool gui):
+Monos::Monos(Args args, bool gui):
 config(args,gui) {
 	/* evaluate arguments */
 	if(!config.isValid() && !gui) {return;}
@@ -42,7 +42,9 @@ void Monos::constructorInit(bool gui) {
 
 	/* load data: input and bbox */
 	data->initialize(config);
-	LOG(INFO) << "input loaded";
+	if(config.verbose) {
+		LOG(INFO) << "input loaded";
+	}
 
 	if(config.verbose) {
 		data->printInput();
@@ -59,8 +61,9 @@ void Monos::constructorInit(bool gui) {
 
 void Monos::reinitialize(const std::string& fileName, bool gui) {
 	if(fileExists(fileName)) {
-		LOG(INFO) << "File " << fileName << " exists, reloading!";
-
+		if(config.verbose) {
+			LOG(INFO) << "File " << fileName << " exists, reloading!";
+		}
 		destruct();
 
 		config.setNewInputfile(fileName);
@@ -78,17 +81,17 @@ void Monos::run() {
 	if(!init()) {return;}
 
 	if(!wf->ComputeSkeleton(true)) {return;}
-	LOG(INFO) << "lower skeleton done";
+	if(config.verbose) {LOG(INFO) << "lower skeleton done";}
 
 	if(!wf->ComputeSkeleton(false)) {return;}
-	LOG(INFO) << "upper skeleton done";
+	if(config.verbose) {LOG(INFO) << "upper skeleton done";}
 
 	/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
 	 * their incidences. */
 	wf->SortArcsOnNodes();
 
 	s->MergeUpperLowerSkeleton();
-	LOG(INFO) << "merging upper and lower skeleton done";
+	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
 
 	write();
 }
@@ -97,7 +100,7 @@ void Monos::write() {
 	if(config.outputType != OutputType::NONE && s->computationFinished) {
 		s->writeOBJ(config);
 		data->addPolyToOBJ(config);
-		LOG(INFO) << "output written";
+		if(config.verbose) {LOG(INFO) << "output written";}
 	}
 }
 
@@ -113,7 +116,8 @@ bool Monos::init() {
 	/* verfify monotonicity -- if required, rotate to assure
 	 * that P is x-monotone */
 	if(!data->ensureMonotonicity()) {
-		LOG(WARNING) << "polygon is not monotone!";
+		if(config.verbose) {LOG(WARNING) << "polygon is not monotone!";}
+		exit(1);
 		return false;
 	}
 
@@ -121,7 +125,7 @@ bool Monos::init() {
 	data->bbox = data->computeBoundingBox();
 
 	/* debug */
-	LOG(INFO) << "monotonicity line: " << data->monotonicityLine.to_vector();
+	if(config.verbose) {LOG(INFO) << "monotonicity line: " << data->monotonicityLine.to_vector();}
 //	Point p = data->v(data->bbox.monotoneMinIdx);
 //	Edge e(p,p+data->monotonicityLine.to_vector()); // = data->confineRayToBBox(Ray(p,data->monotonicityLine.to_vector()));
 //	data->lines.push_back(e);
@@ -129,7 +133,7 @@ bool Monos::init() {
 
 	/** input must be monotone */
 	wf->ChainDecomposition();
-	LOG(INFO) << "chain decomposition done";
+	if(config.verbose) {LOG(INFO) << "chain decomposition done";}
 
 	return true;
 }

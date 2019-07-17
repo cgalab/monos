@@ -18,5 +18,6 @@ std::string currentTimeStamp();
 void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm);
 
 void setupEasylogging(int argc, char** argv);
+void resetLogging(bool output);
 
 #endif

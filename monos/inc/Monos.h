@@ -32,7 +32,7 @@
 
 class Monos {
 public:
-	Monos(std::list<std::string>& args, bool gui = false);
+	Monos(Args args, bool gui = false);
 	virtual ~Monos();
 
 	/**

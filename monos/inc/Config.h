@@ -3,35 +3,47 @@
 
 #include <string>
 #include <list>
+#include <fstream>
+
+#include <getopt.h>
 
 #include "Definitions.h"
 #include "tools.h"
 
+using Args = std::pair<int,char**>;
+
+static struct option long_options[] = {
+		{ "help"        , no_argument      , 0, 'h'},
+		{ "verbose"     , no_argument      , 0, 'v'},
+		{ "obj"         , required_argument, 0, 'o'},
+		{ 0, 0, 0, 0}
+};
+
 class Config {
 public:
+
+	[[noreturn]]
+	 static void
+	 usage(const char *progname, int err) {
+		FILE *f = err ? stderr : stdout;
+
+		fprintf(f,"Usage: %s [options] <OBJ|GRAPHML file>\n", progname);
+		fprintf(f,"  Options: --obj | -o <filename>      write output.\n");
+		fprintf(f,"           --verbose | -v             print processing information.\n");
+		fprintf(f,"\n");
+		fprintf(f,"Input format can be .gml/.graphml (GraphML) or .obj (Wavefront Object).\n");
+		fprintf(f,"Parsing input from cin assumes graphml format.");
+		fprintf(f,"\n");
+		exit(err);
+	}
+
 	Config(bool _gui = false):
-		fileName(""),verbose(false),silent(false),gui(_gui),
+		fileName(""),gui(_gui),
 		outputType(OutputType::NONE),outputFileName(""),validConfig(false) {
-
-		printOptions = "[-h] [-v|-s] ";
-		printOptions += "[-poly|-obj <filename>] <filename>";
 	}
 
-	Config(std::list<std::string> args, bool gui = false):Config(gui) {
+	Config(Args args, bool gui = false):Config(gui) {
 		validConfig = evaluateArguments(args);
-	}
-
-	void printHelp() const {
-		std::cout << "usage: monos " << printOptions << std::endl;
-	}
-
-	void printHelpLong() const {
-		std::cout << "  -h \t\t\tpruint this help" << std::endl
-			 << "  -v \t\t\tverbose mode, shows more information about the computation" << std::endl
-			 << "  -s \t\t\tsilent mode, shows no information" << std::endl
-			 << "  -l \t\t\tlogging verbose output to <filename>.log" << std::endl
-			 << "  -obj <file> \t\twrite output in wavefront obj format (3D coordinates)" << std::endl
-			 << "  <filename> \t\tinput type can be .gml (GraphML) or .obj (Wavefront Object)" << std::endl;
 	}
 
 	bool isValid() const { return validConfig; }
@@ -45,15 +57,17 @@ public:
 
 	std::string   	fileName;
 
-	bool 			verbose;
-	bool			silent;
+	bool 			use_stdin = false;
+
+	bool 			verbose = false;
+	bool			silent  = true;
 	bool 			gui;
 
 	OutputType  	outputType;
 	std::string		outputFileName;
 
 private:
-	bool evaluateArguments(std::list<std::string> args);
+	bool evaluateArguments(Args args);
 
 	std::string 	printOptions;
 	bool	 		validConfig;

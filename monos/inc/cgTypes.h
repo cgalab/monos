@@ -286,9 +286,8 @@ template<class T, class U>
 Point intersectElements(const T& a, const U& b) {
 	Point intersectionPoint = INFPOINT;
 
-	std::cout << "(" << a << " -- " << b; fflush(stdout);
+	LOG(INFO) << "(" << a << " -- " << b << ") ";
 	auto result = CGAL::intersection(a, b);
-	std::cout << ")" << std::endl; fflush(stdout);
 	if (result) {
 		if (const Point* p = boost::get<Point>(&*result)) {
 			return Point(*p);

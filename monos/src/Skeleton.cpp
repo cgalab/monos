@@ -45,7 +45,7 @@ void Skeleton::MergeUpperLowerSkeleton() {
  * */
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "-- START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex;
-	fflush(stdout);
+
 
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
 	Bisector bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
@@ -57,10 +57,10 @@ bool Skeleton::SingleMergeStep() {
 //		LOG(WARNING) << "Collienar input edges " << upperChainIndex << ", " << lowerChainIndex;
 //	}
 
-	std::cout << std::endl << "-- "; fflush(stdout);
+//	std::cout << std::endl << "-- ";
 //	LOG(INFO) << "Bisector: " << bis;
-	std::cout << "-- "; fflush(stdout);
-	LOG(INFO) << "Bisector-dir: " << bis.direction(); fflush(stdout);
+//	std::cout << "-- ";
+	LOG(INFO) << "Bisector-dir: " << bis.direction();
 
 	/* visualize next bisector via dashed line-segment */
 	if(data.gui) {
@@ -116,9 +116,9 @@ bool Skeleton::SingleMergeStep() {
 		LOG(INFO) << "After findNextIntersectingArc: arcs ARE empty!";
 	}
 
-	std::cout << std::endl;
+	LOG(INFO) << "";
 	LOG(INFO) << "############################################## END STEP ###########################";
-	std::cout << std::endl;
+	LOG(INFO) << "";
 
 	return !EndOfBothChains();
 }
@@ -149,7 +149,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 	pathBackupLower = wf.lowerPath;
 	pathBackupUpper = wf.upperPath;
 
-	LOG(INFO) << "findNextIntersectingArc start"; fflush(stdout);
+	LOG(INFO) << "findNextIntersectingArc start";
 	while(!EndOfBothChains() && !success) {
 		arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
 		arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
@@ -166,9 +166,9 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		arc  = (localOnUpperChain) ? arc_u         : arc_l;
 
-		std::cout << std::boolalpha<< "localOnUpperChain: " << localOnUpperChain << std::endl;
-		std::cout << "BEFORE path: " << *path << std::endl;
-		fflush(stdout);
+		LOG(INFO) << std::boolalpha<< "localOnUpperChain: " << localOnUpperChain;
+		LOG(INFO) << "BEFORE path: " << *path;
+
 
 		LOG(INFO) << "Test if perp and update clause!";
 		if(bis.isParallel() && bisUpdateOnce) {
@@ -179,7 +179,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			bisUpdateOnce = false;
 		}
 
-		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis; fflush(stdout);
+		LOG(INFO) << "intersect arc: " << *arc << ", and bisector " << bis;
 
 		/* if we have a sourcenode that is a ghost node we handle the intersection here */
 		if(handleSourceGhostNode(bis,arcs,newPoint)) {
@@ -209,7 +209,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		}
 
 		if(Pi != INFPOINT) {
-			LOG(INFO) << "Intersection found with " << path->currentArcIdx; fflush(stdout);
+			LOG(INFO) << "Intersection found with " << path->currentArcIdx;
 			success = true;
 		}
 
@@ -226,11 +226,11 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 					lowerChainIndex = nextLowerChainIndex(lowerChainIndex);
 					wf.initPathForEdge(false,lowerChainIndex);
 				}
-				LOG(WARNING) << "next chain index";fflush(stdout);
+				LOG(WARNING) << "next chain index";
 			}
 		}
 
-		std::cout << std::endl << std::boolalpha << "AFTER success: " << success << ", path: " << *path << std::endl; fflush(stdout);
+		LOG(INFO) << std::endl << std::boolalpha << "AFTER success: " << success << ", path: " << *path;
 	}
 
 	if(success) {
@@ -259,9 +259,9 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		Pi_2 = INFPOINT;
 
 		while(!EndOfChain(path->isUpperChain()) && !piReached) {
-			std::cout << std::endl << "updating 2nd path: " << *path << std::endl; fflush(stdout);
+			LOG(INFO) << std::endl << "updating 2nd path: " << *path;
 			arc = wf.getArc(*path);
-			std::cout << "intersect " << *arc << ", and bis: " << bis << std::endl; fflush(stdout);
+			LOG(INFO) << "intersect " << *arc << ", and bis: " << bis;
 
 			/* classical intersection detection on current paths arc */
 			if(isValidArc(path->currentArcIdx)) {
@@ -344,7 +344,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 						classicalSweep = false;
 						LOG(INFO) << "collinear input edges!";
 					}
-					LOG(INFO) << "possible ghost arc ahead!"; fflush(stdout);
+					LOG(INFO) << "possible ghost arc ahead!";
 				}
 
 				LOG(INFO) << "comparing points: " << Pi << " and " << Pr;
@@ -402,7 +402,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 		LOG(ERROR) << "NO INTERSECTION FOUND!!!";
 	}
 
-	LOG(INFO) << "findNextIntersectingArc END"; fflush(stdout);
+	LOG(INFO) << "findNextIntersectingArc END";
 }
 
 uint Skeleton::handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Bisector& bis) {
@@ -572,10 +572,10 @@ bool Skeleton::handleSourceGhostNode(Bisector& bis, std::vector<uint>& arcs, Poi
 				newPoint = pAA;
 				return true;
 			} else {
-				LOG(WARNING) << "handleGhostVertex: should not happen!"; fflush(stdout);
+				LOG(WARNING) << "handleGhostVertex: should not happen!";
 			}
 		} else {
-			LOG(WARNING) << "handleGhostVertex: arcs do not intersect!"; fflush(stdout);
+			LOG(WARNING) << "handleGhostVertex: arcs do not intersect!";
 		}
 	}
 	return false;
@@ -591,7 +591,7 @@ Point Skeleton::handleGhostVertex(const MonotonePathTraversal& path, const Arc& 
 			Point pA = arc.point(0);
 			Point pB = arc.point(1);
 			Point pS = sourceNode->point;
-			LOG(INFO) << "point A " << pA << " B " << pB << " S " << pS; fflush(stdout);
+			LOG(INFO) << "point A " << pA << " B " << pB << " S " << pS;
 			Point closestPoint = INFPOINT;
 			if(data.monotonicityLine.to_vector().x() > Exact(0)) {
 				closestPoint = (CGAL::abs(pS.y()-pA.y()) <= CGAL::abs(pS.y()-pB.y())) ? pA : pB;
@@ -652,13 +652,12 @@ bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {
 			arc->disable();
 		}
 
-		std::cout << " arc-start: " << arc->firstNodeIdx << " "; fflush(stdout);
-		std::cout << " arc-endpoint: " << arc->secondNodeIdx << " "; fflush(stdout);
+		LOG(INFO) << " arc-start: " << arc->firstNodeIdx <<  " arc-endpoint: " << arc->secondNodeIdx << " ";
 
 		auto secondNode = &wf.nodes[arc->secondNodeIdx];
 		auto arcs = &secondNode->arcs;
 
-		std::cout << " arcs:" << arcs->size() << " "; fflush(stdout);
+		LOG(INFO) << " arcs:" << arcs->size() << " ";
 
 		/* remove reference to 'arcIdx' from node */
 		auto pos = std::find(arcs->begin(),arcs->end(),arcIdxIt);

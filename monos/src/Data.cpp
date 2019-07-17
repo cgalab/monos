@@ -29,8 +29,10 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 void Data::initialize(const Config& cfg) {
 	/* load input vertices/polygon and weights */
 	if(cfg.isValid()) {
-		if (!loadFile(cfg.fileName)) {
-			assert(false); return;
+		if(cfg.use_stdin) {
+			if(!parseGML(std::cin)) {exit(1);}
+		} else if (!loadFile(cfg.fileName)) {
+			exit(1);
 		}
 	}
 }
@@ -51,14 +53,14 @@ bool Data::isEdgeCollinear(const uint& i, const uint& j) const {
 }
 
 bool Data::loadFile(const std::string& fileName) {
+	std::ifstream in;
 	if(fileExists(fileName)) {
-		std::ifstream in(fileName);
-
+		in.open(fileName);
 		std::string extension = (fileName.find(".")  != std::string::npos) ? fileName.substr(fileName.find_last_of(".")+1) : "";
 		transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
 		if( extension == "gml" || extension == "graphml" ) {
-			std::cout << "parsing gml" << std::endl;
+			LOG(INFO) << "parsing gml" << std::endl;
 			if(!parseGML(in)) {return false;}
 		} else {
 			std::vector<std::string> lines;
@@ -163,7 +165,7 @@ bool Data::parseOBJ(const std::vector<std::string>& lines) {
 }
 
 bool Data::parsePOLY(const std::vector<std::string>& lines) {
-	std::cout << "POLY: no yet supported!" << lines.size() << std::endl;
+	LOG(INFO) << "POLY: no yet supported!" << lines.size();
 	return false;
 }
 
@@ -199,10 +201,6 @@ bool Data::parseGML(std::istream &istream) {
 			weights[max] = edge.weight;
 		}
 	}
-
-//	for(auto edge : poly) {
-//		std::cout << edge[0] << "-" << edge[1] << "  ";
-//	}
 
 	/* initialize const input variables */
 	inputVertices 	= points;
@@ -270,20 +268,15 @@ bool Data::ensureMonotonicity() {
 		return true;
 	}
 
+	std::stringstream ss;
 	for(auto i : intervals) {
-		std::cout << i << std::endl;
+		ss << i << std::endl;
 	}
-	std::cout << std::endl;
+	LOG(INFO) << ss.str();
 
 	/* sort all vectors in interval in CCW order */
 //	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
 //	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
-
-	std::cout << "after sort: " << std::endl;
-	for(auto i : intervals) {
-		std::cout << i << std::endl;
-	}
-	std::cout << std::endl;
 
 	/* iterate to first START vector */
 	auto itStart  = intervals.begin();
@@ -418,16 +411,17 @@ Edge Data::confineRayToBBox(const Ray& ray) const {
 
 
 void Data::printInput() const {
-	std::cout << "Input Vertices: " << std::endl;
+	std::stringstream ss;
+	ss << "Input Vertices: " << std::endl;
 	for(auto point : inputVertices) {
-		std::cout << "(" << point.x() << "," << point.y() << ") ";
+		ss << "(" << point.x() << "," << point.y() << ") ";
 	}
-	std::cout << std::endl << "Input Polygon: " << std::endl;
+	ss << std::endl << "Input Polygon: " << std::endl;
 	uint cnt = 0;
 	for(auto edge : polygon) {
-		std::cout  << "(" << edge[0] << "," << edge[1] << ")N[" << getEdge(cnt++).to_vector() << "] ";
+		ss << "(" << edge[0] << "," << edge[1] << ")N[" << getEdge(cnt++).to_vector() << "] ";
 	}
-	std::cout << std::endl;
+	LOG(INFO) << ss.str();
 }
 
 

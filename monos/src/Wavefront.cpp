@@ -50,7 +50,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 			events[event.mainEdge] = event;
 			auto te = TimeEdge(event.eventTime,event.mainEdge);
 			eventTimes.insert(te);
-			std::cout << event << std::endl;
+			LOG(INFO) << event;
 		}
 
 		/* iterate over the chainIterator */
@@ -110,7 +110,7 @@ bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
 }
 
 bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
-	std::cout << "SingleDequeue :: ";
+	LOG(INFO) << "SingleDequeue :: ";
 	auto etIt  = eventTimes.begin();
 	auto event = &events[etIt->edgeIdx];
 	auto eventTime = etIt->time;
@@ -212,9 +212,6 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			auto it = points.begin();
 			Point A = *it; ++it;
 			Point B = *it;
-
-			std::cout << std::boolalpha << data.isAbove(A,B);
-			std::cout << std::boolalpha << isLowerChain(chain);
 
 			for(;it!=points.end();++it) {
 				B = *it;
@@ -408,7 +405,7 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 	uint edgeA, edgeB, edgeC, edgeD;
 	edgeB = event.leftEdge;
 	edgeC = event.rightEdge;
-	std::cout << event;
+	LOG(INFO) << event;
 	ChainRef it(event.chainEdge);
 	--it;
 
@@ -489,9 +486,7 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 
 	/* compute bisector intersection, this is the collapse
 	 * time of the middle edge (b) 'edge-event' for b  */
-	std::cout << "bi " << std::endl; fflush(stdout);
 	auto intersection = intersectElements(abBis.supporting_line(), bcBis.supporting_line());
-	std::cout << "ai " << intersection  << std::endl; fflush(stdout);
 
 	Line b(data.getEdge(bIdx).supporting_line());
 	if(intersection != INFPOINT && b.has_on_positive_side(intersection)) {
@@ -509,7 +504,7 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
 		}
 	}
-	std::cout << e << " ret event. "; fflush(stdout);
+	LOG(INFO) << e << " ret event. ";
 
 	return e;
 }
@@ -521,7 +516,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 
 	Point intersectionA = intersectElements(a, b);
 
-	std::cout << " bis " << aIdx << "/" << bIdx << "  ";
+	LOG(INFO) << " bis " << aIdx << "/" << bIdx << "  ";
 
 	/* classical bisector (unweighted) */
 	if( data.w(aIdx) == 1 && data.w(bIdx) == 1) {
@@ -573,7 +568,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 					bis.setParallel(true);
 				}
 
-				std::cout << bisLine; fflush(stdout);
+				LOG(INFO) << bisLine;
 				return bis;
 			}
 		}
@@ -717,17 +712,17 @@ void Wavefront::ChainDecomposition() {
 	lowerChain = lc;
 	upperChain = uc;
 
-
 	/*  some DEBUG output  */
-	std::cout << "upper chain: ";
+	std::stringstream ss;
+	ss << "upper chain: ";
 	for(auto e : upperChain) {
-		std::cout << e << " ";
+		ss << e << " ";
 	}
-	std::cout << std::endl << "lower chain: ";
+	ss << std::endl << "lower chain: ";
 	for(auto e : lowerChain) {
-		std::cout << e << " ";
+		ss << e << " ";
 	}
-	std::cout << std::endl;
+	LOG(INFO) << ss.str();
 }
 
 uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray) {
@@ -784,8 +779,7 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 }
 
 bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
-	LOG(INFO) << "nextMonotoneArcOfPath";
-	std::cout << path << std::endl;
+	LOG(INFO) << "nextMonotoneArcOfPath" << path;
 
 	if(path.done()) {return false;}
 
@@ -801,9 +795,8 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 
 	} else if(isArcLeftOfArc(*oppositeArc,*currentArc)) { // && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
 		/* opposite arcs left endpoint is to the left of the current arc ones */
-		std::cout << "swap " << path << " --> ";
 		path.swap();
-		std::cout << path << std::endl;
+		LOG(INFO) << "swap" << path;
 		return true;
 	} else {
 		/* step to the next arc to the right of current arc */
@@ -958,7 +951,7 @@ uint Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
 
 void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 	/* set the upperPath/lowerPath in 'wf' */
-	LOG(INFO) << "initPathForEdge " << edgeIdx; fflush(stdout);
+	LOG(INFO) << "initPathForEdge " << edgeIdx;
 	Node& terminalNode   = (upper) ? getTerminalNodeForVertex(data.e(edgeIdx)[0]) : getTerminalNodeForVertex(data.e(edgeIdx)[1]);
 
 	MonotonePathTraversal path;
@@ -970,7 +963,7 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 		auto ie = pathFinder[edgeIdx];
 		Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
 		uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
-		std::cout << "distantArcIdx arc idx " << distantArcIdx << std::endl; fflush(stdout);
+		LOG(INFO) << "distantArcIdx arc idx " << distantArcIdx;
 
 		if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
 			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
@@ -988,7 +981,7 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 		lowerPath = path;
 	}
 
-	std::cout << path << std::endl;
+	LOG(INFO) << path;
 }
 
 uint Wavefront::getPossibleRayIdx(const Node& node, uint edgeIdx) const {
@@ -1033,44 +1026,47 @@ void Wavefront::SortArcsOnNodes() {
 		n.sort(arcList);
 
 		/*	-- DEBUG ONLY --*/
-		std::cout << i << " (" << n.point << ") " << n.arcs.size() << ": ";
-		for(auto a : n.arcs) {
-			std::cout << a << " [";
-			auto arc = &arcList[a];
-			std::cout << arc->firstNodeIdx << "-" << arc->secondNodeIdx << "] ";
-
-			auto nodeB = &nodes[ arc->firstNodeIdx ];
-			if(arc->type != ArcType::RAY && arc->firstNodeIdx == i) {
-				nodeB = &nodes[ arc->secondNodeIdx ];
-			}
-
-			if(arc->firstNodeIdx == i) {
-				std::cout << arc->secondNodeIdx;
-			} else {
-				std::cout << arc->firstNodeIdx;
-			}
-			std::cout <<  " (" << nodeB->arcs.size() << ") ";
-		}
-		std::cout << std::endl;
+//		std::cout << i << " (" << n.point << ") " << n.arcs.size() << ": ";
+//		for(auto a : n.arcs) {
+//			std::cout << a << " [";
+//			auto arc = &arcList[a];
+//			std::cout << arc->firstNodeIdx << "-" << arc->secondNodeIdx << "] ";
+//
+//			auto nodeB = &nodes[ arc->firstNodeIdx ];
+//			if(arc->type != ArcType::RAY && arc->firstNodeIdx == i) {
+//				nodeB = &nodes[ arc->secondNodeIdx ];
+//			}
+//
+//			if(arc->firstNodeIdx == i) {
+//				std::cout << arc->secondNodeIdx;
+//			} else {
+//				std::cout << arc->firstNodeIdx;
+//			}
+//			std::cout <<  " (" << nodeB->arcs.size() << ") ";
+//		}
+//		std::cout << std::endl;
 		/*	-- DEBUG ONLY --*/
 		++i;
 	}
 }
 
 void Wavefront::printChain(const Chain& chain) const {
-	std::cout << "chain links: ";
+	std::stringstream ss;
+	ss <<  "chain links: ";
 	for(auto l : chain) {
-		std::cout << l << " ";
+		ss << l << " ";
 	}
-	std::cout << std::endl;
+	LOG(INFO) << ss.str();
 }
 
 void Wavefront::printEvents() const {
-	std::cout << "eventlist: " << std::endl;
+	std::stringstream ss;
+	ss << "eventlist: " << std::endl;
 	for(auto t : eventTimes) {
 		auto e = events[t.edgeIdx];
-		std::cout << e << std::endl;
+		ss << e << std::endl;
 	}
+	LOG(INFO) << ss.str();
 }
 
 void Wavefront::reset() {

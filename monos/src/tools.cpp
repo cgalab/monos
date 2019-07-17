@@ -47,7 +47,25 @@ void setupEasylogging(int argc, char** argv) {
 	el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
 	el::Loggers::setLoggingLevel(el::Level::Global);
 	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+
+	defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
+
 	el::Loggers::reconfigureAllLoggers(defaultConf);
 	el::Loggers::reconfigureLogger("default", defaultConf);
 }
 
+void resetLogging(bool output) {
+	el::Configurations defaultConf;
+	defaultConf.setToDefault();
+	defaultConf.setGlobally(el::ConfigurationType::Format, "%msg");
+	el::Loggers::addFlag(el::LoggingFlag::HierarchicalLogging);
+	el::Loggers::setLoggingLevel(el::Level::Global);
+	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+
+	if(output) {
+		defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "true");
+	} else {
+		defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
+	}
+	el::Loggers::reconfigureAllLoggers(defaultConf);
+}
