@@ -16,6 +16,9 @@ class InputGraphicsItem :
 
   private:
     const BasicInput * const input;
+    const Polygon * const polygon;
+    const InputWeights * const weights;
+    const InputPoints * const points;
     CGAL::Qt::PainterOstream<K> painterostream;
     QPen vertices_pen;
     QPen segments_pen;
@@ -28,7 +31,7 @@ class InputGraphicsItem :
     void updateBoundingBox();
 
   public:
-    InputGraphicsItem(const BasicInput * const input);
+    InputGraphicsItem(const BasicInput * const input, const Polygon * const polygon, const InputWeights * const weights, const InputPoints * const points);
 
     QRectF boundingRect() const { return bounding_rect; };
 

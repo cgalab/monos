@@ -2,6 +2,11 @@
 
 std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
 	os << "path-edge (" << path.edgeIdx << ") - current:" << path.currentArcIdx << " opposite: " << path.oppositeArcIdx;
+	if(path.iterateAwayFromEdge) {
+		os << " away ";
+	} else {
+		os << " towards ";
+	}
 	return os;
 }
 
@@ -694,7 +699,11 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			}
 		}
 	}
+
+	assert(false);
+	return Bisector(Ray(),aIdx,bIdx);
 }
+
 Bisector Wavefront::getBisectorWRTMonotonicityLine(const Bisector& bisector) const {
 	Bisector bis(bisector);
 
@@ -851,11 +860,10 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 		path.currentArcIdx = path.oppositeArcIdx;
 		LOG(INFO) << "current and opposite are adjacent";
 		return true;
-	//} else if(currentArc.adjacent(oppositeArc)) {
-
 	} else if(isArcLeftOfArc(*oppositeArc,*currentArc)) { // && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
 		/* opposite arcs left endpoint is to the left of the current arc ones */
 		path.swap();
+		path.iterateAwayFromEdge = !path.iterateAwayFromEdge;
 		LOG(INFO) << "swap" << path;
 		return true;
 	} else {
@@ -868,12 +876,23 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 			currentArc  = &arcList[path.currentArcIdx];
 			if(isArcLeftOfArc(*oppositeArc,*currentArc)) {
 				path.swap();
+				path.iterateAwayFromEdge = !path.iterateAwayFromEdge;
 			}
 			LOG(INFO) << "next arc " << path.currentArcIdx << " found";
 			return true;
 		} else {
-			LOG(ERROR) << "No next arc found!";
-			return false;
+//			path.iterateAwayFromEdge = !path.iterateAwayFromEdge;
+//			nextArcIdx = getNextArcIdx(path,*oppositeArc);
+//			if(nextArcIdx != MAX) {
+//				path.swap();
+//				LOG(INFO) << "next arc " << nextArcIdx << " found";
+//				path.currentArcIdx = nextArcIdx;
+//				currentArc  = &arcList[path.currentArcIdx];
+//				return true;
+//			} else {
+				LOG(ERROR) << "No next arc found!";
+				return false;
+//			}
 		}
 	}
 }
@@ -896,9 +915,19 @@ void Wavefront::updateArcNewNode(const uint idx, const uint nodeIdx) {
 }
 
 uint Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const {
-	uint rightNodeIdx = getRightmostNodeIdxOfArc(arc);
-	auto rightNode    = nodes[rightNodeIdx];
-	uint repeat       = 1;
+	uint rightNodeIdx; // = getRightmostNodeIdxOfArc(arc);
+	uint repeat       = 0;
+
+	if(!arc.isRay()) {
+		if(path.iterateAwayFromEdge) {
+			rightNodeIdx = arc.secondNodeIdx;
+		} else {
+			rightNodeIdx = arc.firstNodeIdx;
+		}
+	} else {
+		rightNodeIdx = arc.firstNodeIdx;
+	}
+	auto rightNode = nodes[rightNodeIdx];
 
 	/* run twice */
 	do{
@@ -1029,7 +1058,12 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
 		} else {
 			Arc&  distantArc    = arcList[distantArcIdx];
-			path = (isArcLeftOfArc(initialArc,distantArc)) ? MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx,upper) : MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
+			if(isArcLeftOfArc(initialArc,distantArc)) {
+				path =  MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx,upper);
+			} else {
+				path = MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
+				path.iterateAwayFromEdge = false;
+			}
 		}
 	} else {
 		path = MonotonePathTraversal(edgeIdx,MAX,MAX,upper);

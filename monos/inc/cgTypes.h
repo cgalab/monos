@@ -304,6 +304,7 @@ Point intersectElements(const T& a, const U& b) {
 Point intersectArcArc(const Arc& arcA, const Arc& arcB);
 Point intersectRayArc(const Ray& ray, const Arc& arc);
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
+Point intersectBisectorEdge(const Bisector& bis, const Edge& edge);
 
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {

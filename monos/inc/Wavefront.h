@@ -7,11 +7,12 @@
 
 class MonotonePathTraversal {
 public:
-	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0, bool upperChain=true)
+	MonotonePathTraversal(uint edgeIdx=0, uint currentArcIdx=0, uint oppositeArcIdx=0, bool upperChain=true, bool iterateAway=true)
 	: edgeIdx(edgeIdx)
 	, currentArcIdx(currentArcIdx)
 	, oppositeArcIdx(oppositeArcIdx)
 	, upperChain(upperChain)
+	, iterateAwayFromEdge(iterateAway)
 	{}
 
 	bool done() const {return currentArcIdx == oppositeArcIdx;}
@@ -20,15 +21,18 @@ public:
 	void swap() { std::swap(currentArcIdx, oppositeArcIdx); }
 
 	void set(const MonotonePathTraversal& reset) {
-		edgeIdx 		= reset.edgeIdx;
-		currentArcIdx 	= reset.currentArcIdx;
-		oppositeArcIdx 	= reset.oppositeArcIdx;
-		upperChain 		= reset.upperChain;
+		edgeIdx 		    = reset.edgeIdx;
+		currentArcIdx 	    = reset.currentArcIdx;
+		oppositeArcIdx 	    = reset.oppositeArcIdx;
+		upperChain 		    = reset.upperChain;
+		iterateAwayFromEdge = reset.iterateAwayFromEdge;
 	}
 
 	uint edgeIdx;
 	uint currentArcIdx, oppositeArcIdx;
 	bool upperChain;
+
+	bool iterateAwayFromEdge;
 
 	bool operator==(const MonotonePathTraversal& rhs) const {
 		return this->currentArcIdx == rhs.currentArcIdx && this->edgeIdx == rhs.edgeIdx && this->oppositeArcIdx == rhs.oppositeArcIdx && this->upperChain == rhs.upperChain;

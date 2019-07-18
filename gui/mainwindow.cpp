@@ -35,7 +35,7 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	/* general init. of monos */
 	monos.init();
 
-	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput());
+	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput(), &monos.data->getPolygon(), &monos.data->getWeights(), &monos.data->getVertices());
 	scene.addItem(input_gi.get());
 
 	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
@@ -252,7 +252,7 @@ void MainWindow::dropEvent(QDropEvent *e) {
 
         	monos.reinitialize(fileName.toStdString(),true);
 
-        	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput());
+        	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput(), &monos.data->getPolygon(), &monos.data->getWeights(), &monos.data->getVertices());
         	scene.addItem(input_gi.get());
 
         	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);

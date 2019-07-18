@@ -108,6 +108,14 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 	}
 }
 
+Point intersectBisectorEdge(const Bisector& bis, const Edge& edge) {
+	if(bis.isRay()) {
+		return intersectElements(bis.ray,edge);
+	} else {
+		return intersectElements(bis.line,edge);
+	}
+}
+
 Point intersectArcArc(const Arc& arcA, const Arc& arcB) {
 	if(arcA.isEdge()) {
 		if(arcB.isEdge()) {
