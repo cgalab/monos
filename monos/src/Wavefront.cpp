@@ -495,7 +495,7 @@ Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cI
 
 	Line b(data.getEdge(bIdx).supporting_line());
 	if(intersection != INFPOINT && b.has_on_positive_side(intersection)) {
-		auto distance = normalDistance(b, intersection);
+		auto distance = normalDistance(b, intersection) / (data.w(bIdx)*data.w(bIdx));
 		assert(distance > 0);
 		/* does collapse so we create an event
 		 * and add it to the queue
@@ -595,7 +595,12 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Line bOffsetLine    = Line( bP + bN , b.direction() );
 			Point intersectionB = intersectElements(aOffsetLine, bOffsetLine);
 
-			auto bis = Bisector(Ray(intersectionA,intersectionB),aIdx,bIdx);
+			Ray bisRay(intersectionA,intersectionB);
+			if( !a.has_on_positive_side(bP+bisRay.to_vector()) || !b.has_on_positive_side(bP+bisRay.to_vector()) ) {
+				bisRay= bisRay.opposite();
+			}
+
+			auto bis = Bisector(bisRay,aIdx,bIdx);
 			return bis;
 
 		} else {
