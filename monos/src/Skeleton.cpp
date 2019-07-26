@@ -128,6 +128,9 @@ bool Skeleton::SingleMergeStep() {
 void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, bool& setUpperChain, Point& newPoint) {
 	assert(sourceNode != nullptr);
 
+	wf.initPathForEdge(true,upperChainIndex);
+	wf.initPathForEdge(false,lowerChainIndex);
+
 	/* new intersection point must be to the right of 'currentPoint' in respect to the monotonicity line */
 	auto& currentPoint = sourceNode->point;
 	bool success = false, localOnUpperChain, edgeIntersection = false;
@@ -320,7 +323,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 
 							arcs.push_back(path->currentArcIdx);
 						} else {
-							choosePi = (data.monotoneSmaller(Pi,Pi_2)) ? true : false;
+							choosePi = (data.monotoneSmaller(bis.supporting_line(),Pi,Pi_2)) ? true : false;
 						}
 					}
 
@@ -336,7 +339,8 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 			}
 
 			if(!piReached) {
-				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
+//				Point Pr = wf.nodes[wf.getRightmostNodeIdxOfArc(*arc)].point;
+				Point Pl = wf.nodes[wf.getLeftmostNodeIdxOfArc(*arc)].point;
 
 				bool classicalSweep = true;
 				auto arcOpposite = (arc == arc_l) ? arc_u : arc_l;
@@ -353,9 +357,9 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, b
 					LOG(INFO) << "possible ghost arc ahead!";
 				}
 
-				LOG(INFO) << "comparing points: " << Pi << " and " << Pr;
+				LOG(INFO) << "comparing points: " << Pi << " and " << Pl;
 
-				if( !classicalSweep || ((data.monotoneSmaller(Pi,Pr) && !edgeIntersection) ||
+				if( !classicalSweep || ((data.monotoneSmaller(Pi,Pl) && !edgeIntersection) ||
 					(arc->isRay() && !data.rayPointsLeft(arc->ray) && !edgeIntersection) ) ) {
 					LOG(INFO) << "no 2nd intersection but height of Pi reached";
 					piReached = true;
