@@ -227,7 +227,6 @@ bool Data::ensureMonotonicity() {
 	intervalA = vA;
 	intervalB = vA;
 
-//	std::vector<MonotoneVector> intervals;
 	std::set<MonotoneVector,MonVectCmp> intervals;
 	uint idCnt = 0;
 
@@ -244,15 +243,11 @@ bool Data::ensureMonotonicity() {
 		if(CGAL::right_turn(corner-vA,corner,corner+vB)) {
 			MonotoneVector a(vA,MonotoneType::START, idCnt);
 			MonotoneVector b(vB,MonotoneType::END,   idCnt);
-//			intervals.push_back(a);
-//			intervals.push_back(b);
 			intervals.insert(a);
 			intervals.insert(b);
 
 			a = MonotoneVector(Vector(-vA.x(),-vA.y()),MonotoneType::START,  idCnt+1);
 			b = MonotoneVector(Vector(-vB.x(),-vB.y()),MonotoneType::END,    idCnt+1);
-//			intervals.push_back(a);
-//			intervals.push_back(b);
 			intervals.insert(a);
 			intervals.insert(b);
 
@@ -273,10 +268,6 @@ bool Data::ensureMonotonicity() {
 		ss << i << std::endl;
 	}
 	LOG(INFO) << ss.str();
-
-	/* sort all vectors in interval in CCW order */
-//	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
-//	std::sort(intervals.begin(),intervals.end(),MonVectCmp());
 
 	/* iterate to first START vector */
 	auto itStart  = intervals.begin();
@@ -314,6 +305,7 @@ bool Data::ensureMonotonicity() {
 			}
 			/* we found a window*/
 			if(activeCnt == 0) {
+				/* TODO VERIFY CORRECT LINE! */
 				success = true;
 			} else if(it->type == MonotoneType::START) {
 				if(!activeIntervals[it->id]) {
@@ -322,39 +314,98 @@ bool Data::ensureMonotonicity() {
 				}
 			}
 
-		} while(!success && ++it != intervals.end());
+			if(success) {
+				/* in case of a rectilinear monotone polygon we have two possible monotonoicity lines
+				 * due to the angle intervals we stored, therfore we have to check if we found the  right
+				 * one */
+				Vector a = it->vector;
+				++it;
+				Vector b = it->vector;
+				Line line = getMonotonicityLineFromVector(a,b);
+
+				LOG(INFO) << "monotonicity Line " << line << " dir: " << line.direction().to_vector() << " found ... testing.";
+
+				if(testMonotonicityLineOnPolygon(line)) {
+					monotonicityLine = line;
+					perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
+					isMonotone = true;
+				} else {
+					success = false;
+				}
+			}
+
+			/* iterate */
+			if(++it == intervals.end()) {it = intervals.begin();}
+
+		} while(!success && it != itStart);
 	}
 
 	/* construct the monotonicity line */
-	if(success) {
-		Vector a = it->vector;
-		++it;
-		Vector b = it->vector;
-
-		auto c = CGAL::bisector(Line(ORIGIN,a),Line(ORIGIN,b));
-		monotonicityLine = c.perpendicular(ORIGIN);
-
-		if(monotonicityLine.to_vector().x() < 0.0) {
-			monotonicityLine = monotonicityLine.opposite();
-		}
-		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
-		isMonotone = true;
-		return true;
-	} else { /* polygon is not monotone */
+	if(!success) {
 		LOG(WARNING) << "Polygon not monotone!";
 		return false;
 	}
+
+	return true;
+}
+
+/* test if given line is a line where the input polygon is monotone to */
+bool Data::testMonotonicityLineOnPolygon(const Line line) const {
+	uint startIdx = 0;
+	Point pStart  = eA(startIdx);
+	for(uint i = startIdx+1; i < polygon.size(); ++i) {
+		auto p = eA(i);
+		if(monotoneSmaller(line,p,pStart)) {
+			startIdx = i; pStart = p;
+		}
+	}
+
+	/* startIdx is 'leftmost' edge, start walking 'rightwards' until we violate the monotonicity */
+	bool monotone  = true, rightward = true;
+	auto dir = line.direction().perpendicular(CGAL::POSITIVE);
+	LOG(INFO) << "test dir: " << dir;
+	auto idxIt = startIdx;
+	do {
+		LOG(INFO) << "pa " << eA(idxIt) << ", pb " << eB(idxIt);
+		auto testLine = Line(eA(idxIt),-dir);
+		if(rightward && testLine.has_on_negative_side(eB(idxIt))) {
+			LOG(INFO) << "end rightward";
+			rightward = false;
+		} else if(!rightward && testLine.has_on_positive_side(eB(idxIt))) {
+			LOG(INFO) << "end monotone";
+			monotone = false;
+		}
+
+		if(++idxIt >= polygon.size()) {idxIt = 0;}
+	} while(monotone && idxIt != startIdx);
+
+	return monotone;
+}
+
+Line Data::getMonotonicityLineFromVector(const Vector a, const Vector b) const {
+	auto c = CGAL::bisector(Line(ORIGIN,a),Line(ORIGIN,b));
+	Line l = c.perpendicular(ORIGIN);
+
+	if(l.to_vector().x() < 0.0) {
+		l = l.opposite();
+	} else if(l.is_vertical() && l.to_vector().y() < 0.0) {
+		l = l.opposite();
+	}
+
+	return l;
 }
 
 bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
 	assert(a != b);
-
-	Line perpL = Line(b,perpMonotonDir);
+	auto checkDir = line.direction().perpendicular(CGAL::POSITIVE);
+	Line perpL = Line(b,checkDir);
 	return perpL.has_on_positive_side(a);
 }
 
 bool Data::monotoneSmaller(const Point& a, const Point& b) const {
-	return monotoneSmaller(monotonicityLine,a,b);
+	assert(a != b);
+	Line perpL = Line(b,perpMonotonDir);
+	return perpL.has_on_positive_side(a);
 }
 bool Data::rayPointsLeft(const Ray& ray) const {
 	Point Pa = monotonicityLine.point(0);

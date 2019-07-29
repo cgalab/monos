@@ -137,6 +137,10 @@ private:
 	bool parseOBJ(const std::vector<std::string>& lines);
 	bool parseGML(std::istream &istream);
 	bool parsePOLY(const std::vector<std::string>& lines);
+
+	Line getMonotonicityLineFromVector(const Vector a, const Vector b) const;
+	bool testMonotonicityLineOnPolygon(const Line line) const;
+
 	/** Input: vertices as 2D coordinates, polygon as edge "list"
 	 *  with index to the inputVertices
 	 **/

@@ -1,6 +1,6 @@
 # MONOS
 
-MONOS computes the weighted straight skeleton of a given monotone polygon.
+MONOS computes the straight skeleton of a given monotone polygon.
 
 # Algorithm
 
@@ -9,18 +9,12 @@ The algorithm is based on the following scientific work: https://doi.org/10.1016
 
 # Input/Output
 
-Reads GraphML .gml or  wavefront .obj format that describes a polygon. Writes the
-same format; .obj gets 3D coordinates which can be imported to programs like
+Reads GraphML (.graphml) or  wavefront (.obj) format that describes a polygon. Writes the
+same format; .obj gets 3D coordinates which can be imported into programs like
 Blender.
 
 # ToDo's
-- implement weighted bisector (enables weighted variant)
 - implement GraphML output
-- handle multi events and parallel bisectors/input edges
-
-## Optional ToDo's
-- library function
-- GUI version
 
 # Requirements 
 - C++17 enabled complier (gcc,clang)
@@ -36,14 +30,13 @@ Blender.
 
 # Usage
 
-<code>monos [-h] [-v|-s] [-obj &lt;filename&gt;] &lt;filename&gt;</code>
+<code>monos [--verbose] [--obj &lt;filename&gt;] &lt;filename&gt;</code>
 
 | options        | description           |
 | -------------:|:------------- |
-|  -h           |         print this help |
-|  -v           |         verbose mode, shows more information about the computation |
-|  -s           |         silent mode, shows no information |
-|  -obj      |            write output in wavefront obj format (3D coordinates) |
+|  --help           |         print help |
+|  --verbose           |         verbose mode, shows information about the computation |
+|  --obj      |            write output in wavefront obj format (3D coordinates) |
 |  &lt;filename&gt; |           input type is either wavefront obj or GML format |
 
 # Submodules
