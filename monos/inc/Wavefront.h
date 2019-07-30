@@ -119,6 +119,7 @@ public:
 	void SortArcsOnNodes();
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 
+	Node* getNode(const uint& idx) {return &nodes[idx];}
 	Arc* getArc(const uint& idx) {return &arcList[idx];}
 	Arc* getArc(const MonotonePathTraversal& path) {return &arcList[path.currentArcIdx];}
 	uint getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const;
@@ -138,6 +139,8 @@ public:
 	void updateArcNewNode(const uint idx, const uint nodeIdx);
 
 	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
+	bool isEdgeOnLowerChain(const uint edgeIdx) const;
+
 	bool hasParallelBisector(const Event& event) const;
 
 	/* the chain skeleton and the final skeleton is stored in nodes and arcList */

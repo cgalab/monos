@@ -228,6 +228,7 @@ void MainWindow::on_actionEventStep_triggered() {
 		}
 	}
 
+	on_actionResize_triggered();
 	time_changed();
 }
 

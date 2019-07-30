@@ -821,6 +821,16 @@ uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& e
 	return arcIdx;
 }
 
+/* as the polygon boundary is index from 0 to n and we have start and end indices stored
+ * we can decide in O(1) if an index in in the lower chain */
+bool Wavefront::isEdgeOnLowerChain(const uint edgeIdx) const {
+	if(startLowerEdgeIdx < endLowerEdgeIdx) {
+		return edgeIdx >= startLowerEdgeIdx && edgeIdx <= endLowerEdgeIdx;
+	} else {
+		return edgeIdx >= startLowerEdgeIdx || edgeIdx <= endLowerEdgeIdx;
+	}
+}
+
 void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleton) {
 	uint nodeIdx = nodes.size();
 	auto paths 	 = pathFinder[event.mainEdge];
@@ -1025,7 +1035,7 @@ uint Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
 	} else if (arc.isRay()) {
 		return arc.firstNodeIdx;
 	} else {
-		LOG(ERROR) << "Traversing a disabled arc/ray!";
+		LOG(ERROR) << "Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
 		return arc.firstNodeIdx;
 	}
 }
@@ -1038,7 +1048,7 @@ uint Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
 	} else if (arc.isRay()) {
 		return arc.firstNodeIdx;
 	} else {
-		LOG(ERROR) << "Traversing a disabled arc/ray!";
+		LOG(ERROR) << "Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
 		return arc.firstNodeIdx;
 	}
 }

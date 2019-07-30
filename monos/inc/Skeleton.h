@@ -20,7 +20,6 @@
 
 class Skeleton {
 public:
-//	Skeleton(const Data& _data, Wavefront& _wf) :
 	Skeleton(Data& _data, Wavefront& _wf) :
 		data(_data),wf(_wf) {}
 
@@ -39,10 +38,10 @@ public:
 	bool computationFinished = false;
 
 private:
-	void findNextIntersectingArc(Bisector& bis, std::vector<uint>& arcs, bool& upperChain, Point& newPoint);
+	void findNextIntersectingArc(Bisector& bis, std::set<uint>& arcs, bool& upperChain, Point& newPoint);
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
-	uint handleMerge(const std::vector<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Bisector& bis);
+	uint handleMerge(const std::set<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Bisector& bis);
 	void updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	uint nextUpperChainIndex(const uint& idx) const;
@@ -73,7 +72,7 @@ private:
 	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
 	bool areNextInputEdgesCollinear() const;
 	Point handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, Bisector& bis);
-	bool handleSourceGhostNode(Bisector& bis, std::vector<uint>& arcs, Point& newPoint);
+	void handleSourceGhostNode(Bisector& bis, std::set<uint>& arcs, Point& newPoint);
 
 	Data& data;
 	Wavefront& 	wf;
