@@ -295,6 +295,16 @@ bool Data::ensureMonotonicity() {
 
 	if(activeCnt == 0) {
 		success = true;
+		Vector a = intervals.rbegin()->vector;
+		Vector b = intervals.begin()->vector;
+		Line line = getMonotonicityLineFromVector(a,b);
+		if(testMonotonicityLineOnPolygon(line)) {
+							monotonicityLine = line;
+							perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
+							isMonotone = true;
+						} else {
+							assert(false);
+						}
 	} else {
 		do {
 			if(it->type == MonotoneType::END) {
