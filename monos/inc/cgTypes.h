@@ -266,11 +266,13 @@ struct Node {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));
 	}
 
-	void removeArc(const uint arcIdx) {
+	bool removeArc(const uint arcIdx) {
 		auto idx = std::find(arcs.begin(),arcs.end(),arcIdx);
 		if(idx != arcs.end()) {
 			arcs.erase(idx);
+			return true;
 		}
+		return false;
 	}
 
 	friend std::ostream& operator<< (std::ostream& os, const Node& node);
