@@ -130,6 +130,13 @@ public:
 
 	// gui debug
 	std::vector<Edge> lines;
+	void visualizeBisector(Edge edge) {
+		if(gui) {
+			if(!lines.empty()) {lines.pop_back();}
+			lines.push_back(edge);
+		}
+	}
+
 
 private:
 	bool loadFile(const std::string& fileName);

@@ -299,12 +299,12 @@ bool Data::ensureMonotonicity() {
 		Vector b = intervals.begin()->vector;
 		Line line = getMonotonicityLineFromVector(a,b);
 		if(testMonotonicityLineOnPolygon(line)) {
-							monotonicityLine = line;
-							perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
-							isMonotone = true;
-						} else {
-							assert(false);
-						}
+			monotonicityLine = line;
+			perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
+			isMonotone = true;
+		} else {
+			assert(false);
+		}
 	} else {
 		do {
 			if(it->type == MonotoneType::END) {

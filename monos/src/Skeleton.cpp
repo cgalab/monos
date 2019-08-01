@@ -55,11 +55,7 @@ bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "Bisector-dir: " << bis.direction();
 
 	/* visualize next bisector via dashed line-segment */
-	if(data.gui) {
-		Edge visBis(sourceNode->point,sourceNode->point+(5*bis.to_vector()) );
-		if(!data.lines.empty()) {data.lines.pop_back();}
-		data.lines.push_back(visBis);
-	}
+	data.visualizeBisector(Edge(sourceNode->point,sourceNode->point+(5*bis.to_vector())));
 
 	/* setup intersection call */
 	std::set<uint> arcs;
@@ -341,15 +337,67 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::set<uint>& arcs, bool
 				Pi_2 = handleGhostVertex(*path,*arc,bis);
 
 				if(Pi_2 == INFPOINT) {
-					auto lRef = bis.supporting_line();
-					if(arc->isEdge()) {
-						Point a = arc->edge.point(0);
-						Point b = arc->edge.point(1);
+					auto bisLine = bis.supporting_line();
+					Point a = arc->edge.point(0);
+					Point b = arc->edge.point(1);
 
-						if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-							(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+//					if(bisLine.is_vertical() && bis.isParallel()) {
+//						LOG(INFO) << "bis vertical and parallel!";
+//						bool collinear = false;
+//
+//						std::set<uint> arcEdgeIndices;
+//						for(auto i : arc->getNodeIndices()) {
+//							auto n = wf.getNode(i);
+//							for(auto a : n->arcs) {
+//								auto arcIt = wf.getArc(a);
+//								arcEdgeIndices.insert(arcIt->leftEdgeIdx);
+//								arcEdgeIndices.insert(arcIt->rightEdgeIdx);
+//							}
+//
+//							for(auto i : {bis.eIdxA,bis.eIdxB}) {
+//								for(auto j : arcEdgeIndices) {
+//									LOG(INFO) << "check " << i << ", " << j;
+//									if(i != j && data.isEdgeCollinear(i,j)) {
+//										LOG(INFO) << "collinear!";
+//										collinear = true;
+//										Pi_2 = n->point;
+//										break;
+//									}
+//								}
+//							}
+//
+//							arcEdgeIndices.clear();
+//							if(collinear) {break;}
+//						}
+//
+//
+////						if(collinear) {
+////							LOG(INFO) << "collienar is true";
+////							auto bisDist = CGAL::squared_distance(data.getEdge(bis.eIdxA).supporting_line(),bisLine);
+////							LOG(INFO) << "dist comp";
+////							auto aDist   = CGAL::squared_distance(a,data.getEdge(arc->leftEdgeIdx).supporting_line());
+////							LOG(INFO) << "dist comp";
+////							auto bDist   = CGAL::squared_distance(b,data.getEdge(arc->leftEdgeIdx).supporting_line());
+////
+////							LOG(INFO) << "compare distances!";
+////							if(bisDist == aDist) {
+////								Pi_2 = a;
+////							} else if(bisDist == bDist) {
+////								Pi_2 = b;
+////							}
+////						}
+//
+//						if(Pi_2 == INFPOINT) {
+//							Pi_2 = intersectBisectorArc(bis,*arc);
+//						}
+//
+//					} else
+						if(arc->isEdge()) {
+
+						if( (bisLine.has_on_positive_side(a) && bisLine.has_on_positive_side(b)) ||
+							(bisLine.has_on_negative_side(a) && bisLine.has_on_negative_side(b))
 						) {
-							// no intersection
+							// no intersection, edge lies completlely on either side of bis
 						} else {
 							Pi_2 = intersectBisectorArc(bis,*arc);
 						}
@@ -376,7 +424,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::set<uint>& arcs, bool
 						if(Pi_2 == pNodeB.point) {
 							for(auto aIdx : pNodeB.arcs) {
 								auto arcIt = wf.getArc(aIdx);
-								if(arcIt->secondNodeIdx == arc->secondNodeIdx) {
+								if(arcIt->secondNodeIdx == arc->secondNodeIdx) { // || arcIt->firstNodeIdx == arc->secondNodeIdx) {
 									arcAlreadyInserted = true;
 									arcs.insert(aIdx);
 								}
@@ -511,6 +559,7 @@ void Skeleton::findNextIntersectingArc(Bisector& bis, std::set<uint>& arcs, bool
 	} else {
 		LOG(ERROR) << "NO INTERSECTION FOUND!!!";
 	}
+
 	LOG(INFO) << "handle ghost?";
 	/* if we have a sourcenode that is a ghost node we handle the intersection here */
 	handleSourceGhostNode(bis,arcs,newPoint);
