@@ -93,11 +93,21 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 }
 
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
-	if(arc.type == ArcType::NORMAL) {
-		if(bis.isRay()) {
-			return intersectElements(bis.ray,arc.edge);
+	auto lRef = bis.supporting_line();
+	if(arc.isEdge()) {
+		Point a = arc.edge.point(0);
+		Point b = arc.edge.point(1);
+
+		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+				(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+		) {
+			return INFPOINT;
 		} else {
-			return intersectElements(bis.line,arc.edge);
+			if(bis.isRay()) {
+				return intersectElements(bis.ray,arc.edge);
+			} else {
+				return intersectElements(bis.line,arc.edge);
+			}
 		}
 	} else {
 		if(bis.isRay()) {

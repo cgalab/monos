@@ -18,6 +18,74 @@
 #include "Data.h"
 #include "Wavefront.h"
 
+class Intersection {
+	using ArcList = std::set<uint>;
+public:
+	Intersection(Point intersection = INFPOINT):intersection(intersection) {}
+	~Intersection() {}
+
+	void addArc(uint arcIdx, bool upperChain) {
+		if(upperChain) {
+			addUpperArc(arcIdx);
+		} else {
+			addLowerArc(arcIdx);
+		}
+	}
+	void addUpperArc(uint arcIdx) {upperArcs.insert(arcIdx);}
+	void addLowerArc(uint arcIdx) {lowerArcs.insert(arcIdx);}
+
+	void clearUpperArcs() {upperArcs.clear();}
+	void clearLowerArcs() {lowerArcs.clear();}
+
+	void setIntersection(bool upperChain) {intersection = (upperChain) ? firstUpperIntersection : firstLowerIntersection;}
+	void setIntersection(Point newIntersection) {intersection = newIntersection;}
+	void setIntersection(Point newIntersection, bool upperChain) {
+		if(upperChain) {
+			setUpperIntersection(newIntersection);
+		} else {
+			setLowerIntersection(newIntersection);
+		}
+	}
+	void setUpperIntersection(Point newIntersection) {firstUpperIntersection = newIntersection;}
+	void setLowerIntersection(Point newIntersection) {firstLowerIntersection = newIntersection;}
+
+	Point point(bool upperChain) const { return (upperChain) ? upperPoint() : lowerPoint();}
+	Point point() const {
+		for(auto p : {firstLowerIntersection,firstUpperIntersection,intersection}) {
+			if(p != INFPOINT) {
+				return p;
+			}
+		}
+		return INFPOINT;
+	}
+
+	Point lowerPoint() const {return firstLowerIntersection;}
+	Point upperPoint() const {return firstUpperIntersection;}
+	uint size() const {return lowerArcs.size() + upperArcs.size();}
+
+	bool empty() const {return upperArcs.empty() && lowerArcs.empty();}
+	bool isValid() const {return firstLowerIntersection != INFPOINT || firstUpperIntersection != INFPOINT;}
+	bool isBothIntersectionsValid() const {return firstLowerIntersection != INFPOINT && firstUpperIntersection != INFPOINT;}
+	bool isEqualIntersectionPoints() const { return firstLowerIntersection == firstUpperIntersection;}
+
+
+	bool onlyUpperChain() const {return !empty() && lowerArcs.empty();}
+	bool onlyLowerChain() const {return !empty() && upperArcs.empty();}
+
+	ArcList getUpperArcs() const {return upperArcs;}
+	ArcList getLowerArcs() const {return lowerArcs;}
+	ArcList getAllArcs() const {return ArcList(std::inserter(upperArcs,upperArcs.end()),std::inserter(lowerArcs,lowerArcs.end()));}
+
+	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
+
+private:
+	ArcList upperArcs;
+	ArcList lowerArcs;
+	Point intersection = INFPOINT;
+	Point firstUpperIntersection = INFPOINT;
+	Point firstLowerIntersection = INFPOINT;
+};
+
 class Skeleton {
 public:
 	Skeleton(Data& _data, Wavefront& _wf) :
@@ -38,10 +106,10 @@ public:
 	bool computationFinished = false;
 
 private:
-	void findNextIntersectingArc(Bisector& bis, std::set<uint>& arcs, bool& upperChain, Point& newPoint);
+	Intersection findNextIntersectingArc(Bisector& bis);
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
-	uint handleMerge(const std::set<uint>& arcIndices, const uint& edgeIdxA, const uint& edgeIdxB, const Point& p, const Bisector& bis);
+	uint handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
 	void updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	uint nextUpperChainIndex(const uint& idx) const;
@@ -71,8 +139,11 @@ private:
 
 	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
 	bool areNextInputEdgesCollinear() const;
-	Point handleGhostVertex(const MonotonePathTraversal& path, const Arc& arc, Bisector& bis);
+	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
 	void handleSourceGhostNode(Bisector& bis, std::set<uint>& arcs, Point& newPoint);
+
+	void checkNodeIntersection(Intersection& intersection, const Arc* arc, bool localOnUpperChain);
+	bool monotoneSmallerPointOnBisector(const Line& bisLine, const Intersection& intersection, const bool localOnUpperChain) const;
 
 	Data& data;
 	Wavefront& 	wf;
