@@ -72,7 +72,9 @@ bool Skeleton::SingleMergeStep() {
 	/* setup intersection call */
 	/* obtain the arcIdx and newPoint for the next bis arc intersection */
 	Intersection intersection = findNextIntersectingArc(bis);
-
+	LOG(INFO) << "intersection " << intersection;
+	simplifyIntersection(bis,intersection);
+	LOG(INFO) << "intersection " << intersection;
 
 	if(!intersection.empty()) {
 		LOG(INFO) << "After findNextIntersectingArc: arcs NOT empty!" << intersection;
@@ -348,10 +350,6 @@ Intersection Skeleton::findNextIntersectingArc(Bisector& bis) {
 						Line lRef(sourceNode->point,data.monotonicityLine.direction());
 						auto dPi   = normalDistance(lRef,intersection.point(!localOnUpperChain));
 						auto dPi_2 = normalDistance(lRef,intersection.point(localOnUpperChain));
-						if(dPi > dPi_2) {
-							intersection.setIntersection(localOnUpperChain);
-							intersection.clear(!localOnUpperChain);
-						}
 						choosePi = (dPi < dPi_2) ? true : false;
 					} else {
 						/* equality check is difficult for bisector intersections, let us
@@ -510,6 +508,21 @@ bool Skeleton::monotoneSmallerPointOnBisector(const Line& bisLine, const Interse
 	return data.monotoneSmaller(bisLine,intersection.point(!localOnUpperChain),intersection.point(localOnUpperChain));
 }
 
+void Skeleton::simplifyIntersection(const Bisector& bis, Intersection& intersection) {
+	if(intersection.size() > 1) {
+		if(intersection.isBothIntersectionsValid()) {
+			if(data.monotoneSmaller(intersection.getUpperIntersection(),intersection.getLowerIntersection())) {
+				intersection.setIntersection(intersection.getUpperIntersection());
+				intersection.clear(false);
+			} else {
+				if(intersection.getUpperIntersection() != intersection.getLowerIntersection()) {
+					intersection.setIntersection(intersection.getLowerIntersection());
+					intersection.clear(true);
+				}
+			}
+		}
+	}
+}
 
 uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis) {
 	auto sourceNode = &wf.nodes[sourceNodeIdx];

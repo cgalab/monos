@@ -97,6 +97,8 @@ public:
 		return allArcs;
 //		return ArcList(std::inserter(upperArcs,upperArcs.end()),std::inserter(lowerArcs,lowerArcs.end()));
 	}
+	Point getUpperIntersection() const {return firstUpperIntersection;}
+	Point getLowerIntersection() const {return firstLowerIntersection;}
 
 	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
 
@@ -129,6 +131,7 @@ public:
 
 private:
 	Intersection findNextIntersectingArc(Bisector& bis);
+	void simplifyIntersection(const Bisector& bis, Intersection& intersection);
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
 	uint handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
