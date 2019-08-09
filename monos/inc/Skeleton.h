@@ -34,8 +34,21 @@ public:
 	void addUpperArc(uint arcIdx) {upperArcs.insert(arcIdx);}
 	void addLowerArc(uint arcIdx) {lowerArcs.insert(arcIdx);}
 
+	void clearAll() {clearUpperArcs(); clearLowerArcs();}
+	void clear(bool upperChain) {
+		if(upperChain) {
+			clearUpperArcs();
+		} else {
+			clearLowerArcs();
+		}
+	}
 	void clearUpperArcs() {upperArcs.clear();}
 	void clearLowerArcs() {lowerArcs.clear();}
+
+	void add(Point intersection, uint arcIdx, bool upperChain) {
+		setIntersection(intersection,upperChain);
+		addArc(arcIdx,upperChain);
+	}
 
 	void setIntersection(bool upperChain) {intersection = (upperChain) ? firstUpperIntersection : firstLowerIntersection;}
 	void setIntersection(Point newIntersection) {intersection = newIntersection;}
@@ -64,8 +77,12 @@ public:
 	uint size() const {return lowerArcs.size() + upperArcs.size();}
 
 	bool empty() const {return upperArcs.empty() && lowerArcs.empty();}
-	bool isValid() const {return firstLowerIntersection != INFPOINT || firstUpperIntersection != INFPOINT;}
-	bool isBothIntersectionsValid() const {return firstLowerIntersection != INFPOINT && firstUpperIntersection != INFPOINT;}
+	bool isValid() const {
+		return !empty() && (firstLowerIntersection != INFPOINT || firstUpperIntersection != INFPOINT);
+	}
+	bool isBothIntersectionsValid() const {
+		return lowerPoint() != INFPOINT && upperPoint() != INFPOINT && !upperArcs.empty() && !lowerArcs.empty();
+	}
 	bool isEqualIntersectionPoints() const { return firstLowerIntersection == firstUpperIntersection;}
 
 
@@ -74,7 +91,12 @@ public:
 
 	ArcList getUpperArcs() const {return upperArcs;}
 	ArcList getLowerArcs() const {return lowerArcs;}
-	ArcList getAllArcs() const {return ArcList(std::inserter(upperArcs,upperArcs.end()),std::inserter(lowerArcs,lowerArcs.end()));}
+	ArcList getAllArcs() const {
+		ArcList allArcs(upperArcs);
+		std::copy (lowerArcs.begin(),lowerArcs.end(),std::inserter(allArcs,allArcs.end()));
+		return allArcs;
+//		return ArcList(std::inserter(upperArcs,upperArcs.end()),std::inserter(lowerArcs,lowerArcs.end()));
+	}
 
 	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
 
@@ -140,10 +162,12 @@ private:
 	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
-	void handleSourceGhostNode(Bisector& bis, std::set<uint>& arcs, Point& newPoint);
+	void handleSourceGhostNode(Bisector& bis, Intersection& intersection);
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc, bool localOnUpperChain);
 	bool monotoneSmallerPointOnBisector(const Line& bisLine, const Intersection& intersection, const bool localOnUpperChain) const;
+
+	void initNextChainAndPath(bool upperChain);
 
 	Data& data;
 	Wavefront& 	wf;
