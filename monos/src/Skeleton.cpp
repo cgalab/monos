@@ -153,7 +153,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	Arc *arc, *arc_u, *arc_l;
 	Intersection *intersection;
 
-	if(bis.isParallel() && bis.isRay()) {bis.changeToLine();}
+	if(bis.isParallel() && bis.isRay()) {bis.changeToLine(); LOG(INFO) << "change bis-ray to line.";}
 
 	/* while iterate we may iterate one arc to far, this is an easy way to step back */
 	pathBackupLower = wf.lowerPath; pathBackupUpper = wf.upperPath;
