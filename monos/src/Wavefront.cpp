@@ -971,6 +971,17 @@ bool Wavefront::isArcLeftOfPoint(const Arc& arc, const Point& point) const {
 	}
 }
 
+bool Wavefront::isArcLeftOfArc(const Arc* arcA, const Arc* arcB) const {
+	assert(arcA != nullptr && arcB != nullptr);
+	if(arcA == nullptr) {
+		return false;
+	} else if(arcB == nullptr) {
+		return true;
+	} else {
+		return isArcLeftOfArc(data.monotonicityLine,*arcA,*arcB);
+	}
+}
+
 bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
 	return isArcLeftOfArc(data.monotonicityLine,arcA,arcB);
 }

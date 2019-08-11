@@ -100,6 +100,12 @@ public:
 		}
 	}
 
+	void changeToLine() {
+		line = supporting_line();
+		type = BisType::LINE;
+		ray  = Ray();
+	}
+
 	void newSource(const Point s) {
 		if(isRay()) {
 			ray = Ray(s,direction());
@@ -304,14 +310,16 @@ Point intersectElements(const T& a, const U& b) {
 	Point intersectionPoint = INFPOINT;
 
 	LOG(INFO) << "(" << a << " -- " << b << ") ";
+
 	auto result = CGAL::intersection(a, b);
 	if (result) {
 		if (const Point* p = boost::get<Point>(&*result)) {
 			return Point(*p);
+		} else if (const Edge* e = boost::get<Edge>(&*result)) {
+			LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
+			return Point(e->point(0));
 		} else {
 			LOG(WARNING) << "Intersection forms a segment/ray/line";
-//			const Edge* s = boost::get<Edge>(&*result);
-//			std::cout << *s << std::endl;
 			return intersectionPoint;
 		}
 	}

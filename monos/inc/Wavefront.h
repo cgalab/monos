@@ -103,7 +103,9 @@ public:
 	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
 	inline uint addNode(const Point& intersection, const Exact& time) {
 		Node node(NodeType::NORMAL,intersection,time);
-		nodes.push_back(node);
+		if(nodes.rbegin()->point != node.point) {
+			nodes.push_back(node);
+		}
 		return nodes.size() - 1;
 	}
 
@@ -129,6 +131,7 @@ public:
 	 * with respect to the monotonicity line. Actually only the right path suffices! */
 	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
 	bool isArcLeftOfArc(const Line& ray, const Arc& arcA, const Arc& arcB) const;
+	bool isArcLeftOfArc(const Arc* arcA, const Arc* arcB) const;
 	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const;
 	bool isArcLeftOfPoint(const Arc& arc, const Point& point) const;
 	uint getLeftmostNodeIdxOfArc(const Arc& arc) const;

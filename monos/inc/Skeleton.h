@@ -24,91 +24,35 @@ public:
 	Intersection(Point intersection = INFPOINT):intersection(intersection) {}
 	~Intersection() {}
 
-	void addArc(uint arcIdx, bool upperChain) {
-		if(upperChain) {
-			addUpperArc(arcIdx);
-		} else {
-			addLowerArc(arcIdx);
-		}
-	}
-	void addUpperArc(uint arcIdx) {upperArcs.insert(arcIdx);}
-	void addLowerArc(uint arcIdx) {lowerArcs.insert(arcIdx);}
+	void addArc(uint arcIdx) {assert(!done); arcs.insert(arcIdx);}
+	void clear() {arcs.clear();}
 
-	void clearAll() {clearUpperArcs(); clearLowerArcs();}
-	void clear(bool upperChain) {
-		if(upperChain) {
-			clearUpperArcs();
-		} else {
-			clearLowerArcs();
-		}
-	}
-	void clearUpperArcs() {upperArcs.clear();}
-	void clearLowerArcs() {lowerArcs.clear();}
-
-	void add(Point intersection, uint arcIdx, bool upperChain) {
-		setIntersection(intersection,upperChain);
-		addArc(arcIdx,upperChain);
+	void add(Point intersection, uint arcIdx) {
+		assert(!done);
+		setIntersection(intersection);
+		addArc(arcIdx);
 	}
 
-	void setIntersection(bool upperChain) {intersection = (upperChain) ? firstUpperIntersection : firstLowerIntersection;}
-	void setIntersection(Point newIntersection) {intersection = newIntersection;}
-	void setIntersection(Point newIntersection, bool upperChain) {
-		if(upperChain) {
-			setUpperIntersection(newIntersection);
-		} else {
-			setLowerIntersection(newIntersection);
-		}
-	}
-	void setUpperIntersection(Point newIntersection) {firstUpperIntersection = newIntersection;}
-	void setLowerIntersection(Point newIntersection) {firstLowerIntersection = newIntersection;}
+	void setIntersection(Point P) {intersection = P;}
+	Point getIntersection() const {return intersection;}
 
-	Point point(bool upperChain) const { return (upperChain) ? upperPoint() : lowerPoint();}
-	Point point() const {
-		for(auto p : {firstLowerIntersection,firstUpperIntersection,intersection}) {
-			if(p != INFPOINT) {
-				return p;
-			}
-		}
-		return INFPOINT;
-	}
+	void setDone() {done=true;}
+	bool isDone() {return done;}
 
-	Point lowerPoint() const {return firstLowerIntersection;}
-	Point upperPoint() const {return firstUpperIntersection;}
-	uint size() const {return lowerArcs.size() + upperArcs.size();}
-
-	bool empty() const {return upperArcs.empty() && lowerArcs.empty();}
-	bool isValid() const {
-		return !empty() && (firstLowerIntersection != INFPOINT || firstUpperIntersection != INFPOINT);
-	}
-	bool isBothIntersectionsValid() const {
-		return lowerPoint() != INFPOINT && upperPoint() != INFPOINT && !upperArcs.empty() && !lowerArcs.empty();
-	}
-	bool isEqualIntersectionPoints() const { return firstLowerIntersection == firstUpperIntersection;}
-
-
-	bool onlyUpperChain() const {return !empty() && lowerArcs.empty();}
-	bool onlyLowerChain() const {return !empty() && upperArcs.empty();}
-
-	ArcList getUpperArcs() const {return upperArcs;}
-	ArcList getLowerArcs() const {return lowerArcs;}
-	ArcList getAllArcs() const {
-		ArcList allArcs(upperArcs);
-		std::copy (lowerArcs.begin(),lowerArcs.end(),std::inserter(allArcs,allArcs.end()));
-		return allArcs;
-//		return ArcList(std::inserter(upperArcs,upperArcs.end()),std::inserter(lowerArcs,lowerArcs.end()));
-	}
-	Point getUpperIntersection() const {return firstUpperIntersection;}
-	Point getLowerIntersection() const {return firstLowerIntersection;}
+	uint size() const {return arcs.size();}
+	bool empty() const {return arcs.empty();}
+	ArcList getArcs() const {return arcs;}
 
 	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
 
 private:
-	ArcList upperArcs;
-	ArcList lowerArcs;
+	ArcList arcs;
 	Point intersection = INFPOINT;
-	Point firstUpperIntersection = INFPOINT;
-	Point firstLowerIntersection = INFPOINT;
+	bool done = false;
 };
+
+/* FIRST is UpperChainIntersection / SECOND is LowerChainIntersection*/
+using IntersectionPair = std::pair<Intersection,Intersection>;
 
 class Skeleton {
 public:
@@ -130,8 +74,10 @@ public:
 	bool computationFinished = false;
 
 private:
-	Intersection findNextIntersectingArc(Bisector& bis);
-	void simplifyIntersection(const Bisector& bis, Intersection& intersection);
+	IntersectionPair findNextIntersectingArc(Bisector& bis);
+	bool isIntersectionSimple(const IntersectionPair& pair) const;
+	Intersection getIntersectionIfSimple(const IntersectionPair& pair, bool& onUpperChain) const;
+
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
 	uint handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
@@ -167,8 +113,7 @@ private:
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
 	void handleSourceGhostNode(Bisector& bis, Intersection& intersection);
 
-	void checkNodeIntersection(Intersection& intersection, const Arc* arc, bool localOnUpperChain);
-	bool monotoneSmallerPointOnBisector(const Line& bisLine, const Intersection& intersection, const bool localOnUpperChain) const;
+	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 
 	void initNextChainAndPath(bool upperChain);
 
