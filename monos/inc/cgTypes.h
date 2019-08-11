@@ -208,8 +208,23 @@ public:
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
 		edge(e),ray(Ray()) {}
 
-	void disable() {type=ArcType::DISABLED;}
-	bool isDisable() {return type == ArcType::DISABLED;}
+	void disable() {type = ArcType::DISABLED;}
+	bool isDisable() const {return type == ArcType::DISABLED;}
+	bool isAA() const {
+		if(isEdge()) {
+			return edge.is_vertical() || edge.is_horizontal();
+		} else {
+			return ray.is_vertical() || ray.is_horizontal();
+		}
+	}
+
+	bool has_on(const Point p) const {
+		if(isEdge()) {
+			return edge.has_on(p);
+		} else {
+			return ray.has_on(p);
+		}
+	}
 
 	bool adjacent(const Arc& arc) const {
 		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
@@ -311,16 +326,18 @@ Point intersectElements(const T& a, const U& b) {
 
 	LOG(INFO) << "(" << a << " -- " << b << ") ";
 
-	auto result = CGAL::intersection(a, b);
-	if (result) {
-		if (const Point* p = boost::get<Point>(&*result)) {
-			return Point(*p);
-		} else if (const Edge* e = boost::get<Edge>(&*result)) {
-			LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
-			return Point(e->point(0));
-		} else {
-			LOG(WARNING) << "Intersection forms a segment/ray/line";
-			return intersectionPoint;
+	if(CGAL::do_intersect(a,b)) {
+		auto result = CGAL::intersection(a, b);
+		if (result) {
+			if (const Point* p = boost::get<Point>(&*result)) {
+				return Point(*p);
+			} else if (const Edge* e = boost::get<Edge>(&*result)) {
+				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
+				return Point(e->point(0));
+			} else {
+				LOG(WARNING) << "Intersection forms a segment/ray/line";
+				return intersectionPoint;
+			}
 		}
 	}
 	return intersectionPoint;

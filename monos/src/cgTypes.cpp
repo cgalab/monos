@@ -94,21 +94,41 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 	auto lRef = bis.supporting_line();
-	if(arc.isEdge()) {
-		Point a = arc.edge.point(0);
-		Point b = arc.edge.point(1);
 
-		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-				(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
-		) {
-			return INFPOINT;
+	bool arcAAElements = arc.isAA();
+	bool bisAA = lRef.is_horizontal() || lRef.is_vertical();
+
+	if(arcAAElements || bisAA) {
+		LOG(WARNING) << "AA elements might cause problems!";
+
+		Point P = intersectElements(bis.supporting_line(),arc.supporting_line());
+		if(arc.has_on(P)) {
+			return P;
 		} else {
-			if(bis.isRay()) {
-				return intersectElements(bis.ray,arc.edge);
-			} else {
-				return intersectElements(bis.line,arc.edge);
-			}
+			return INFPOINT;
 		}
+
+	} else if(arc.isEdge()) {
+		if(bis.isRay()) {
+			return intersectElements(bis.ray,arc.edge);
+		} else {
+			return intersectElements(bis.line,arc.edge);
+		}
+
+//		Point a = arc.edge.point(0);
+//		Point b = arc.edge.point(1);
+//
+//		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+//				(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+//		) {
+//			return INFPOINT;
+//		} else {
+//			if(bis.isRay()) {
+//				return intersectElements(bis.ray,arc.edge);
+//			} else {
+//				return intersectElements(bis.line,arc.edge);
+//			}
+//		}
 	} else {
 		if(bis.isRay()) {
 			return intersectElements(bis.ray,arc.ray);
