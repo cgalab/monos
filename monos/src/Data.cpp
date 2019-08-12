@@ -46,10 +46,14 @@ Edge Data::getEdge(const EdgeIterator& it) const {
 	return getEdge(it - polygon.begin());
 }
 
+bool Data::isEdgeCollinear(const Edge& eA, const Edge& eB) const {
+	return CGAL::parallel(eA,eB) && CGAL::collinear(eA.point(0),eA.point(1),eB.point(0));
+}
+
 bool Data::isEdgeCollinear(const uint& i, const uint& j) const {
 	auto eA = getEdge(i);
 	auto eB = getEdge(j);
-	return CGAL::parallel(eA,eB) && CGAL::collinear(eA.point(0),eA.point(1),eB.point(0));
+	return isEdgeCollinear(eA,eB);
 }
 
 bool Data::loadFile(const std::string& fileName) {

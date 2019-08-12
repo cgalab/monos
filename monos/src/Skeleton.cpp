@@ -195,6 +195,9 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 			LOG(INFO) << "(if) handleGhostVertex";
 		/* classical intersection detection on current paths arc */
 		} else if(isValidArc(path->currentArcIdx)) {
+			if(hasEquidistantInputEdges(*path,*arc,bis)) {
+				LOG(INFO) << "equidistant?!";
+			}
 			Point P = intersectBisectorArc(bis,*arc);
 			if(P != INFPOINT) {
 				intersection->add(P,path->currentArcIdx);
@@ -601,27 +604,48 @@ void Skeleton::CheckAndResetPath(MonotonePathTraversal* path, const MonotonePath
 }
 
 bool Skeleton::hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const {
-	std::set<uint> edgeIndicesSet = {arc.leftEdgeIdx,arc.rightEdgeIdx,bis.eIdxA,bis.eIdxB};
-	std::vector<uint> edgeIndices(edgeIndicesSet.begin(),edgeIndicesSet.end());
-	std::vector<Edge> edges;
-	for(auto idx : edgeIndices) {
-		edges.push_back(data.getEdge(idx));
-	}
-	std::vector<std::array<int,2>> idxPairs = {{{0,1}},{{0,2}},{{1,2}}};
-	Exact dist = Exact(-1);
-	std::vector<Exact> distances;
-	for(auto ip : idxPairs) {
-		if(!data.isEdgeCollinear(ip[0],ip[1]) && isLinesParallel(edges[ip[0]],edges[ip[1]])) {
-			dist = CGAL::squared_distance(edges[ip[0]].supporting_line(),edges[ip[1]].supporting_line());
-			if(dist > Exact(0)) {
-				distances.push_back(dist);
+	std::set<uint> edgeIndicesSet = {arc.leftEdgeIdx,arc.rightEdgeIdx};
+	std::vector<uint> bisIndices = {bis.eIdxA,bis.eIdxB};
+
+	for(auto nidx : {arc.firstNodeIdx,arc.secondNodeIdx}) {
+		if(nidx != MAX) {
+			auto node = wf.getNode(nidx);
+			for(auto aidx : node->arcs) {
+				auto arcIt = wf.getArc(aidx);
+				edgeIndicesSet.insert(arcIt->leftEdgeIdx);
+				edgeIndicesSet.insert(arcIt->rightEdgeIdx);
 			}
 		}
 	}
 
-	if(distances.size() > 0) {
+	std::vector<Edge> edges;
+	std::vector<Edge> bisEdges;
+	for(auto idx : edgeIndicesSet) {
+		LOG(INFO) << "edx: " << idx;
+		edges.push_back(data.getEdge(idx));
+	}
+	for(auto idx : bisIndices) {
+		LOG(INFO) << "bisedx: " << idx;
+		bisEdges.push_back(data.getEdge(idx));
+	}
+	if(edges.size() < 2) {
+		return false;
+	}
+	std::vector<Exact> distances;
+	for(auto iA : bisEdges) {
+		for(auto iB : edges) {
+			if(!data.isEdgeCollinear(iA,iB) && isLinesParallel(iA,iB) ) {
+				auto dist = CGAL::squared_distance(iA.supporting_line(),iB.supporting_line());
+				if(dist > Exact(0)) {
+					LOG(INFO) << "d: " << dist;
+					distances.push_back(dist);
+				}
+			}
+		}
+	}
+
+	if(distances.size() > 1) {
 		LOG(INFO) << "number of computed distances: " << distances.size();
-		assert(distances.size() > 1);
 		return distances[0] == distances[1];
 	}
 

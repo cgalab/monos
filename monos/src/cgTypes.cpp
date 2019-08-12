@@ -107,12 +107,11 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 		auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
 		if(arc.isEdge()) {
 			auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
-			LOG(INFO) << "D";
+
 			if(arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P))  {
 				return INFPOINT;
 			}
 		} else {
-			LOG(INFO) << "E";
 			if(arcNormalLineA.has_on_positive_side(P))  {
 				return INFPOINT;
 			}

@@ -104,6 +104,8 @@ public:
 	}
 
 	bool isEdgeCollinear(const uint& i, const uint& j) const;
+	bool isEdgeCollinear(const Edge& eA, const Edge& eB) const;
+
 	Edge confineRayToBBox(const Ray& ray) const;
 
 	void addPolyToOBJ(const Config& cfg) const;
