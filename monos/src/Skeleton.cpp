@@ -162,12 +162,15 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
 	arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
 
+	if(arc_u == nullptr) {upperIntersection.setDone();}
+	if(arc_l == nullptr) {lowerIntersection.setDone();}
+
 	while( !EndOfBothChains() && ( !upperIntersection.isDone() || !lowerIntersection.isDone() ) ) {
 		/* check which arc lies further to the left */
-		localOnUpperChain = wf.isArcLeftOfArc(arc_u,arc_l) && !upperIntersection.isDone();
+		localOnUpperChain = wf.isArcLeftOfArc(arc_u,arc_l); // && !upperIntersection.isDone();
 
-		if(localOnUpperChain && upperIntersection.isDone()) {localOnUpperChain = false;}
-		if(!localOnUpperChain && lowerIntersection.isDone()) {localOnUpperChain = true;}
+		if( localOnUpperChain && upperIntersection.isDone()) {localOnUpperChain = false;}
+		if(!localOnUpperChain && lowerIntersection.isDone()) {localOnUpperChain = true; }
 
 		path 		 = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
 		arc  		 = (localOnUpperChain) ? arc_u         : arc_l;

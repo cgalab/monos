@@ -102,11 +102,23 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 		LOG(WARNING) << "AA elements might cause problems!";
 
 		Point P = intersectElements(bis.supporting_line(),arc.supporting_line());
-		if(arc.has_on(P)) {
-			return P;
+
+		auto arcSup = arc.supporting_line();
+		auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
+		if(arc.isEdge()) {
+			auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
+			LOG(INFO) << "D";
+			if(arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P))  {
+				return INFPOINT;
+			}
 		} else {
-			return INFPOINT;
+			LOG(INFO) << "E";
+			if(arcNormalLineA.has_on_positive_side(P))  {
+				return INFPOINT;
+			}
 		}
+
+		return P;
 
 	} else if(arc.isEdge()) {
 		if(bis.isRay()) {

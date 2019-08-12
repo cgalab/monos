@@ -248,6 +248,11 @@ public:
 
 	Point point(int i) const {return (isEdge()) ? edge.point(i) : ray.point(i);}
 
+	bool hasEndPoint(Point P) const {
+		LOG(INFO) << "hasEndPoint";
+		return P == point(0) || (isEdge() && P == point(1));
+	}
+
 	ArcType type;
 	uint firstNodeIdx, secondNodeIdx;
 	uint leftEdgeIdx,  rightEdgeIdx;

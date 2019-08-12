@@ -123,7 +123,13 @@ public:
 
 	Node* getNode(const uint& idx) {return &nodes[idx];}
 	Arc* getArc(const uint& idx) {return &arcList[idx];}
-	Arc* getArc(const MonotonePathTraversal& path) {return &arcList[path.currentArcIdx];}
+	Arc* getArc(const MonotonePathTraversal& path) {
+		if(path.currentArcIdx == MAX) {
+			return nullptr;
+		} else {
+			return &arcList[path.currentArcIdx];
+		}
+	}
 	uint getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const;
 
 	/* -- monotone path traversal -- */
