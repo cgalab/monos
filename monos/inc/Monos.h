@@ -58,6 +58,9 @@ public:
 	bool computeSingleSkeletonEvent(bool lower) {return wf->ComputeSingleSkeletonEvent(lower);}
 	bool finishSkeleton(bool lower)    {return wf->FinishSkeleton(lower);   }
 
+//	Point intersect(Line a, Line b);
+//	void minimumExample();
+
 	Data			*data;
 	Config 			config;
 	Wavefront 		*wf;

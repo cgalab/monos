@@ -95,24 +95,39 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 	auto lRef = bis.supporting_line();
 
-	bool arcAAElements = arc.isAA();
 	bool bisAA = lRef.is_horizontal() || lRef.is_vertical();
 
-	if(arcAAElements || bisAA) {
+	if(arc.isAA() || bisAA) {
 		LOG(WARNING) << "AA elements might cause problems!";
 
-		Point P = intersectElements(bis.supporting_line(),arc.supporting_line());
+		if(arc.isEdge() && !bisAA) {
+			if(lRef.has_on_positive_side(arc.point(0)) && lRef.has_on_positive_side(arc.point(1))) {
+				return INFPOINT;
+			}
+			if(lRef.has_on_negative_side(arc.point(0)) && lRef.has_on_negative_side(arc.point(1))) {
+				return INFPOINT;
+			}
+		}
+
+		Point P = INFPOINT;
+
+		if(arc.isEdge()) {
+			P = intersectElements(bis.supporting_line(),arc.edge);
+			return P;
+		} else {
+			P = intersectElements(bis.supporting_line(),arc.supporting_line());
+		}
 
 		auto arcSup = arc.supporting_line();
 		auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
 		if(arc.isEdge()) {
 			auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
 
-			if(arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P))  {
+			if(P != arc.point(0) && P != arc.point(1) && (arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P)) )  {
 				return INFPOINT;
 			}
 		} else {
-			if(arcNormalLineA.has_on_positive_side(P))  {
+			if(P != arc.point(0) && arcNormalLineA.has_on_positive_side(P))  {
 				return INFPOINT;
 			}
 		}
