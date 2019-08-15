@@ -82,6 +82,7 @@ private:
 
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
+	uint handleDoubleMerge(const IntersectionPair& intersectionPair, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
 	uint handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
 	void updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
@@ -117,7 +118,7 @@ private:
 
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
-	void handleSourceGhostNode(Bisector& bis);
+	void handleSourceGhostNode(Bisector& bis, IntersectionPair& pair);
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 

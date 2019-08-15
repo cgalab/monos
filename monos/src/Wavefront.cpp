@@ -919,7 +919,7 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 
 void Wavefront::updateArcNewNode(const uint idx, const uint nodeIdx) {
 	auto arc = getArc(idx);
-	Node* node = &nodes[nodeIdx];
+	Node* node = getNode(nodeIdx);
 	if(arc->isEdge()) {
 		if(arc->firstNodeIdx == nodeIdx) {
 			arc->edge = Edge(node->point,arc->edge.target());

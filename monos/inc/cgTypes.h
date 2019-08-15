@@ -353,6 +353,8 @@ Point intersectElements(const T& a, const U& b) {
 	return intersectionPoint;
 }
 
+uint getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
+
 Point intersectArcArc(const Arc& arcA, const Arc& arcB);
 Point intersectRayArc(const Ray& ray, const Arc& arc);
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc);

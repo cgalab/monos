@@ -194,4 +194,14 @@ Point intersectRayArc(const Ray& ray, const Arc& arc) {
 	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
 }
 
+uint getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB) {
+	for(auto i : {arcA.firstNodeIdx,arcA.secondNodeIdx}) {
+		for(auto j : {arcB.firstNodeIdx,arcB.secondNodeIdx}) {
+			if(i != MAX && j != MAX && i == j) {
+				return i;
+			}
+		}
+	}
+	return MAX;
+}
 

@@ -69,6 +69,9 @@ bool Skeleton::SingleMergeStep() {
 	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
 	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl << "intersection lower: " << intersectionPair.second;
 
+	/* if we need to handle a source ghost node from the previous round! */
+	handleSourceGhostNode(bis,intersectionPair);
+
 	if(isVerticalIntersectionButSimple(bis,intersectionPair) || isIntersectionSimple(intersectionPair)) {
 		bool onUpperChain;
 		auto intersection = getIntersectionIfSimple(bis,intersectionPair,onUpperChain);
@@ -85,8 +88,7 @@ bool Skeleton::SingleMergeStep() {
 	} else {
 		/* more than two arcs means at least one existing node lies on the intersection */
 		LOG(INFO) << "-- handleMerge(intersectionPair.first/second may be not enough here!";
-		newNodeIdx = handleMerge(intersectionPair.first,upperChainIndex,lowerChainIndex,bis);
-		newNodeIdx = handleMerge(intersectionPair.second,upperChainIndex,lowerChainIndex,bis);
+		newNodeIdx = handleDoubleMerge(intersectionPair,upperChainIndex,lowerChainIndex,bis);
 
 		Point Pl = data.eA(wf.startLowerEdgeIdx);
 		Point Pu = data.eA(wf.startLowerEdgeIdx);
@@ -167,9 +169,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	if(arc_u == nullptr) {upperIntersection.setDone();}
 	if(arc_l == nullptr) {lowerIntersection.setDone();}
 
-	/* if we need to handle a source ghost node from the previous round! */
-	handleSourceGhostNode(bis);
-
 	while( !EndOfBothChains() && ( !upperIntersection.isDone() || !lowerIntersection.isDone() ) ) {
 		/* check which arc lies further to the left */
 		localOnUpperChain = wf.isArcLeftOfArc(arc_u,arc_l); // && !upperIntersection.isDone();
@@ -184,15 +183,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 		LOG(INFO) << std::boolalpha << "# localOnUpperChain: " << localOnUpperChain << " upper: "<<upperIntersection.isDone()<< ", lower: " << lowerIntersection.isDone();;
 		LOG(INFO) << "# BEFORE path: " << *path;
 		LOG(INFO) << "# intersect arc: " << *arc << ", and bisector " << bis;
-
-//		LOG(INFO) << "Test if perp and update clause!";
-//		if(bis.isParallel() && bisUpdateOnce) {
-//			if((bisOnPositiveSide && localOnUpperChain) || (!bisOnPositiveSide && !localOnUpperChain) ) {
-//				LOG(INFO) << "findNextIntersectingArc() -- change direction";
-//				bis.changeDirection();
-//			}
-//			bisUpdateOnce = false;
-//		}
 
 		/* detect and handle possible ghost vertex */
 		if(handleGhostVertex(*path,bis,*intersection)) {
@@ -218,15 +208,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 				intersection->setDone();
 			} else {
 				LOG(INFO) << "## TEST THIS when P = INFPOINT!?!";
-				/* for collinear arc and bisector we also return INFPOINT thus we take extra care here */
-//				if(bis.isParallel())  {
-//					Point checkA = data.pointOnMonotonicityLine(arc->point(1));
-//					Point checkB = data.pointOnMonotonicityLine(bis.point(1));
-//					if(checkA == checkB) {
-//						LOG(WARNING) << "<<TODO!>> possible intersection on collienar bisector and arc;";
-//						assert(false);
-//					}
-//				}
 
 				/* while iterate we may iterate one arc to far, this is an easy way to step back */
 				if(localOnUpperChain) {	pathBackupUpper = wf.upperPath;
@@ -253,11 +234,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 				}
 			}
 		}
-
-		/* while iterate we may iterate one arc to far, this is an easy way to step back */
-//		pathBackupLower = wf.lowerPath;
-//		pathBackupUpper = wf.upperPath;
-
 	}
 	LOG(INFO) << std::endl << std::boolalpha << "AFTER success: " << intersection->isDone() << ", path: " << *path;
 	LOG(INFO) << "findNextIntersectingArc END";
@@ -294,6 +270,7 @@ bool Skeleton::isNodeIntersectionAndVerticalBisector(const Bisector& bis, const 
 
 	return false;
 }
+
 void Skeleton::reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Intersection& intersection) {
 	if(bis.isAA()) {
 		LOG(INFO) << "reevaluateIntersectionIfMultipleArcs";
@@ -333,226 +310,6 @@ void Skeleton::reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Interse
 		}
 	}
 }
-
-//	if(intersection.isValid() || edgeIntersection) {
-//		/* we found an intersecting arc on 'localOnUpperChain', now we have to traverse
-//		 * the face on the opposite side until we reach the height of the intersecting
-//		 * arc, i.r.t. the monotonicity line
-//		 ***/
-//
-//		path = (!localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-//		arc = wf.getArc(*path);
-//		bool piReached = false;
-//
-//		/* check for possible upcoming ghost arc */
-//		if(!EndOfChain(path->isUpperChain()) && hasCollinearEdges(*arc_u,*arc_l)) {
-//			LOG(INFO) << "parallel input edges";
-//			if(wf.isArcPerpendicular((*arc_u)) || wf.isArcPerpendicular((*arc_u))) {
-//				LOG(INFO) << "...and vertical arc(s).";
-//			}
-//		} else {
-//			/* skip if edges are collinear  */
-//			/* check and reset if we walked to far on the other chain */
-//			auto pathBackup = (!localOnUpperChain) ? pathBackupUpper : pathBackupLower;
-//			CheckAndResetPath(path, pathBackup, intersection.point());
-//		}
-//
-//		while(!EndOfChain(path->isUpperChain()) && !intersection.isBothIntersectionsValid() && !piReached) {
-//			LOG(INFO) << std::endl << "updating 2nd path: " << *path;
-//			arc = wf.getArc(*path);
-//			LOG(INFO) << "intersect " << *arc << ", and bis: " << bis;
-//
-//			/* classical intersection detection on current paths arc */
-//			if(isValidArc(path->currentArcIdx)) {
-//				/* detect and handle possible ghost vertex */
-//				if(handleGhostVertex(*path,bis,intersection)) {
-//					/* is done in function */
-//				} else {
-//					Point P = intersectBisectorArc(bis,*arc);
-//					if(P != INFPOINT) {
-//						intersection.setIntersection(P,localOnUpperChain);
-//						intersection.addArc(path->currentArcIdx,localOnUpperChain);
-//					}
-//
-////					if(bisLine.is_vertical() && bis.isParallel()) {
-////						LOG(INFO) << "bis vertical and parallel!";
-////						bool collinear = false;
-////
-////						std::set<uint> arcEdgeIndices;
-////						for(auto i : arc->getNodeIndices()) {
-////							auto n = wf.getNode(i);
-////							for(auto a : n->arcs) {
-////								auto arcIt = wf.getArc(a);
-////								arcEdgeIndices.insert(arcIt->leftEdgeIdx);
-////								arcEdgeIndices.insert(arcIt->rightEdgeIdx);
-////							}
-////
-////							for(auto i : {bis.eIdxA,bis.eIdxB}) {
-////								for(auto j : arcEdgeIndices) {
-////									LOG(INFO) << "check " << i << ", " << j;
-////									if(i != j && data.isEdgeCollinear(i,j)) {
-////										LOG(INFO) << "collinear!";
-////										collinear = true;
-////										Pi_2 = n->point;
-////										break;
-////									}
-////								}
-////							}
-////
-////							arcEdgeIndices.clear();
-////							if(collinear) {break;}
-////						}
-////
-////
-//////						if(collinear) {
-//////							LOG(INFO) << "collienar is true";
-//////							auto bisDist = CGAL::squared_distance(data.getEdge(bis.eIdxA).supporting_line(),bisLine);
-//////							LOG(INFO) << "dist comp";
-//////							auto aDist   = CGAL::squared_distance(a,data.getEdge(arc->leftEdgeIdx).supporting_line());
-//////							LOG(INFO) << "dist comp";
-//////							auto bDist   = CGAL::squared_distance(b,data.getEdge(arc->leftEdgeIdx).supporting_line());
-//////
-//////							LOG(INFO) << "compare distances!";
-//////							if(bisDist == aDist) {
-//////								Pi_2 = a;
-//////							} else if(bisDist == bDist) {
-//////								Pi_2 = b;
-//////							}
-//////						}
-////
-//				}
-//
-//				if(intersection.isBothIntersectionsValid()) {
-//					/* check if we intersect an end node of an arc, then we can go an as
-//					 * this node is start node of the next arc */
-//					checkNodeIntersection(intersection,arc,localOnUpperChain);
-//
-//					/* we found two points Pi and Pi_2, one on each chain */
-//					bool choosePi = false;
-//					if(bis.isParallel()) {
-//						Line lRef(sourceNode->point,data.monotonicityLine.direction());
-//						auto dPi   = normalDistance(lRef,intersection.point(!localOnUpperChain));
-//						auto dPi_2 = normalDistance(lRef,intersection.point(localOnUpperChain));
-//						choosePi = (dPi < dPi_2) ? true : false;
-//					} else {
-//						/* equality check is difficult for bisector intersections, let us
-//						 * check first if the next faces, i.e., the respective input edges
-//						 * are collinear */
-//						if(   ( !bis.isGhost()  &&  areNextInputEdgesCollinear()) ||
-//							  ( intersection.isEqualIntersectionPoints() )
-//						) {
-//							LOG(INFO) << "enter the next edges collinear clause";
-//							/* in this case we want both arcs in the return set and finish 'here' */
-//							choosePi  = true;
-//							addGhostNode = true;
-//							path = (localOnUpperChain) ? &wf.lowerPath : &wf.upperPath;
-//							intersection.addArc(path->currentArcIdx,localOnUpperChain);
-//						} else {
-//							choosePi = monotoneSmallerPointOnBisector(bis.supporting_line(),intersection,localOnUpperChain);
-//						}
-//					}
-//
-//					if(choosePi) {
-//						LOG(INFO) << "success (Pi)";
-//						path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-//					} else {
-//						LOG(INFO) << "success (Pi_2)";
-//						localOnUpperChain = !localOnUpperChain;
-//					}
-//					intersection.setIntersection(localOnUpperChain);
-//				}
-//			} else {
-//				/* for collinear arc and bisector we also return INFPOINT thus we take extra care here */
-//				if(bis.isParallel())  {
-//					Point checkA = data.pointOnMonotonicityLine(arc->point(1));
-//					Point checkB = data.pointOnMonotonicityLine(bis.point(1));
-//					if(checkA == checkB) {
-//						LOG(INFO) << "possible intersection on collinear bisector and arc;";
-//						if( (arc->isEdge() && CGAL::do_intersect(bis.supporting_line(),arc->edge)) ||
-//							(arc->isRay()  && CGAL::do_intersect(bis.supporting_line(),arc->ray))) {
-//							intersection.add(arc->point(0),path->currentArcIdx,localOnUpperChain);
-//						}
-//					}
-//				}
-//			}
-//
-//
-//			if(!intersection.isBothIntersectionsValid()) {
-//				Point Pl = wf.nodes[wf.getLeftmostNodeIdxOfArc(*arc)].point;
-//
-//				bool classicalSweep = true;
-//				auto arcOpposite = (arc == arc_l) ? arc_u : arc_l;
-//				LOG(INFO) << "no intersection found with arc:" << *arc << ", arc on other chain: " << *arcOpposite;
-//
-//				/*********************************************************/
-//				/*    check for possible upcoming ghost arc scenario     */
-//				/*********************************************************/
-//				if(wf.isArcPerpendicular(*arc_l) || wf.isArcPerpendicular(*arc_u)) {
-//					if(hasCollinearEdges(*arc,*arcOpposite)) {
-//						classicalSweep = false;
-//						LOG(INFO) << "collinear input edges!";
-//					}
-//					LOG(INFO) << "possible ghost arc ahead!";
-//				}
-//
-//				LOG(INFO) << "comparing points: " << intersection.point() << " and " << Pl;
-//
-//				if( !classicalSweep || ((data.monotoneSmaller(intersection.point(),Pl) && !edgeIntersection) ||
-//					(arc->isRay() && !data.rayPointsLeft(arc->ray) && !edgeIntersection) ) ) {
-//					LOG(INFO) << "no 2nd intersection but height of Pi reached";
-//					piReached = true;
-//					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-//				}
-//			}
-//
-//			if(!piReached) {
-//				/* check input edge intersection first */
-//				Edge e = data.getEdge(path->edgeIdx);
-//
-//				if(localOnUpperChain) {
-//					pathBackupUpper = wf.upperPath;
-//				} else {
-//					pathBackupLower = wf.lowerPath;
-//				}
-//
-//				if(do_intersect(bis,e)) {
-//					LOG(INFO) << " intersecting input edge!";
-//					piReached = true;
-//					edgeIntersection = true;
-//					path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-//				} else if(!wf.nextMonotoneArcOfPath(*path)) {
-//					/* iterate over path */ LOG(WARNING) << "next chain index";
-//					initNextChainAndPath(path->isUpperChain());
-//				}
-//			}
-//		}
-//
-//		if(!piReached) {
-//			path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
-//		}
-//
-//		/* setting the 'newPoint' to the found intersection if 'success' */
-////		newPoint = Pi;
-////
-////		if(!arcAlreadyInserted) {
-////			if(!arcs.empty() && localOnUpperChain) {
-////				arcs.insert(arcs.begin(),path->currentArcIdx);
-////			} else {
-////				arcs.insert(path->currentArcIdx);
-////			}
-////		}
-//	} else {
-//		LOG(ERROR) << "NO INTERSECTION FOUND!!!";
-//	}
-//
-//	LOG(INFO) << "handle ghost?";
-//	/* if we have a sourcenode that is a ghost node we handle the intersection here */
-//	handleSourceGhostNode(bis,intersection);
-//
-//	LOG(INFO) << "findNextIntersectingArc END";
-//
-//	return std::make_pair(upperIntersection,lowerIntersection);
-//}
 
 void Skeleton::checkNodeIntersection(Intersection& intersection, const Arc* arc) {
 	uint runs = (arc->isEdge()) ? 2 : 1;
@@ -625,6 +382,19 @@ void Skeleton::initNextChainAndPath(bool upperChain) {
 		wf.initPathForEdge(false,lowerChainIndex);
 	}
 }
+
+uint Skeleton::handleDoubleMerge(const IntersectionPair& intersectionPair, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis) {
+	uint newNodeIdx = handleMerge(intersectionPair.first,edgeIdxA,edgeIdxB,bis);
+	for(auto arcIdx : intersectionPair.second.getArcs()) {
+		if(arcIdx < MAX) {
+			/* TODO: parallel-bisectors, direction unclear */
+			LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
+			updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,intersectionPair.first.getIntersection());
+		}
+	}
+	return newNodeIdx;
+}
+
 
 uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis) {
 	auto sourceNode = &wf.nodes[sourceNodeIdx];
@@ -786,167 +556,70 @@ bool Skeleton::areNextInputEdgesCollinear() const {
 	return false;
 }
 
-void Skeleton::handleSourceGhostNode(Bisector& bis) {
+void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 	if(sourceNode->isGhostNode()) {
-		/* we already have a ghost node to handle, i.e., next intersection gives us the 'height' of 'bis'
+
+		/* find the intersection of the next arcs (upper and lower) */
+		assert(pair.first.size() < 2);
+		assert(pair.second.size() < 2);
+
+		auto upperArc = wf.getArc(*pair.first.getArcs().begin());
+		auto lowerArc = wf.getArc(*pair.second.getArcs().begin());
+
+		/* we have a ghost node to handle, i.e., next intersection gives us the 'height' '
 		 * since the actual height is not known yet  */
-		LOG(INFO) << "0";
-		Line ghostLine = bis.supporting_line();
-		uint chosenArcIdx = MAX;
-		Point PGhost = INFPOINT;
-		std::set<uint> verticalArcs;
-		LOG(INFO) << "1";
-		for(auto aIdx : sourceNode->arcs) {
-			auto arc = wf.getArc(aIdx);
-			LOG(INFO) << aIdx << ", arc: "  << *arc;
-			if(arc->isVertical()) {
-				LOG(INFO) << "vertical";
-				verticalArcs.insert(aIdx);
-//				LOG(INFO) << "a";
-//				PGhost = Point(arc->point(0).x(),ghostLine.point(0).y());
-//				LOG(INFO) << "b";
-//				if(PGhost != INFPOINT) {
-//				LOG(INFO) << "c " << aIdx;
-//					chosenArcIdx = aIdx;
-//					break;
-//				}
+
+		auto newNodePoint = intersectArcArc(*upperArc,*lowerArc);
+		if(newNodePoint != INFPOINT) {
+			pair.first.setIntersection(newNodePoint);
+			pair.second.setIntersection(newNodePoint);
+
+			uint chosenArcIdx = MAX;
+			Point PGhost = INFPOINT;
+			std::vector<uint> verticalArcs;
+			for(auto aIdx : sourceNode->arcs) {
+				auto arc = wf.getArc(aIdx);
+				if(arc->isVertical()) {
+					verticalArcs.push_back(aIdx);
+				}
 			}
-		}
 
-		LOG(INFO) << "size: " << verticalArcs.size();
+			LOG(INFO) << "size: " << verticalArcs.size();
 
-		chosenArcIdx = *verticalArcs.begin();
-		auto arc = wf.getArc(chosenArcIdx);
-		PGhost = Point(arc->point(0).x(),ghostLine.point(0).y());
+			chosenArcIdx = *verticalArcs.begin();
+			auto arc = wf.getArc(chosenArcIdx);
+			PGhost = Point(arc->point(0).x(),newNodePoint.y());
 
-		//assert(PGhost != INFPOINT);
+			/* we already added the arcs we only have to move the node */
+//			uint commonNodeIdx = getArcsCommonNodeIdx(*wf.getArc(verticalArcs[0]),*wf.getArc(verticalArcs[1]))
 
-//			auto refArc = wf.getArc(*intersection.getArcs().begin());
-//			Line l = refArc->supporting_line();
-//			uint run = 2;
-//
-//			LOG(INFO) << "start handleSourceGhostNode: newpoint: " << intersection.getIntersection();
-//
-//			do {
-//				/* run==2: find the arc incident at 'sourceNode' that is intersected by the line(arc) */
-//				/* run==1: find the arc incident at 'sourceNode' that is intersected by the line(newpoint,monolinedir) */
-//				Point Pint 		  = data.v(0);
-//				Exact dist		  = CGAL::squared_distance(intersection.getIntersection(),Pint);
-//				uint chosenArcIdx = MAX;
-//
-//				for(uint arcIdx : sourceNode->arcs) {
-//					if(arcIdx == *intersection.getArcs().begin() || arcIdx == *intersection.getArcs().rbegin()) {continue;}
-//					auto checkArc = wf.getArc(arcIdx);
-//					auto checkP   = INFPOINT;
-//					if(checkArc->isEdge()) {
-//						checkP   = intersectElements(l,checkArc->edge);
-//					} else if(checkArc->isRay()) {
-//						checkP   = intersectElements(l,checkArc->ray);
-//					}
-//
-//					if(checkP != INFPOINT) {
-//						if(intersection.getIntersection() == checkP) {
-//							dist = 0;
-//							chosenArcIdx = arcIdx;
-//							Pint = checkP;
-//							break;
-//						}
-//						auto newDist = CGAL::squared_distance(intersection.getIntersection(),checkP);
-//						if(newDist < dist) {
-//							dist = newDist;
-//							chosenArcIdx = arcIdx;
-//							Pint = checkP;
-//						}
-//					}
-//				}
-//
-//				if(chosenArcIdx == MAX) {
-//					LOG(WARNING) << "handleSourceGhostNode chosenArcIdx == MAX";
-//					return;
-//				}
+			sourceNode->point = PGhost;
+			for(auto a : sourceNode->arcs) {
+				wf.updateArcNewNode(a,sourceNodeIdx);
+			}
 
-//		LOG(INFO) << "handleSourceGhostNode(run " << run << ") found arc " << chosenArcIdx;
-//
-//		if(run == 2) {
 //			auto chosenArc  = wf.getArc(chosenArcIdx);
+//			auto newNodeIdx = wf.addNode(PGhost,sourceNode->time);
+//			auto newNode = wf.getNode(newNodeIdx);
+//			sourceNode->removeArc(chosenArcIdx);
+//			newNode->arcs.push_back(chosenArcIdx);
+//			if(chosenArc->secondNodeIdx == sourceNodeIdx) {
+//				chosenArc->secondNodeIdx = newNodeIdx;
+//			} else {
+//				assert(chosenArc->firstNodeIdx == sourceNodeIdx);
+//				chosenArc->firstNodeIdx = newNodeIdx;
+//			}
 //
-//			intersection.addArc(chosenArcIdx);
-//			/* we have to reset the upper/lower chain index as it a 'step back' */
 //			if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
-//				lowerChainIndex = chosenArc->leftEdgeIdx;
+//				wf.addArc(newNodeIdx,sourceNodeIdx,chosenArc->leftEdgeIdx,upperChainIndex,bis.isVertical());
 //			} else {
-//				upperChainIndex = chosenArc->rightEdgeIdx;
+//				wf.addArc(newNodeIdx,sourceNodeIdx,lowerChainIndex,chosenArc->rightEdgeIdx,bis.isVertical());
 //			}
-//		} else {
-		/* adding ghost node and subdivide existing arc */
-
-		auto chosenArc  = wf.getArc(chosenArcIdx);
-		auto newNodeIdx = wf.addNode(PGhost,sourceNode->time);
-		auto newNode = wf.getNode(newNodeIdx);
-		sourceNode->removeArc(chosenArcIdx);
-		newNode->arcs.push_back(chosenArcIdx);
-		if(chosenArc->secondNodeIdx == sourceNodeIdx) {
-			chosenArc->secondNodeIdx = newNodeIdx;
-		} else {
-			assert(chosenArc->firstNodeIdx == sourceNodeIdx);
-			chosenArc->firstNodeIdx = newNodeIdx;
+//
+//			LOG(INFO) << "handleSourceGhostNode: resetting sourceNode! " << *newNode;
+//			sourceNode = newNode;
+//			sourceNodeIdx = newNodeIdx;
 		}
-
-		if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
-			wf.addArc(newNodeIdx,sourceNodeIdx,chosenArc->leftEdgeIdx,upperChainIndex,bis.isVertical());
-		} else {
-			wf.addArc(newNodeIdx,sourceNodeIdx,lowerChainIndex,chosenArc->rightEdgeIdx,bis.isVertical());
-		}
-
-		LOG(INFO) << "handleSourceGhostNode: resetting sourceNode! " << *newNode;
-		sourceNode = newNode;
-		sourceNodeIdx = newNodeIdx;
-		//}
-
-		//l = Line(intersection.getIntersection(),data.monotonicityLine.direction());
-//	} while(--run > 0);
-
-//		} else {
-//			assert(intersection.size() > 2);
-//			auto arc_u = wf.getArc(wf.upperPath);
-//			auto arc_l = wf.getArc(wf.lowerPath);
-//
-//			if(arc_u == nullptr || arc_l == nullptr) {return;}
-//
-//			auto pAA = intersectArcArc(*arc_u, *arc_l);
-//			if(pAA != INFPOINT) {
-//				/* now we have to modify the sourcenode 'height' and its incident arcs */
-//				bis.newSource(pAA);
-//				/* since sourcenode is a ghost node, its incident edges are collinear*/
-//				auto arcOfSN = getArc(sourceNode->arcs.front());
-//				auto bisOfarcOfSN = wf.constructBisector(arcOfSN.leftEdgeIdx,arcOfSN.rightEdgeIdx);
-//
-//				Point pSN_new = INFPOINT;
-//				if(bis.supporting_line().is_horizontal() && bisOfarcOfSN.isParallel()) {
-//					pSN_new = Point(arcOfSN.point(0).x(),bis.point(0).y());
-//				} else {
-//					pSN_new = intersectElements(bis.supporting_line(),arcOfSN.supporting_line());
-//				}
-//				if(pSN_new != INFPOINT) {
-//					LOG(WARNING) << "handleGhostVertex: set ghost node to " << pSN_new;
-//					sourceNode->point = pSN_new;
-//
-//					/* update arcs to end at the new loci of soucenode */
-//					for(auto idx : sourceNode->arcs) {
-//						wf.updateArcNewNode(idx,sourceNodeIdx);
-//					}
-//
-//					/* setting the return values */
-//					LOG(WARNING) << "####### FOR THIS we need both intersections here!";
-//					intersection.add(pAA,wf.upperPath.currentArcIdx);
-//					intersection.add(pAA,wf.lowerPath.currentArcIdx);
-//				} else {
-//					LOG(WARNING) << "handleGhostVertex: should not happen!";
-//				}
-//			} else {
-//				LOG(WARNING) << "handleGhostVertex: arcs do not intersect!";
-//			}
-//		}
 	}
 }
 
