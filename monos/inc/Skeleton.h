@@ -80,7 +80,6 @@ private:
 
 	Intersection getIntersectionIfSimple(const Bisector& bis, const IntersectionPair& pair, bool& onUpperChain) const;
 
-
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
 	uint handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
@@ -118,7 +117,7 @@ private:
 
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
-	void handleSourceGhostNode(Bisector& bis, IntersectionPair& intersectionPair);
+	void handleSourceGhostNode(Bisector& bis);
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 

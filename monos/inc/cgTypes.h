@@ -201,14 +201,14 @@ struct TimeEdgeCmp {
 
 class Arc {
 public:
-	Arc(ArcType t, uint firstNode, uint leftEdge, uint rightEdge, Ray r):
+	Arc(ArcType t, uint firstNode, uint leftEdge, uint rightEdge, Ray r, bool v):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(MAX),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
-		edge(Edge()),ray(r) {}
-	Arc(ArcType t, uint firstNode, uint secondNode, uint leftEdge, uint rightEdge, Edge e):
+		edge(Edge()),ray(r),vertical(v) {}
+	Arc(ArcType t, uint firstNode, uint secondNode, uint leftEdge, uint rightEdge, Edge e, bool v):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(secondNode),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
-		edge(e),ray(Ray()) {}
+		edge(e),ray(Ray()),vertical(v) {}
 
 	void disable() {type = ArcType::DISABLED;}
 	bool isDisable() const {return type == ArcType::DISABLED;}
@@ -220,13 +220,7 @@ public:
 		}
 	}
 
-	bool isVertical() const {
-		if(isEdge()) {
-			return edge.is_vertical();
-		} else {
-			return ray.is_vertical();
-		}
-	}
+	bool isVertical() const { return vertical; }
 
 	bool has_on(const Point p) const {
 		if(isEdge()) {
@@ -269,6 +263,7 @@ public:
 
 	Edge edge;
 	Ray  ray;
+	bool vertical;
 
 	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };

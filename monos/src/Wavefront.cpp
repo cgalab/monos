@@ -264,10 +264,10 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		auto idx = event->mainEdge;
 		auto paths = pathFinder[idx];
 		if(singleLeft) {
-			addArc(paths[0],nodeIdx,event->leftEdge,event->mainEdge);
+			addArc(paths[0],nodeIdx,event->leftEdge,event->mainEdge,false);
 			singleLeft = false;
 		}
-		addArc(paths[1],nodeIdx,event->mainEdge,event->rightEdge);
+		addArc(paths[1],nodeIdx,event->mainEdge,event->rightEdge,false);
 
 		/* update path finder for left and right edge */
 		pathFinder[idx][1] = nodeIdx;
@@ -396,7 +396,7 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 				bis = bis.opposite();
 			}
 
-			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis);
+			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical());
 
 			/* iterate over remaining chain */
 			aEdgeIdx = bEdgeIdx;
@@ -799,9 +799,9 @@ void Wavefront::ChainDecomposition() {
 	LOG(INFO) << ss.str();
 }
 
-uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray) {
+uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray, const bool vertical) {
 	auto nodeA = &nodes[nodeAIdx];
-	Arc arc(ArcType::RAY, nodeAIdx, edgeLeft, edgeRight, ray);
+	Arc arc(ArcType::RAY, nodeAIdx, edgeLeft, edgeRight, ray, vertical);
 	auto arcIdx = arcList.size();
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
@@ -809,10 +809,10 @@ uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint
 	return arcIdx;
 }
 
-uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight) {
+uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight, const bool vertical) {
 	auto nodeA = &nodes[nodeAIdx];
 	auto nodeB = &nodes[nodeBIdx];
-	Arc arc(ArcType::NORMAL, nodeAIdx, nodeBIdx, edgeLeft, edgeRight, Edge(nodeA->point, nodeB->point));
+	Arc arc(ArcType::NORMAL, nodeAIdx, nodeBIdx, edgeLeft, edgeRight, Edge(nodeA->point, nodeB->point),vertical);
 	auto arcIdx = arcList.size();
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
@@ -835,17 +835,20 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	uint nodeIdx = nodes.size();
 	auto paths 	 = pathFinder[event.mainEdge];
 
+	Point Pa = getNode(paths[0])->point, Pb = getNode(paths[1])->point;
+	Edge e(Pa,Pb);
+
 	/* if this is already done, i.e., left and/or right path ends at a node of the event */
 	if(nodes[paths[0]].point == event.eventPoint && nodes[paths[1]].point == event.eventPoint) {
 		nodeIdx = paths[0];
 	} else if(nodes[paths[0]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the right side */
 		nodeIdx = paths[0];
-		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge);
+		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical());
 	} else if(nodes[paths[1]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the left side */
 		nodeIdx = paths[1];
-		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge);
+		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical());
 	} else {
 		/* a classical event to be handled */
 		LOG(INFO) << "event point before adding node " << event.eventPoint;
@@ -853,8 +856,10 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		nodes.push_back(node);
 		skeleton.push_back(nodeIdx);
 
-		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge);
-		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge);
+		Edge e1(Pa,event.eventPoint);
+		Edge e2(Pb,event.eventPoint);
+		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge,e1.is_vertical());
+		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge,e2.is_vertical());
 	}
 
 	/* update path finder for left and right edge */
