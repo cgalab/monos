@@ -283,23 +283,17 @@ void Skeleton::reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Interse
 					auto nodeA = wf.getNode(arc->firstNodeIdx);
 					auto nodeB = wf.getNode(arc->secondNodeIdx);
 					Exact distComp;
-					LOG(INFO) << "Pref: " << Pref << " nodepnt: " << nodeA->point;
 					if(intersection.getIntersection().y() != nodeA->point.y()) {
-						LOG(INFO) << "2";
 						distComp = CGAL::abs(Pref.y() - nodeA->point.y());
-						LOG(INFO) << "3 " << distComp << " ?< " << dist;
 						if(distComp < dist) {
-							LOG(INFO) << "if true";
 							dist = distComp;
 							intersection.clear();
 							intersection.add(nodeA->point,aIdx);
 						}
 					}
 					if(intersection.getIntersection().y() != nodeB->point.y()) {
-						LOG(INFO) << "2'";
 						distComp = CGAL::abs(Pref.y() - nodeB->point.y());
 						if(distComp < dist) {
-							LOG(INFO) << "if true";
 							dist = distComp;
 							intersection.clear();
 							intersection.add(nodeB->point,aIdx);
@@ -590,35 +584,11 @@ void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 			auto arc = wf.getArc(chosenArcIdx);
 			PGhost = Point(arc->point(0).x(),newNodePoint.y());
 
-			/* we already added the arcs we only have to move the node */
-//			uint commonNodeIdx = getArcsCommonNodeIdx(*wf.getArc(verticalArcs[0]),*wf.getArc(verticalArcs[1]))
-
+			/* we already added the arcs, we only have to move the (source)node */
 			sourceNode->point = PGhost;
 			for(auto a : sourceNode->arcs) {
 				wf.updateArcNewNode(a,sourceNodeIdx);
 			}
-
-//			auto chosenArc  = wf.getArc(chosenArcIdx);
-//			auto newNodeIdx = wf.addNode(PGhost,sourceNode->time);
-//			auto newNode = wf.getNode(newNodeIdx);
-//			sourceNode->removeArc(chosenArcIdx);
-//			newNode->arcs.push_back(chosenArcIdx);
-//			if(chosenArc->secondNodeIdx == sourceNodeIdx) {
-//				chosenArc->secondNodeIdx = newNodeIdx;
-//			} else {
-//				assert(chosenArc->firstNodeIdx == sourceNodeIdx);
-//				chosenArc->firstNodeIdx = newNodeIdx;
-//			}
-//
-//			if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
-//				wf.addArc(newNodeIdx,sourceNodeIdx,chosenArc->leftEdgeIdx,upperChainIndex,bis.isVertical());
-//			} else {
-//				wf.addArc(newNodeIdx,sourceNodeIdx,lowerChainIndex,chosenArc->rightEdgeIdx,bis.isVertical());
-//			}
-//
-//			LOG(INFO) << "handleSourceGhostNode: resetting sourceNode! " << *newNode;
-//			sourceNode = newNode;
-//			sourceNodeIdx = newNodeIdx;
 		}
 	}
 }

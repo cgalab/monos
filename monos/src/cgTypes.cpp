@@ -111,8 +111,11 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 
 		Point P = INFPOINT;
 
-		if(arc.isEdge()) {
+		if(!arc.isVertical() && arc.isEdge()) {
 			P = intersectElements(bis.supporting_line(),arc.edge);
+			return P;
+		} else if(!arc.isVertical() && arc.isRay()) {
+			P = intersectElements(bis.supporting_line(),arc.ray);
 			return P;
 		} else {
 			P = intersectElements(bis.supporting_line(),arc.supporting_line());
