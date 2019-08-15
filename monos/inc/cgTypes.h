@@ -87,6 +87,8 @@ public:
 
 	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
 
+	bool isAA() const {if(isRay()) {return ray.is_vertical() || ray.is_horizontal();} else {return line.is_vertical() || line.is_horizontal();}}
+	bool isVertical() const {if(isRay()) {return ray.is_vertical();} else {return line.is_vertical();}}
 	void setParallel(bool p) {parallel = p;}
 	bool isParallel() const {return parallel;}
 	void setGhost(bool g) {ghost = g;}
@@ -215,6 +217,14 @@ public:
 			return edge.is_vertical() || edge.is_horizontal();
 		} else {
 			return ray.is_vertical() || ray.is_horizontal();
+		}
+	}
+
+	bool isVertical() const {
+		if(isEdge()) {
+			return edge.is_vertical();
+		} else {
+			return ray.is_vertical();
 		}
 	}
 

@@ -118,17 +118,19 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 			P = intersectElements(bis.supporting_line(),arc.supporting_line());
 		}
 
-		auto arcSup = arc.supporting_line();
-		auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
-		if(arc.isEdge()) {
-			auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
+		if(P != INFPOINT) {
+			auto arcSup = arc.supporting_line();
+			auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
+			if(arc.isEdge()) {
+				auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
 
-			if(P != arc.point(0) && P != arc.point(1) && (arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P)) )  {
-				return INFPOINT;
-			}
-		} else {
-			if(P != arc.point(0) && arcNormalLineA.has_on_positive_side(P))  {
-				return INFPOINT;
+				if(P != arc.point(0) && P != arc.point(1) && (arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P)) )  {
+					return INFPOINT;
+				}
+			} else {
+				if(P != arc.point(0) && arcNormalLineA.has_on_positive_side(P))  {
+					return INFPOINT;
+				}
 			}
 		}
 

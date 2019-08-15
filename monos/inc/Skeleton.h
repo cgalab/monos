@@ -76,7 +76,10 @@ public:
 private:
 	IntersectionPair findNextIntersectingArc(Bisector& bis);
 	bool isIntersectionSimple(const IntersectionPair& pair) const;
-	Intersection getIntersectionIfSimple(const IntersectionPair& pair, bool& onUpperChain) const;
+	bool isVerticalIntersectionButSimple(const Bisector& bis, const IntersectionPair& pair) const;
+
+	Intersection getIntersectionIfSimple(const Bisector& bis, const IntersectionPair& pair, bool& onUpperChain) const;
+
 
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
@@ -108,7 +111,11 @@ private:
 
 	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
 
-	bool hasEquidistantInputEdges(const MonotonePathTraversal& path, const Arc& arc, const Bisector& bis) const;
+	bool hasEquidistantInputEdges(const Arc& arc, const Bisector& bis) const;
+	bool isNodeIntersectionAndVerticalBisector(const Bisector& bis, const uint nodeIdx) const;
+
+	void reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Intersection& intersection);
+
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
 	void handleSourceGhostNode(Bisector& bis, Intersection& intersection);
