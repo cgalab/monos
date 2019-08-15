@@ -121,7 +121,9 @@ bool Skeleton::SingleMergeStep() {
 	sourceNode = &wf.nodes[sourceNodeIdx];
 
 	if(addGhostNode) {
+		LOG(INFO) << "add ghost node!";
 		sourceNode->setGhost(true);
+		handleSourceGhostNode(bis,intersectionPair);
 		addGhostNode = false;
 		LOG(INFO) << "SingleMergeStep: setting sourceNode to be a ghost node!";
 	}
@@ -255,13 +257,8 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 
 	}
 	LOG(INFO) << std::endl << std::boolalpha << "AFTER success: " << intersection->isDone() << ", path: " << *path;
-
-	/* if we have a sourcenode that is a ghost node we handle the intersection here */
-	LOG(INFO) << "handle ghost?";
-
-	handleSourceGhostNode(bis,*intersection);
-
 	LOG(INFO) << "findNextIntersectingArc END";
+
 	return std::make_pair(upperIntersection,lowerIntersection);
 }
 
@@ -638,6 +635,7 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 	} else {
 		distB = CGAL::abs( intersection.getIntersection().y() - data.getEdge(edgeIdxA).point(0).y() );
 		distB=distB*distB;
+		addGhostNode = true;
 	}
 
 
@@ -785,137 +783,158 @@ bool Skeleton::areNextInputEdgesCollinear() const {
 	return false;
 }
 
-void Skeleton::handleSourceGhostNode(Bisector& bis, Intersection& intersection) {
+void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& intersectionPair) {
 	if(sourceNode->isGhostNode()) {
 		/* we already have a ghost node to handle, i.e., next intersection gives us the 'height' of 'bis'
 		 * since the actual height is not known yet  */
-
-		if(intersection.size() == 1) {
-			auto refArc = wf.getArc(*intersection.getArcs().begin());
-			Line l = refArc->supporting_line();
-			uint run = 2;
-
-			LOG(INFO) << "start handleSourceGhostNode: newpoint: " << intersection.getIntersection();
-
-			do {
-				/* run==2: find the arc incident at 'sourceNode' that is intersected by the line(arc) */
-				/* run==1: find the arc incident at 'sourceNode' that is intersected by the line(newpoint,monolinedir) */
-				Point Pint 		  = data.v(0);
-				Exact dist		  = CGAL::squared_distance(intersection.getIntersection(),Pint);
-				uint chosenArcIdx = MAX;
-
-				for(uint arcIdx : sourceNode->arcs) {
-					if(arcIdx == *intersection.getArcs().begin() || arcIdx == *intersection.getArcs().rbegin()) {continue;}
-					auto checkArc = wf.getArc(arcIdx);
-					auto checkP   = INFPOINT;
-					if(checkArc->isEdge()) {
-						checkP   = intersectElements(l,checkArc->edge);
-					} else if(checkArc->isRay()) {
-						checkP   = intersectElements(l,checkArc->ray);
-					}
-
-					if(checkP != INFPOINT) {
-						if(intersection.getIntersection() == checkP) {
-							dist = 0;
-							chosenArcIdx = arcIdx;
-							Pint = checkP;
-							break;
-						}
-						auto newDist = CGAL::squared_distance(intersection.getIntersection(),checkP);
-						if(newDist < dist) {
-							dist = newDist;
-							chosenArcIdx = arcIdx;
-							Pint = checkP;
-						}
-					}
+		LOG(INFO) << "0";
+		Line ghostLine = bis.supporting_line();
+		uint chosenArcIdx = MAX;
+		Point PGhost = INFPOINT;
+		LOG(INFO) << "1";
+		for(auto aIdx : sourceNode->arcs) {
+			LOG(INFO) << aIdx;
+			auto arc = wf.getArc(aIdx);
+			if(arc->isVertical()) {
+				LOG(INFO) << "a";
+				PGhost = Point(arc->point(0).x(),ghostLine.point(0).y());
+				LOG(INFO) << "b";
+				if(PGhost != INFPOINT) {
+				LOG(INFO) << "c " << aIdx;
+					chosenArcIdx = aIdx;
+					break;
 				}
-
-				if(chosenArcIdx == MAX) {
-					LOG(WARNING) << "handleSourceGhostNode chosenArcIdx == MAX";
-					return;
-				}
-
-				LOG(INFO) << "handleSourceGhostNode(run " << run << ") found arc " << chosenArcIdx;
-
-				if(run == 2) {
-					auto chosenArc  = wf.getArc(chosenArcIdx);
-
-					intersection.addArc(chosenArcIdx);
-					/* we have to reset the upper/lower chain index as it a 'step back' */
-					if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
-						lowerChainIndex = chosenArc->leftEdgeIdx;
-					} else {
-						upperChainIndex = chosenArc->rightEdgeIdx;
-					}
-				} else {
-					/* adding ghost node and subdivide existing arc */
-					auto chosenArc  = wf.getArc(chosenArcIdx);
-					auto newNodeIdx = wf.addNode(Pint,CGAL::squared_distance(data.getEdge(chosenArc->rightEdgeIdx).supporting_line(),Pint));
-					auto newNode = wf.getNode(newNodeIdx);
-					sourceNode->removeArc(chosenArcIdx);
-					newNode->arcs.push_back(chosenArcIdx);
-					if(chosenArc->secondNodeIdx == sourceNodeIdx) {
-						chosenArc->secondNodeIdx = newNodeIdx;
-					} else {
-						assert(chosenArc->firstNodeIdx == sourceNodeIdx);
-						chosenArc->firstNodeIdx = newNodeIdx;
-					}
-
-					if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
-						wf.addArc(newNodeIdx,sourceNodeIdx,chosenArc->leftEdgeIdx,upperChainIndex);
-					} else {
-						wf.addArc(newNodeIdx,sourceNodeIdx,lowerChainIndex,chosenArc->rightEdgeIdx);
-					}
-
-					LOG(INFO) << "handleSourceGhostNode: resetting sourceNode! " << *newNode;
-					sourceNode = newNode;
-					sourceNodeIdx = newNodeIdx;
-				}
-
-				l = Line(intersection.getIntersection(),data.monotonicityLine.direction());
-			} while(--run > 0);
-
-		} else {
-			assert(intersection.size() > 2);
-			auto arc_u = wf.getArc(wf.upperPath);
-			auto arc_l = wf.getArc(wf.lowerPath);
-
-			if(arc_u == nullptr || arc_l == nullptr) {return;}
-
-			auto pAA = intersectArcArc(*arc_u, *arc_l);
-			if(pAA != INFPOINT) {
-				/* now we have to modify the sourcenode 'height' and its incident arcs */
-				bis.newSource(pAA);
-				/* since sourcenode is a ghost node, its incident edges are collinear*/
-				auto arcOfSN = getArc(sourceNode->arcs.front());
-				auto bisOfarcOfSN = wf.constructBisector(arcOfSN.leftEdgeIdx,arcOfSN.rightEdgeIdx);
-
-				Point pSN_new = INFPOINT;
-				if(bis.supporting_line().is_horizontal() && bisOfarcOfSN.isParallel()) {
-					pSN_new = Point(arcOfSN.point(0).x(),bis.point(0).y());
-				} else {
-					pSN_new = intersectElements(bis.supporting_line(),arcOfSN.supporting_line());
-				}
-				if(pSN_new != INFPOINT) {
-					LOG(WARNING) << "handleGhostVertex: set ghost node to " << pSN_new;
-					sourceNode->point = pSN_new;
-
-					/* update arcs to end at the new loci of soucenode */
-					for(auto idx : sourceNode->arcs) {
-						wf.updateArcNewNode(idx,sourceNodeIdx);
-					}
-
-					/* setting the return values */
-					LOG(WARNING) << "####### FOR THIS we need both intersections here!";
-					intersection.add(pAA,wf.upperPath.currentArcIdx);
-					intersection.add(pAA,wf.lowerPath.currentArcIdx);
-				} else {
-					LOG(WARNING) << "handleGhostVertex: should not happen!";
-				}
-			} else {
-				LOG(WARNING) << "handleGhostVertex: arcs do not intersect!";
 			}
 		}
+
+		assert(PGhost != INFPOINT);
+
+//			auto refArc = wf.getArc(*intersection.getArcs().begin());
+//			Line l = refArc->supporting_line();
+//			uint run = 2;
+//
+//			LOG(INFO) << "start handleSourceGhostNode: newpoint: " << intersection.getIntersection();
+//
+//			do {
+//				/* run==2: find the arc incident at 'sourceNode' that is intersected by the line(arc) */
+//				/* run==1: find the arc incident at 'sourceNode' that is intersected by the line(newpoint,monolinedir) */
+//				Point Pint 		  = data.v(0);
+//				Exact dist		  = CGAL::squared_distance(intersection.getIntersection(),Pint);
+//				uint chosenArcIdx = MAX;
+//
+//				for(uint arcIdx : sourceNode->arcs) {
+//					if(arcIdx == *intersection.getArcs().begin() || arcIdx == *intersection.getArcs().rbegin()) {continue;}
+//					auto checkArc = wf.getArc(arcIdx);
+//					auto checkP   = INFPOINT;
+//					if(checkArc->isEdge()) {
+//						checkP   = intersectElements(l,checkArc->edge);
+//					} else if(checkArc->isRay()) {
+//						checkP   = intersectElements(l,checkArc->ray);
+//					}
+//
+//					if(checkP != INFPOINT) {
+//						if(intersection.getIntersection() == checkP) {
+//							dist = 0;
+//							chosenArcIdx = arcIdx;
+//							Pint = checkP;
+//							break;
+//						}
+//						auto newDist = CGAL::squared_distance(intersection.getIntersection(),checkP);
+//						if(newDist < dist) {
+//							dist = newDist;
+//							chosenArcIdx = arcIdx;
+//							Pint = checkP;
+//						}
+//					}
+//				}
+//
+//				if(chosenArcIdx == MAX) {
+//					LOG(WARNING) << "handleSourceGhostNode chosenArcIdx == MAX";
+//					return;
+//				}
+
+//		LOG(INFO) << "handleSourceGhostNode(run " << run << ") found arc " << chosenArcIdx;
+//
+//		if(run == 2) {
+//			auto chosenArc  = wf.getArc(chosenArcIdx);
+//
+//			intersection.addArc(chosenArcIdx);
+//			/* we have to reset the upper/lower chain index as it a 'step back' */
+//			if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
+//				lowerChainIndex = chosenArc->leftEdgeIdx;
+//			} else {
+//				upperChainIndex = chosenArc->rightEdgeIdx;
+//			}
+//		} else {
+			/* adding ghost node and subdivide existing arc */
+
+		auto chosenArc  = wf.getArc(chosenArcIdx);
+		auto newNodeIdx = wf.addNode(PGhost,sourceNode->time);
+		auto newNode = wf.getNode(newNodeIdx);
+		sourceNode->removeArc(chosenArcIdx);
+		newNode->arcs.push_back(chosenArcIdx);
+		if(chosenArc->secondNodeIdx == sourceNodeIdx) {
+			chosenArc->secondNodeIdx = newNodeIdx;
+		} else {
+			assert(chosenArc->firstNodeIdx == sourceNodeIdx);
+			chosenArc->firstNodeIdx = newNodeIdx;
+		}
+
+		if(wf.isEdgeOnLowerChain(chosenArc->leftEdgeIdx)) {
+			wf.addArc(newNodeIdx,sourceNodeIdx,chosenArc->leftEdgeIdx,upperChainIndex);
+		} else {
+			wf.addArc(newNodeIdx,sourceNodeIdx,lowerChainIndex,chosenArc->rightEdgeIdx);
+		}
+
+		LOG(INFO) << "handleSourceGhostNode: resetting sourceNode! " << *newNode;
+		sourceNode = newNode;
+		sourceNodeIdx = newNodeIdx;
+		//}
+
+		//l = Line(intersection.getIntersection(),data.monotonicityLine.direction());
+//	} while(--run > 0);
+
+//		} else {
+//			assert(intersection.size() > 2);
+//			auto arc_u = wf.getArc(wf.upperPath);
+//			auto arc_l = wf.getArc(wf.lowerPath);
+//
+//			if(arc_u == nullptr || arc_l == nullptr) {return;}
+//
+//			auto pAA = intersectArcArc(*arc_u, *arc_l);
+//			if(pAA != INFPOINT) {
+//				/* now we have to modify the sourcenode 'height' and its incident arcs */
+//				bis.newSource(pAA);
+//				/* since sourcenode is a ghost node, its incident edges are collinear*/
+//				auto arcOfSN = getArc(sourceNode->arcs.front());
+//				auto bisOfarcOfSN = wf.constructBisector(arcOfSN.leftEdgeIdx,arcOfSN.rightEdgeIdx);
+//
+//				Point pSN_new = INFPOINT;
+//				if(bis.supporting_line().is_horizontal() && bisOfarcOfSN.isParallel()) {
+//					pSN_new = Point(arcOfSN.point(0).x(),bis.point(0).y());
+//				} else {
+//					pSN_new = intersectElements(bis.supporting_line(),arcOfSN.supporting_line());
+//				}
+//				if(pSN_new != INFPOINT) {
+//					LOG(WARNING) << "handleGhostVertex: set ghost node to " << pSN_new;
+//					sourceNode->point = pSN_new;
+//
+//					/* update arcs to end at the new loci of soucenode */
+//					for(auto idx : sourceNode->arcs) {
+//						wf.updateArcNewNode(idx,sourceNodeIdx);
+//					}
+//
+//					/* setting the return values */
+//					LOG(WARNING) << "####### FOR THIS we need both intersections here!";
+//					intersection.add(pAA,wf.upperPath.currentArcIdx);
+//					intersection.add(pAA,wf.lowerPath.currentArcIdx);
+//				} else {
+//					LOG(WARNING) << "handleGhostVertex: should not happen!";
+//				}
+//			} else {
+//				LOG(WARNING) << "handleGhostVertex: arcs do not intersect!";
+//			}
+//		}
 	}
 }
 

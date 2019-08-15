@@ -118,7 +118,7 @@ private:
 
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
-	void handleSourceGhostNode(Bisector& bis, Intersection& intersection);
+	void handleSourceGhostNode(Bisector& bis, IntersectionPair& intersectionPair);
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 
