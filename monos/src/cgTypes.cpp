@@ -154,12 +154,6 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 				return intersectElements(bis.line,arc.edge);
 			}
 		}
-//		LOG(INFO) << "TESTOUTPUT bis: " << bis << ", arc: " << arc;
-//		if(bis.isRay()) {
-//			return intersectElements(bis.ray,arc.edge);
-//		} else {
-//			return intersectElements(bis.line,arc.edge);
-//		}
 	} else {
 		if(bis.isRay()) {
 			return intersectElements(bis.ray,arc.ray);

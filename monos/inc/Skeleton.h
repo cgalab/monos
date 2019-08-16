@@ -42,6 +42,7 @@ public:
 	uint size() const {return arcs.size();}
 	bool empty() const {return arcs.empty();}
 	ArcList getArcs() const {return arcs;}
+	uint getFirstArcIdx() const {return (!empty()) ? *arcs.begin() : MAX;}
 
 	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
 
@@ -115,6 +116,7 @@ private:
 	bool isNodeIntersectionAndVerticalBisector(const Bisector& bis, const uint nodeIdx) const;
 
 	void reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Intersection& intersection);
+	void multiEventCheck(const Bisector& bis, IntersectionPair& pair);
 
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);

@@ -90,13 +90,13 @@ bool Skeleton::SingleMergeStep() {
 		LOG(INFO) << "-- handleMerge(intersectionPair.first/second may be not enough here!";
 		newNodeIdx = handleDoubleMerge(intersectionPair,upperChainIndex,lowerChainIndex,bis);
 
-		Point Pl = data.eA(wf.startLowerEdgeIdx);
 		Point Pu = data.eA(wf.startLowerEdgeIdx);
+		Point Pl = data.eB(wf.startLowerEdgeIdx);
 		uint lowerArc = MAX, upperArc = MAX;
 		for(auto aIdx : intersectionPair.first.getArcs()) {
 			auto arcIt = wf.getArc(aIdx);
 			/* arc of upper skeleton */
-			Point PCheck = data.eB(arcIt->leftEdgeIdx);
+			Point PCheck = data.eA(arcIt->leftEdgeIdx);
 			if(data.monotoneSmaller(Pu,PCheck)) {
 				upperArc = aIdx;
 				Pu = PCheck;
@@ -238,14 +238,73 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	LOG(INFO) << std::endl << std::boolalpha << "AFTER success: " << intersection->isDone() << ", path: " << *path;
 	LOG(INFO) << "findNextIntersectingArc END";
 
-	return std::make_pair(upperIntersection,lowerIntersection);
+	IntersectionPair intersectionPair = std::make_pair(upperIntersection,lowerIntersection);
+
+	multiEventCheck(bis,intersectionPair);
+
+	return intersectionPair;
+}
+
+void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
+	if(!pair.first.empty() && !pair.second.empty()) {
+		std::set<uint> upperEdges, lowerEdges;
+		for(auto a : pair.first.getArcs()) {
+			auto arc = wf.getArc(a);
+			upperEdges.insert(arc->leftEdgeIdx);
+			upperEdges.insert(arc->rightEdgeIdx);
+		}
+		for(auto a : pair.second.getArcs()) {
+			auto arc = wf.getArc(a);
+			lowerEdges.insert(arc->leftEdgeIdx);
+			lowerEdges.insert(arc->rightEdgeIdx);
+		}
+
+		LOG(INFO) << "going";
+		Point P = pair.first.getIntersection();
+		Exact distU = -CORE_ONE, distL = -CORE_ONE;
+		LOG(INFO) << "distL: " << distL.doubleValue() << ", distU: " << distU.doubleValue();
+
+		bool done = false;
+
+		for(auto i : upperEdges) {
+			for(auto j : lowerEdges) {
+				if(i != upperChainIndex && j != lowerChainIndex && data.isEdgeCollinear(i,j)) {
+					done = true;
+				}
+			}
+		}
+
+		if(!done) {
+			for(auto i : upperEdges) {
+				if(i != bis.eIdxA && i != bis.eIdxB && i != upperChainIndex) {
+					auto l = data.getEdge(i).supporting_line();
+					distU = normalDistance(l,P);
+					break;
+				}
+			}
+			for(auto i : lowerEdges) {
+				if(i != bis.eIdxA && i != bis.eIdxB && i != lowerChainIndex) {
+					auto l = data.getEdge(i).supporting_line();
+					distL = normalDistance(l,P);
+					break;
+				}
+			}
+		}
+
+
+		LOG(INFO) << "distL: " << distL.doubleValue() << ", distU: " << distU.doubleValue();
+		if(done || (distL != -CORE_ONE && distL == distU)) {
+			pair.first.setIntersection(P);
+			pair.second.setIntersection(P);
+		}
+	}
 }
 
 bool Skeleton::isNodeIntersectionAndVerticalBisector(const Bisector& bis, const uint nodeIdx) const {
 	auto node = wf.getNode(nodeIdx);
 	std::set<uint> edges;
 
-	if(bis.isAA()) {
+	if(bis.isVertical()) {
 		for(auto a : node->arcs) {
 			auto arc = wf.getArc(a);
 			edges.insert(arc->leftEdgeIdx);
@@ -396,12 +455,14 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 	bool fromAtoB = true;
 	Exact distB;
 
-	if(!bis.isAA()) {
+	if(!bis.isVertical()) {
 		distB = data.normalDistance(edgeIdxA,intersection.getIntersection());
 		fromAtoB = data.normalDistance(edgeIdxA,sourceNode->point) < distB;
 	} else {
 		distB = CGAL::abs( intersection.getIntersection().y() - data.getEdge(edgeIdxA).point(0).y() );
 		distB=distB*distB;
+
+		/* we have a vertical bisector, if we also have an AA arc we have ghost arc? */
 		addGhostNode = true;
 	}
 
@@ -419,14 +480,24 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 		newArcIdx  = wf.addArc(newNodeIdx,sourceNodeIdx,edgeIdxB,edgeIdxA,bis.isVertical());
 	}
 
+	bool hasAAarc = false;
 	/* update the targets of the relevant arcs */
 	for(auto arcIdx : intersection.getArcs()) {
 		if(arcIdx < MAX) {
+			auto arc = wf.getArc(arcIdx);
+			if(arc->isAA()) {
+				hasAAarc = true;
+			}
 			/* TODO: parallel-bisectors, direction unclear */
 			LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
 			updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,intersection.getIntersection());
 		}
 	}
+
+	if(!hasAAarc) {
+		addGhostNode = false;
+	}
+
 	return newNodeIdx;
 }
 
