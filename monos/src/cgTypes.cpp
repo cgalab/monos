@@ -140,25 +140,25 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 		return P;
 
 	} else if(arc.isEdge()) {
-		if(bis.isRay()) {
-			return intersectElements(bis.ray,arc.edge);
-		} else {
-			return intersectElements(bis.line,arc.edge);
-		}
+		Point a = arc.edge.point(0);
+		Point b = arc.edge.point(1);
 
-//		Point a = arc.edge.point(0);
-//		Point b = arc.edge.point(1);
-//
-//		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-//				(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
-//		) {
-//			return INFPOINT;
+		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+			(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+		) {
+			return INFPOINT;
+		} else {
+			if(bis.isRay()) {
+				return intersectElements(bis.ray,arc.edge);
+			} else {
+				return intersectElements(bis.line,arc.edge);
+			}
+		}
+//		LOG(INFO) << "TESTOUTPUT bis: " << bis << ", arc: " << arc;
+//		if(bis.isRay()) {
+//			return intersectElements(bis.ray,arc.edge);
 //		} else {
-//			if(bis.isRay()) {
-//				return intersectElements(bis.ray,arc.edge);
-//			} else {
-//				return intersectElements(bis.line,arc.edge);
-//			}
+//			return intersectElements(bis.line,arc.edge);
 //		}
 	} else {
 		if(bis.isRay()) {
