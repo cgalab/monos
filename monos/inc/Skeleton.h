@@ -24,11 +24,14 @@ public:
 	Intersection(Point intersection = INFPOINT):intersection(intersection) {}
 	~Intersection() {}
 
-	void addArc(uint arcIdx) {assert(!done); arcs.insert(arcIdx);}
+	void addArc(uint arcIdx) {
+	//	assert(!done);
+		arcs.insert(arcIdx);
+	}
 	void clear() {arcs.clear();}
 
 	void add(Point intersection, uint arcIdx) {
-		assert(!done);
+		//assert(!done);
 		setIntersection(intersection);
 		addArc(arcIdx);
 	}
@@ -43,6 +46,7 @@ public:
 	bool empty() const {return arcs.empty();}
 	ArcList getArcs() const {return arcs;}
 	uint getFirstArcIdx() const {return (!empty()) ? *arcs.begin() : MAX;}
+	uint getSecondArcIdx() const {return (size()>1) ? *(++arcs.begin()) : MAX;}
 
 	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
 
@@ -117,12 +121,15 @@ private:
 
 	void reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Intersection& intersection);
 	void multiEventCheck(const Bisector& bis, IntersectionPair& pair);
+	void checkAndAddCollinearArcs(IntersectionPair& pair);
 
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
 	void handleSourceGhostNode(Bisector& bis, IntersectionPair& pair);
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
+
+	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
 
 	void initNextChainAndPath(bool upperChain);
 

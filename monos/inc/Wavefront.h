@@ -145,6 +145,7 @@ public:
 	uint getRightmostNodeIdxOfArc(const Arc& arc) const;
 	void initPathForEdge(const bool upper, const uint edgeIdx);
 	uint getPossibleRayIdx(const Node& node, uint edgeIdx) const;
+	uint getCommonNodeIdx(const uint& arcIdxA, const uint& arcIdxB);
 
 	void updateArcNewNode(const uint idx, const uint nodeIdx);
 

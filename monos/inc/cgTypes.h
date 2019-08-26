@@ -230,6 +230,23 @@ public:
 		}
 	}
 
+	uint getCommonNodeIdx(const Arc& arc) {
+		if(firstNodeIdx == arc.firstNodeIdx || firstNodeIdx == arc.secondNodeIdx) {
+			return firstNodeIdx;
+		}
+		if(secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx) {
+			return secondNodeIdx;
+		}
+		return MAX;
+	}
+
+	bool isParallel(const Arc& arc) const {
+		return !isDisable() && CGAL::parallel(supporting_line(),arc.supporting_line());
+	}
+	bool isCollinear(const Arc& arc) const {
+		return !isDisable() && CGAL::collinear(point(0),point(1), arc.point(0) + arc.to_vector());
+	}
+
 	bool adjacent(const Arc& arc) const {
 		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
 			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
@@ -246,11 +263,11 @@ public:
 	}
 
 	Line supporting_line() const {return (isEdge()) ? edge.supporting_line() : ray.supporting_line();}
-
+	Vector to_vector() const {return supporting_line().to_vector();}
 	bool isRay()  const { return type == ArcType::RAY;    }
 	bool isEdge() const { return type == ArcType::NORMAL; }
 
-	Point point(int i) const {return (isEdge()) ? edge.point(i) : ray.point(i);}
+	Point point(int i) const {return (isEdge()) ? edge.vertex(i) : ray.point(i);}
 
 	bool hasEndPoint(Point P) const {
 		LOG(INFO) << "hasEndPoint";

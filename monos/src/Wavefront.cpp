@@ -917,6 +917,15 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	}
 }
 
+uint Wavefront::getCommonNodeIdx(const uint& arcIdxA, const uint& arcIdxB) {
+	if(arcIdxA != MAX && arcIdxB != MAX) {
+		Arc* arcA = getArc(arcIdxA);
+		Arc* arcB = getArc(arcIdxB);
+		return arcA->getCommonNodeIdx(*arcB);
+	}
+	return MAX;
+}
+
 void Wavefront::updateArcNewNode(const uint idx, const uint nodeIdx) {
 	auto arc = getArc(idx);
 	Node* node = getNode(nodeIdx);

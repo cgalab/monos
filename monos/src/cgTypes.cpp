@@ -95,12 +95,10 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 	auto lRef = bis.supporting_line();
 
-	bool bisAA = lRef.is_horizontal() || lRef.is_vertical();
-
-	if(arc.isAA() || bisAA) {
+	if(arc.isAA() || bis.isAA()) {
 		LOG(WARNING) << "AA elements might cause problems!";
 
-		if(arc.isEdge() && !bisAA) {
+		if(arc.isEdge() && !bis.isAA()) {
 			if(lRef.has_on_positive_side(arc.point(0)) && lRef.has_on_positive_side(arc.point(1))) {
 				return INFPOINT;
 			}
