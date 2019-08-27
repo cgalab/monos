@@ -129,7 +129,7 @@ private:
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 
-	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
+	bool intersectionHasVerticalCallignedArc(const IntersectionPair& pair) const;
 
 	void initNextChainAndPath(bool upperChain);
 

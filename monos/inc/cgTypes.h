@@ -201,14 +201,14 @@ struct TimeEdgeCmp {
 
 class Arc {
 public:
-	Arc(ArcType t, uint firstNode, uint leftEdge, uint rightEdge, Ray r, bool v):
+	Arc(ArcType t, uint firstNode, uint leftEdge, uint rightEdge, Ray r):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(MAX),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
-		edge(Edge()),ray(r),vertical(v) {}
-	Arc(ArcType t, uint firstNode, uint secondNode, uint leftEdge, uint rightEdge, Edge e, bool v):
+		edge(Edge()),ray(r) {}
+	Arc(ArcType t, uint firstNode, uint secondNode, uint leftEdge, uint rightEdge, Edge e):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(secondNode),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
-		edge(e),ray(Ray()),vertical(v) {}
+		edge(e),ray(Ray()) {}
 
 	void disable() {type = ArcType::DISABLED;}
 	bool isDisable() const {return type == ArcType::DISABLED;}
@@ -219,8 +219,6 @@ public:
 			return ray.is_vertical() || ray.is_horizontal();
 		}
 	}
-
-	bool isVertical() const { return vertical; }
 
 	bool has_on(const Point p) const {
 		if(isEdge()) {
@@ -251,6 +249,8 @@ public:
 		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
 			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
 	}
+	bool is_vertical() const { return (isEdge()) ? edge.is_vertical() : ray.is_vertical();}
+	bool is_horizontal() const { return (isEdge()) ? edge.is_horizontal() : ray.is_horizontal();}
 
 	uint getSecondNodeIdx(const uint idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
 
@@ -280,7 +280,6 @@ public:
 
 	Edge edge;
 	Ray  ray;
-	bool vertical;
 
 	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };

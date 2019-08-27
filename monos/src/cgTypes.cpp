@@ -109,16 +109,16 @@ Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 
 		Point P = INFPOINT;
 
-		if(!arc.isVertical() && arc.isEdge()) {
+		if(!arc.is_vertical() && arc.isEdge()) {
 			P = intersectElements(bis.supporting_line(),arc.edge);
 			return P;
-		} else if(!arc.isVertical() && arc.isRay()) {
+		} else if(!arc.is_vertical() && arc.isRay()) {
 			P = intersectElements(bis.supporting_line(),arc.ray);
 			return P;
 		} else {
 			P = intersectElements(bis.supporting_line(),arc.supporting_line());
 		}
-
+		LOG(INFO) << "P: " << P;
 		if(P != INFPOINT) {
 			auto arcSup = arc.supporting_line();
 			auto arcNormalLineA = arcSup.perpendicular(arc.point(0));

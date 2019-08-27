@@ -32,7 +32,7 @@ void Skeleton::initMerge() {
 
 /* add last are, connect to end node! */
 void Skeleton::finishMerge() {
-	wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex,false);
+	wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex);
 	computationFinished = true;
 	LOG(INFO) << "Merge Finished!";
 }
@@ -227,14 +227,12 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 				if(!wf.nextMonotoneArcOfPath(*path)) {
 					Edge e = data.getEdge(path->edgeIdx);
 					if(do_intersect(bis,e)) {
-						LOG(INFO) << " intersecting input edge!";
-						//path = (localOnUpperChain) ? &wf.upperPath : &wf.lowerPath;
+						LOG(INFO) << "intersecting input edge (done)";
 						intersection->setDone();
 					} else 	{
 						/* iterate over path */ LOG(WARNING) << "///////////////// next chain index! ";
 						intersection->setDone();
 						LOG(INFO) << "I do not think we should iterate to the next face just like that!";
-						//initNextChainAndPath(path->isUpperChain());
 					}
 				} else {
 					if(localOnUpperChain) {
@@ -246,7 +244,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 			}
 		}
 	}
-	LOG(INFO) << std::endl << std::boolalpha << "AFTER success: " << intersection->isDone() << ", path: " << *path;
+	LOG(INFO) << std::boolalpha << "AFTER success: " << intersection->isDone() << ", path: " << *path;
 	LOG(INFO) << "findNextIntersectingArc END";
 
 	IntersectionPair intersectionPair = std::make_pair(upperIntersection,lowerIntersection);
@@ -325,9 +323,11 @@ void Skeleton::checkAndAddCollinearArcs(IntersectionPair& pair) {
 			if(!wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
 				LOG(INFO) << "checkAndAddCollinearArcs (upper): " << arcIdx;
 				pair.first.add(intersection,arcIdx);
-			} else {
-			LOG(INFO) << "checkAndAddCollinearArcs (lower): " << arcIdx;
+				upperChainIndex = arc->rightEdgeIdx;
+			} else /* lower chain */ {
+				LOG(INFO) << "checkAndAddCollinearArcs (lower): " << arcIdx;
 				pair.second.add(intersection,arcIdx);
+				lowerChainIndex = arc->leftEdgeIdx;
 			}
 		}
 	}
@@ -371,7 +371,7 @@ void Skeleton::reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Interse
 			Exact dist = CGAL::abs(Pref.y() - intersection.getIntersection().y());
 			for(auto aIdx : intersection.getArcs()) {
 				auto arc = wf.getArc(aIdx);
-				if(arc->isEdge() && arc->isVertical()) {
+				if(arc->isEdge() && arc->is_vertical()) {
 					auto nodeA = wf.getNode(arc->firstNodeIdx);
 					auto nodeB = wf.getNode(arc->secondNodeIdx);
 					Exact distComp;
@@ -492,12 +492,12 @@ uint Skeleton::handleDoubleMerge(const IntersectionPair& intersectionPair, const
 			assert(false);
 		}
 
-		wf.addArc(sourceNodeIdx,newNodeIdx,edgeIdxA,edgeIdxB,bis.isVertical());
+		wf.addArc(sourceNodeIdx,newNodeIdx,edgeIdxA,edgeIdxB);
 
-		for(auto arcIdx : intersectionPair.first.getArcs()) {
+		for(auto arcIdx : arcs) {
 			if(arcIdx < MAX) {
 				auto arc = wf.getArc(arcIdx);
-				if(upperNodeIdx == arc->firstNodeIdx && !arc->isVertical()) {
+				if(upperNodeIdx == arc->firstNodeIdx && !arc->is_vertical()) {
 					arc->disable();
 				} else {
 					/* TODO: parallel-bisectors, direction unclear */
@@ -508,17 +508,26 @@ uint Skeleton::handleDoubleMerge(const IntersectionPair& intersectionPair, const
 			}
 		}
 
-		if(bis.isVertical() || intersectionHasVerticalArc(intersectionPair)) {
+		arcs = intersectionPair.second.getArcs();
+
+//		if(bis.isVertical() || intersectionHasVerticalArc(intersectionPair)) {
+		if(intersectionHasVerticalCallignedArc(intersectionPair)) {
+			LOG(INFO) << "<- set addGhostNode true (handleDoubleMerge)";
 			addGhostNode = true;
 		}
 
 	} else {
-		if(intersectionPair.first.getIntersection() == intersectionPair.second.getIntersection() || data.monotoneSmaller(intersectionPair.first.getIntersection(),intersectionPair.second.getIntersection())) {
+		if(intersectionPair.first.getIntersection() == intersectionPair.second.getIntersection()) {
 			newNodeIdx = handleMerge(intersectionPair.first,edgeIdxA,edgeIdxB,bis);
 			arcs = intersectionPair.second.getArcs();
+		} else if(data.monotoneSmaller(intersectionPair.first.getIntersection(),intersectionPair.second.getIntersection())) {
+			LOG(INFO) << "first";
+			newNodeIdx = handleMerge(intersectionPair.first,edgeIdxA,edgeIdxB,bis);
+			arcs = std::set<uint>();
 		} else {
+			LOG(INFO) << "second";
 			newNodeIdx = handleMerge(intersectionPair.second,edgeIdxA,edgeIdxB,bis);
-			arcs = intersectionPair.first.getArcs();
+			arcs = std::set<uint>();
 		}
 	}
 
@@ -542,13 +551,10 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 
 	if(!bis.isVertical()) {
 		distB = data.normalDistance(edgeIdxA,intersection.getIntersection());
-		fromAtoB = data.normalDistance(edgeIdxA,sourceNode->point) < distB;
+		fromAtoB = data.normalDistance(edgeIdxA,sourceNode->point) <= distB;
 	} else {
 		distB = CGAL::abs( intersection.getIntersection().y() - data.getEdge(edgeIdxA).point(0).y() );
 		distB=distB*distB;
-
-		/* we have a vertical bisector, if we also have an AA arc we have ghost arc? */
-		addGhostNode = true;
 	}
 
 
@@ -560,9 +566,9 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 	/* distinguish in which direction the ray points and add the arc accordingly */
 	uint newArcIdx = 0;
 	if(bis.isLine() || fromAtoB ) {
-		newArcIdx  = wf.addArc(sourceNodeIdx,newNodeIdx,edgeIdxA,edgeIdxB,bis.isVertical());
+		newArcIdx  = wf.addArc(sourceNodeIdx,newNodeIdx,edgeIdxA,edgeIdxB);
 	} else {
-		newArcIdx  = wf.addArc(newNodeIdx,sourceNodeIdx,edgeIdxB,edgeIdxA,bis.isVertical());
+		newArcIdx  = wf.addArc(newNodeIdx,sourceNodeIdx,edgeIdxB,edgeIdxA);
 	}
 
 //	bool hasAAarc = false;
@@ -586,19 +592,27 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 	return newNodeIdx;
 }
 
-bool Skeleton::intersectionHasVerticalArc(const IntersectionPair& pair) const {
+bool Skeleton::intersectionHasVerticalCallignedArc(const IntersectionPair& pair) const {
 	bool upperAA = false, lowerAA = false;
+	uint upperArcIdx = MAX, lowerArcIdx = MAX;
 	for(auto arcIdx : pair.first.getArcs()) {
 		if(wf.getArc(arcIdx)->isAA()) {
 			upperAA = true;
+			upperArcIdx = arcIdx;
 		}
 	}
 	for(auto arcIdx : pair.second.getArcs()) {
 		if(wf.getArc(arcIdx)->isAA()) {
 			lowerAA = true;
+			lowerArcIdx = arcIdx;
 		}
 	}
-	return upperAA && lowerAA;
+	if(upperAA && lowerAA) {
+		auto lowerArc = wf.getArc(lowerArcIdx);
+		auto upperArc = wf.getArc(upperArcIdx);
+		return lowerArc->isCollinear(*upperArc);
+	}
+	return false;
 }
 
 bool Skeleton::hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const {
@@ -748,35 +762,36 @@ void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 			pair.second.setIntersection(newNodePoint);
 
 			uint chosenArcIdx = MAX;
-			Point PGhost = INFPOINT;
+			auto PGhost = Point(sourceNode->point.x(),newNodePoint.y());
 			std::vector<uint> verticalArcs;
 			for(auto aIdx : sourceNode->arcs) {
 				auto arc = wf.getArc(aIdx);
-				if(arc->isVertical()) {
+				if(arc->is_vertical() && arc->has_on(PGhost)) {
 					verticalArcs.push_back(aIdx);
 				}
 			}
 
-			LOG(INFO) << "size: " << verticalArcs.size();
+			assert(verticalArcs.size() == 1);
 
 			chosenArcIdx = *verticalArcs.begin();
 			auto arc = wf.getArc(chosenArcIdx);
 			PGhost = Point(arc->point(0).x(),newNodePoint.y());
 
-
 			auto newSourceNodeIdx = wf.addNode(PGhost,sourceNode->time);
 
-			wf.addArc(newSourceNodeIdx,sourceNodeIdx,arc->leftEdgeIdx,arc->rightEdgeIdx,arc->isVertical());
+			if(wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
+				wf.addArc(newSourceNodeIdx,sourceNodeIdx,arc->leftEdgeIdx,upperChainIndex);
+			} else /* edgeIdx on upper chain */ {
+				wf.addArc(newSourceNodeIdx,sourceNodeIdx,lowerChainIndex,arc->rightEdgeIdx);
+			}
+
+			sourceNode->removeArc(chosenArcIdx);
+			arc->secondNodeIdx = newSourceNodeIdx;
+			wf.updateArcNewNode(chosenArcIdx,newSourceNodeIdx);
 
 			sourceNodeIdx = newSourceNodeIdx;
 			sourceNode = wf.getNode(sourceNodeIdx);
-			wf.updateArcNewNode(chosenArcIdx,newSourceNodeIdx);
-
-			/* we already added the arcs, we only have to move the (source)node */
-			//sourceNode->point = PGhost;
-//			for(auto a : sourceNode->arcs) {
-//				wf.updateArcNewNode(a,sourceNodeIdx);
-//			}
+			sourceNode->arcs.push_back(chosenArcIdx);
 		}
 	}
 }
@@ -799,6 +814,7 @@ bool Skeleton::handleGhostVertex(const MonotonePathTraversal& path,  Bisector& b
 			} else {
 				closestPoint = (CGAL::abs(pS.x()-pA.x()) <= CGAL::abs(pS.x()-pB.x())) ? pA : pB;
 			}
+			LOG(INFO) << "<- set addGhostNode true (handleGhostVertex)";
 			addGhostNode = true;
 			Point midPoint = CGAL::midpoint(pS,closestPoint);
 			intersection.add(midPoint,path.currentArcIdx);
@@ -945,7 +961,7 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 		for(auto n : wf.nodes) {
 			double x = (n.point.x().doubleValue() - xt) * xm;
 			double y = (n.point.y().doubleValue() - yt) * ym;
-			outfile << "v " << x << " " << y << " 0.0"<< std::endl;
+			outfile << "v " << x << " " << y << " " << CGAL::sqrt(n.time).doubleValue()/10.0 << std::endl;
 		}
 
 
@@ -975,6 +991,7 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 				for(auto newArcIdx : n->arcs) {
 					if(arcIdx != newArcIdx) {
 						arcIt = wf.getArc(newArcIdx);
+						if(arcIt->isDisable()) {continue;}
 						if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
 							found  = true;
 							arcIdx = newArcIdx;
