@@ -264,18 +264,18 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		auto idx = event->mainEdge;
 		auto paths = pathFinder[idx];
 		if(singleLeft) {
-			addArc(paths[0],nodeIdx,event->leftEdge,event->mainEdge);
+			Edge eS(getNode(paths[0])->point,getNode(nodeIdx)->point);
+			addArc(paths[0],nodeIdx,event->leftEdge,event->mainEdge,eS.is_vertical(),eS.is_horizontal());
 			singleLeft = false;
 		}
-		addArc(paths[1],nodeIdx,event->mainEdge,event->rightEdge);
+		Edge e(getNode(paths[1])->point,getNode(nodeIdx)->point);
+		addArc(paths[1],nodeIdx,event->mainEdge,event->rightEdge,e.is_vertical(),e.is_horizontal());
 
 		/* update path finder for left and right edge */
 		pathFinder[idx][1] = nodeIdx;
 		pathFinder[idx][0] = nodeIdx;
 	}
 
-//	updateNeighborEdgeEvents(*eventList[0],chain);
-//	updateNeighborEdgeEvents(*lastEvent,chain);
 	auto chainIt = chain.begin();
 	for(auto event : eventList) {
 		/* remove this edges from the chain (wavefront) */
@@ -396,7 +396,7 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 				bis = bis.opposite();
 			}
 
-			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical());
+			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical(),bis.is_horizontal());
 
 			/* iterate over remaining chain */
 			aEdgeIdx = bEdgeIdx;
@@ -799,9 +799,9 @@ void Wavefront::ChainDecomposition() {
 	LOG(INFO) << ss.str();
 }
 
-uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray, const bool vertical) {
+uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray, const bool vertical, const bool horizontal) {
 	auto nodeA = &nodes[nodeAIdx];
-	Arc arc(ArcType::RAY, nodeAIdx, edgeLeft, edgeRight, ray);
+	Arc arc(ArcType::RAY, nodeAIdx, edgeLeft, edgeRight, ray,vertical,horizontal);
 	auto arcIdx = arcList.size();
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
@@ -809,10 +809,10 @@ uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint
 	return arcIdx;
 }
 
-uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight) {
+uint Wavefront::addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight, const bool vertical, const bool horizontal) {
 	auto nodeA = &nodes[nodeAIdx];
 	auto nodeB = &nodes[nodeBIdx];
-	Arc arc(ArcType::NORMAL, nodeAIdx, nodeBIdx, edgeLeft, edgeRight, Edge(nodeA->point, nodeB->point));
+	Arc arc(ArcType::NORMAL, nodeAIdx, nodeBIdx, edgeLeft, edgeRight, Edge(nodeA->point, nodeB->point),vertical,horizontal);
 	auto arcIdx = arcList.size();
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
@@ -844,11 +844,11 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	} else if(nodes[paths[0]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the right side */
 		nodeIdx = paths[0];
-		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge);
+		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical(),e.is_horizontal());
 	} else if(nodes[paths[1]].point == event.eventPoint) {
 		/* so we use the left referenced node and only create a new arc for the left side */
 		nodeIdx = paths[1];
-		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge);
+		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical(),e.is_horizontal());
 	} else {
 		/* a classical event to be handled */
 		LOG(INFO) << "event point before adding node " << event.eventPoint;
@@ -858,8 +858,8 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 
 		Edge e1(Pa,event.eventPoint);
 		Edge e2(Pb,event.eventPoint);
-		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge);
-		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge);
+		addArc(paths[0],nodeIdx,event.leftEdge,event.mainEdge,e1.is_vertical(),e1.is_horizontal());
+		addArc(paths[1],nodeIdx,event.mainEdge,event.rightEdge,e2.is_vertical(),e2.is_horizontal());
 	}
 
 	/* update path finder for left and right edge */

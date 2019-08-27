@@ -98,8 +98,8 @@ public:
 	}
 
 	/* construct skeletal structure using nodes and arcs */
-	uint addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray, const bool vertical);
-	uint addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight);
+	uint addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint& edgeRight, const Ray& ray, const bool vertical, const bool horizontal);
+	uint addArc(const uint& nodeAIdx, const uint& nodeBIdx, const uint& edgeLeft, const uint& edgeRight, const bool vertical, const bool horizontal);
 	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
 	inline uint addNode(const Point& intersection, const Exact& time) {
 		Node node(NodeType::NORMAL,intersection,time);
@@ -148,6 +148,7 @@ public:
 	uint getCommonNodeIdx(const uint& arcIdxA, const uint& arcIdxB);
 
 	void updateArcNewNode(const uint idx, const uint nodeIdx);
+
 
 	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 	bool isEdgeOnLowerChain(const uint edgeIdx) const;

@@ -87,7 +87,7 @@ private:
 
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
 
-	uint handleDoubleMerge(const IntersectionPair& intersectionPair, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
+	uint handleDoubleMerge(IntersectionPair& intersectionPair, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
 	uint handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis);
 	void updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
@@ -129,7 +129,9 @@ private:
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 
-	bool intersectionHasVerticalCallignedArc(const IntersectionPair& pair) const;
+	uint getAVerticalArc(const Intersection& intersection) const;
+	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
+	bool intersectionHasVerticalCoallignedArc(const IntersectionPair& pair) const;
 
 	void initNextChainAndPath(bool upperChain);
 
