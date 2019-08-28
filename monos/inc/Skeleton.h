@@ -129,6 +129,8 @@ private:
 
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 
+	void removeRaysFromIntersection(Intersection& intersection);
+
 	uint getAVerticalArc(const Intersection& intersection) const;
 	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
 	bool intersectionHasVerticalCoallignedArc(const IntersectionPair& pair) const;

@@ -301,7 +301,7 @@ void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
 			for(auto j : lowerEdges) {
 				LOG(INFO) << "checking collinearity of edge " << i << " and " << j;
 //				if(i != upperChainIndex && j != lowerChainIndex && data.isEdgeCollinear(i,j)) {
-				if(i != j && data.isEdgeCollinear(i,j)) {
+				if(i != j && data.isEdgeCollinearAndCommonInteriorDirection(i,j)) {
 					done = true;
 				}
 			}
@@ -327,7 +327,7 @@ void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
 
 		LOG(INFO) << "distL: " << distL.doubleValue() << ", distU: " << distU.doubleValue();
 		if(done || (distL != -CORE_ONE && distL == distU)) {
-			LOG(INFO) << "setting intersections (disabled)";
+			LOG(INFO) << "setting intersections";
 			pair.first.setIntersection(P);
 			pair.second.setIntersection(P);
 		}
@@ -594,6 +594,16 @@ uint Skeleton::handleDoubleMerge(IntersectionPair& intersectionPair, const uint&
 	return newNodeIdx;
 }
 
+void Skeleton::removeRaysFromIntersection(Intersection& intersection) {
+	for(auto arcIdx : intersection.getArcs())  {
+		auto arc = wf.getArc(arcIdx);
+		if(arc->isRay()) {
+			auto node = wf.getNode(arc->firstNodeIdx);
+			node->removeArc(arcIdx);
+			arc->disable();
+		}
+	}
+}
 
 uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdxA, const uint& edgeIdxB, const Bisector& bis) {
 	bool fromAtoB = true;
@@ -822,12 +832,17 @@ void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 					Exact yMax = arc->point(1).y();
 					if(yMin > yMax) {std::swap(yMin,yMax);}
 					Exact yP = PGhost.y();
-					if(yP >= yMin && yP <= yMax) {
+					if(yP > yMin && yP < yMax) {
 						verticalArcs.push_back(aIdx);
 					}
 				}
 			}
-			assert(verticalArcs.size() == 1);
+
+			LOG(INFO) << "verticalArcs.size: " << verticalArcs.size();
+
+			if(verticalArcs.size() < 1) {
+				return;
+			}
 
 			chosenArcIdx = *verticalArcs.begin();
 			auto arc = wf.getArc(chosenArcIdx);
@@ -904,8 +919,13 @@ void Skeleton::updateArcTarget(const uint& arcIdx, const uint& edgeIdx, const in
 		removePath(arcIdx, edgeIdx);
 	}
 
+
 	auto newNode = &wf.nodes[secondNodeIdx];
-	if(arc->isRay()) {
+
+	if(arc->point(0) == newNode->point) {
+		arc->disable();
+		return;
+	} else if(arc->isRay()) {
 		arc->type = ArcType::NORMAL;
 		arc->edge = Edge(arc->ray.source(),edgeEndPoint);
 		arc->ray = Ray();
@@ -1079,25 +1099,6 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 			outfile << std::endl;
 
 		}
-
-		/* write arcs as line segments into file */
-
-//		for(uint i = 0; i < wf.arcList.size(); ++i) {
-//			auto a = &wf.arcList[i];
-//			/* +1 is the standard OBJ offset for references */
-//			if(a->type == ArcType::NORMAL && wf.isArcInSkeleton(i)) {
-//				outfile << "l " << a->firstNodeIdx+1 << " " << a->secondNodeIdx+1 << std::endl;
-//			} else {
-//				if(a->firstNodeIdx < wf.nodes.size()) {
-//					auto nodeA = wf.nodes[a->firstNodeIdx];
-//					nodeA.arcs.clear();
-//				}
-//				if(a->secondNodeIdx < wf.nodes.size()) {
-//					auto nodeB = wf.nodes[a->secondNodeIdx];
-//					nodeB.arcs.clear();
-//				}
-//			}
-//		}
 
 		outfile.close();
 	}

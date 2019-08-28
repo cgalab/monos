@@ -103,10 +103,7 @@ public:
 	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
 	inline uint addNode(const Point& intersection, const Exact& time) {
 		Node node(NodeType::NORMAL,intersection,time);
-//		Point Pref = nodes.rbegin()->point;
-//		if(Pref.y() != node.point.y() || Pref.x() != node.point.x()) {
-			nodes.push_back(node);
-//		}
+		nodes.push_back(node);
 		return nodes.size() - 1;
 	}
 
