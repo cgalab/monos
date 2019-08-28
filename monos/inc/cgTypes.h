@@ -223,10 +223,22 @@ public:
 
 	bool has_on(const Point p) const {
 		if(is_vertical() && p.x() != point(0).x()) {
-			return false;
+			auto yMin = point(0).y();
+			auto yMax = point(1).y();
+			if(yMin < yMax) {std::swap(yMin,yMax);}
+
+			if( p.y() < yMin || p.y() > yMax || p.x() != point(0).x()) {
+				return false;
+			}
 		}
-		if(is_horizontal() && p.y() != point(0).y()) {
-			return false;
+		if(is_horizontal()) {
+			auto xMin = point(0).x();
+			auto xMax = point(1).x();
+			if(xMin < xMax) {std::swap(xMin,xMax);}
+
+			if( p.x() < xMin || p.x() > xMax || p.y() != point(0).y()) {
+				return false;
+			}
 		}
 		if(isEdge()) {
 			return edge.has_on(p);

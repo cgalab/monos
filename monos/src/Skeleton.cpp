@@ -267,14 +267,17 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	IntersectionPair intersectionPair = std::make_pair(upperIntersection,lowerIntersection);
 
 	multiEventCheck(bis,intersectionPair);
-	if(!sourceNode->isGhostNode()) {
-		checkAndAddCollinearArcs(intersectionPair);
+	if(!sourceNode->isGhostNode() || (sourceNode->isGhostNode() && sourceNode->degree() > 2) ) {
+		if(!data.isEdgeCollinearAndInteriorRight(upperChainIndex,lowerChainIndex)) {
+			checkAndAddCollinearArcs(intersectionPair);
+		}
 	}
+
 	return intersectionPair;
 }
 
 void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
-	if(!pair.first.empty() && !pair.second.empty()) {
+	if(!pair.first.empty() && !pair.second.empty() && !data.isEdgesParallel(upperChainIndex,lowerChainIndex)) {
 		std::set<uint> upperEdges, lowerEdges;
 		for(auto a : pair.first.getArcs()) {
 			auto arc = wf.getArc(a);
@@ -324,7 +327,7 @@ void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
 
 		LOG(INFO) << "distL: " << distL.doubleValue() << ", distU: " << distU.doubleValue();
 		if(done || (distL != -CORE_ONE && distL == distU)) {
-			LOG(INFO) << "setting intersections";
+			LOG(INFO) << "setting intersections (disabled)";
 			pair.first.setIntersection(P);
 			pair.second.setIntersection(P);
 		}
@@ -340,6 +343,7 @@ void Skeleton::checkAndAddCollinearArcs(IntersectionPair& pair) {
 
 	for(auto arcIdx : sourceNode->arcs) {
 		auto arc = wf.getArc(arcIdx);
+	LOG(INFO) << "arc: " << *arc;
 		if(arc->has_on(intersection)) {
 			if(!wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
 				LOG(INFO) << "checkAndAddCollinearArcs (upper): " << arcIdx;
@@ -625,6 +629,11 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 			LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
 			updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,intersection.getIntersection());
 		}
+	}
+
+	auto arc = wf.getArc(intersection.getFirstArcIdx());
+	if(bis.is_vertical() && arc->is_vertical()) {
+		addGhostNode = true;
 	}
 
 	return newNodeIdx;

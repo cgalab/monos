@@ -562,6 +562,13 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				}
 
 				bis.setGhost(true);
+
+				auto dir = a.perpendicular(a.point(0)).direction();
+				if(dir == data.monotonicityLine.direction()) {
+					LOG(INFO) << "-- unset ghost vertex";
+					bis.setGhost(false);
+				}
+
 				return bis;
 			} else {
 				LOG(INFO) << "constructBisector: bisector of parallel input edges";
@@ -579,7 +586,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 		}
 	} else {
 		/* weighted bisector */
-		LOG(INFO) << "weighted bisector!";
+		LOG(WARNING) << "weighted bisector is not working in general (but might if envelope property is not violated)!";
 		if(intersectionA != INFPOINT) {
 			Point bP = intersectionA;
 			Vector aN = a.perpendicular(bP).to_vector();

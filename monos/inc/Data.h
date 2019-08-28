@@ -105,6 +105,10 @@ public:
 
 	bool isEdgeCollinear(const uint& i, const uint& j) const;
 	bool isEdgeCollinear(const Edge& eA, const Edge& eB) const;
+	bool isEdgeCollinearAndInteriorRight(const uint& i, const uint& j) const;
+	bool isEdgesParallel(const uint& i, const uint& j) const {
+		return isLinesParallel(getEdge(i).supporting_line(),getEdge(j).supporting_line());
+	}
 
 	Edge confineRayToBBox(const Ray& ray) const;
 
