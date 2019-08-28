@@ -55,6 +55,11 @@ public:
 		}
 	}
 
+	std::string getFileNameNoPath() const {
+		return fileName.substr(fileName.find_last_of("/\\") + 1);
+	}
+
+
 	std::string   	fileName;
 
 	bool 			use_stdin = false;

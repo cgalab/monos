@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 #ifdef CMAKE_BUILD_TYPE
 	"Monos GUI (" CMAKE_BUILD_TYPE ")"
 #else
-	"Monos GUI"
+	"Monos GUI - " + monos.config.getFileNameNoPath();
 #endif
 	;
 
