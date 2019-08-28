@@ -70,13 +70,19 @@ bool Skeleton::SingleMergeStep() {
 	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
 	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl << "intersection lower: " << intersectionPair.second;
 
-	/* if we need to handle a source ghost node from the previous round! */
+	/**
+	 * IF we need to handle a source ghost node from the previous round!
+	 * This means that the next arc is a ghost arc that will end at that ghost node,
+	 * therefore its position is not yet fixed and we have to move it 'now'. */
 	handleSourceGhostNode(bis,intersectionPair);
 
+	/**
+	 * we distinguish between 'simple' intersections, meaning an intersection point is left of the other
+	 * or there is only one, and the rest where node intersections and things like that may occur */
 	if(isVerticalIntersectionButSimple(bis,intersectionPair) || isIntersectionSimple(intersectionPair)) {
 		bool onUpperChain;
 		auto intersection = getIntersectionIfSimple(bis,intersectionPair,onUpperChain);
-		LOG(INFO) << "simple " << intersection;
+		LOG(INFO) << "-- handleMerge " << intersection;
 		newNodeIdx = handleMerge(intersection,upperChainIndex,lowerChainIndex,bis);
 		Arc* modifiedArc = &wf.arcList[*intersection.getArcs().rbegin()];
 		if(onUpperChain) {
@@ -88,7 +94,7 @@ bool Skeleton::SingleMergeStep() {
 		}
 	} else {
 		/* more than two arcs means at least one existing node lies on the intersection */
-		LOG(INFO) << "-- handleMerge(intersectionPair.first/second may be not enough here!";
+		LOG(INFO) << "-- handleDoubleMerge!";
 		newNodeIdx = handleDoubleMerge(intersectionPair,upperChainIndex,lowerChainIndex,bis);
 
 		Point Pu = data.eA(wf.startLowerEdgeIdx);
@@ -129,17 +135,17 @@ bool Skeleton::SingleMergeStep() {
 //	/* the new node may reside on an arc that is not in the current focus */
 //	checkAndRepairCollinearArcs();
 
+	/* we iterate the sourcenode to the newly added node and go on merging */
 	LOG(INFO) << "changing idx from old: " << sourceNodeIdx << " to " << newNodeIdx;
 	sourceNodeIdx = newNodeIdx;
 	sourceNode = &wf.nodes[sourceNodeIdx];
 
-
-
+	/* addGhostNode is set to true on certain conditions to handle a ghost node in the next
+	 * merge round */
 	if(addGhostNode) {
-		LOG(INFO) << "add ghost node!";
 		sourceNode->setGhost(true);
 		addGhostNode = false;
-		LOG(INFO) << "SingleMergeStep: setting sourceNode to be a ghost node!";
+		LOG(INFO) << "(G) SingleMergeStep: setting sourceNode to be a ghost node!";
 	}
 
 	LOG(INFO) << "";
@@ -300,7 +306,6 @@ void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
 		for(auto i : upperEdges) {
 			for(auto j : lowerEdges) {
 				LOG(INFO) << "checking collinearity of edge " << i << " and " << j;
-//				if(i != upperChainIndex && j != lowerChainIndex && data.isEdgeCollinear(i,j)) {
 				if(i != j && data.isEdgeCollinearAndCommonInteriorDirection(i,j)) {
 					done = true;
 				}
@@ -869,10 +874,6 @@ void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 				for(auto arcIdx : sourceNode->arcs) {
 					wf.updateArcNewNode(arcIdx,sourceNodeIdx);
 				}
-//				LOG(INFO) << "deg 2 ghost: arc? " << *arc;
-//				if(wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
-//				} else /* edgeIdx on upper chain */ {
-//				}
 			}
 		}
 	}
@@ -1047,13 +1048,11 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 				<< currentTimeStamp() <<  std::endl;
 
 		/* write points/nodes into file */
-
 		for(auto n : wf.nodes) {
 			double x = (n.point.x().doubleValue() - xt) * xm;
 			double y = (n.point.y().doubleValue() - yt) * ym;
 			outfile << "v " << x << " " << y << " " << CGAL::sqrt(n.time).doubleValue() * zm << std::endl;
 		}
-
 
 		/* write faces induced by the skeleton into file */
 		for(uint edgeIdx = 0; edgeIdx < data.getPolygon().size(); ++edgeIdx) {

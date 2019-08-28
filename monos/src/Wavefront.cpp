@@ -655,11 +655,7 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 				}
 
 			} else {
-				LOG(ERROR) << "collinear edges!?!";
-
-				/* This should not occur, two collinear edges with different weights can
-				 * not become adjacent in a wavefront except if they are adjacent on the
-				 * boundary of the polygon at time zero!*/
+				LOG(ERROR) << "collinear edges!?! -- is not handled as we do not support weights in gerneral";
 
 				auto eA = data.e(aIdx);
 				auto eB = data.e(bIdx);
@@ -673,38 +669,6 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 						}
 					}
 				}
-
-//				Point Pa = a.point(0);
-//				Line l = a.perpendicular(Pa);
-//				Point Pb = intersectElements(l,b);
-//				Vector aN = l.to_vector();
-//				aN /= CGAL::sqrt(aN.squared_length());
-//				Vector bN = -aN;
-//
-//				auto aDir = aN.perpendicular(CGAL::LEFT_TURN);
-//
-//				Point Pa_off = Pa + aDir;
-//				Point Pb_off = Pb + aDir;
-//
-//				aN *= data.w(aIdx);
-//				bN *= data.w(bIdx);
-//
-//				Point Pa2 = Pa_off + aN;
-//				Point Pb2 = Pb_off + bN;
-//
-//				Ray R1 = Ray(Pa,Pa2);
-//				Ray R2 = Ray(Pa,Pa2);
-//
-//				Point wMidPoint = intersectElements(R1,R2);
-//
-//				Ray bis(wMidPoint,-a.direction());
-//				Edge e = data.confineRayToBBox(bis);
-//
-//				bis = Ray(e.target(),wMidPoint);
-//				auto b = Bisector(bis,aIdx,bIdx);
-//				b.setGhost(true);
-//
-//				return b;
 
 				assert(false);
 				return Bisector(Ray(),aIdx,bIdx);
@@ -874,6 +838,10 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 	pathFinder[event.rightEdge][0] = nodeIdx;
 }
 
+/**
+ * traverse a path that starts on one terminal node of an input edge
+ * this traverse occurs in a monotone (i.r.t. the monotonicity line) way
+ * */
 bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 	LOG(INFO) << "nextMonotoneArcOfPath" << path;
 
@@ -908,18 +876,8 @@ bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
 			LOG(INFO) << "next arc " << path.currentArcIdx << " found";
 			return true;
 		} else {
-//			path.iterateAwayFromEdge = !path.iterateAwayFromEdge;
-//			nextArcIdx = getNextArcIdx(path,*oppositeArc);
-//			if(nextArcIdx != MAX) {
-//				path.swap();
-//				LOG(INFO) << "next arc " << nextArcIdx << " found";
-//				path.currentArcIdx = nextArcIdx;
-//				currentArc  = &arcList[path.currentArcIdx];
-//				return true;
-//			} else {
-				LOG(ERROR) << "No next arc found!";
-				return false;
-//			}
+			LOG(ERROR) << "No next arc found!";
+			return false;
 		}
 	}
 }
