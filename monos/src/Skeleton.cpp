@@ -1034,8 +1034,11 @@ void Skeleton::printSkeleton() const {
 
 void Skeleton::writeOBJ(const Config& cfg) const {
 	if(cfg.outputType == OutputType::OBJ) {
-		double xt, yt, zt, xm, ym, zm;
-		getNormalizer(data.bbox,xt,xm,yt,ym,zt,zm);
+		double xt = 0.0, yt = 0.0, zt = 0.0, xm = 1.0, ym = 1.0, zm = 1.0;
+		if(cfg.normalize) {
+			getNormalizer(data.bbox,xt,xm,yt,ym,zt,zm);
+			zm = 0.1;
+		}
 		uint errorCnt = 20;
 
 		std::ofstream outfile (cfg.outputFileName,std::ofstream::binary);
@@ -1048,7 +1051,7 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 		for(auto n : wf.nodes) {
 			double x = (n.point.x().doubleValue() - xt) * xm;
 			double y = (n.point.y().doubleValue() - yt) * ym;
-			outfile << "v " << x << " " << y << " " << CGAL::sqrt(n.time).doubleValue()/10.0 << std::endl;
+			outfile << "v " << x << " " << y << " " << CGAL::sqrt(n.time).doubleValue() * zm << std::endl;
 		}
 
 

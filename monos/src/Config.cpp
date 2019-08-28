@@ -18,6 +18,10 @@ bool Config::evaluateArguments(Args args) {
 			resetLogging(true);
 			break;
 
+		case 'n':
+			normalize = true;
+			break;
+
 		case 'o':
 			outputFileName = std::string(optarg);
 			outputType = OutputType::OBJ;

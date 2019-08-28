@@ -9,12 +9,9 @@ The algorithm is based on the following scientific work: https://doi.org/10.1016
 
 # Input/Output
 
-Reads GraphML (.graphml) or  wavefront (.obj) format that describes a polygon. Writes the
-same format; .obj gets 3D coordinates which can be imported into programs like
+Reads GraphML (.graphml) or  wavefront (.obj) format that describes a polygon. Writes 
+.obj format with 3D coordinates which can be imported into programs like
 Blender.
-
-# ToDo's
-- implement GraphML output
 
 # Requirements 
 - C++17 enabled complier (gcc,clang)
@@ -23,19 +20,20 @@ Blender.
 
 # Installation
 
-- git clone https://gitlab.cosy.sbg.ac.at/cg/ord/monos
+- git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos
 - mkdir -p monos/build && cd monos/build
 - cmake ..
 - make -j 
 
 # Usage
 
-<code>monos [--verbose] [--obj &lt;filename&gt;] &lt;filename&gt;</code>
+<code>monos [--verbose][--normalize] [--obj &lt;filename&gt;] &lt;filename&gt;</code>
 
 | options        | description           |
 | -------------:|:------------- |
 |  --help           |         print help |
 |  --verbose           |         verbose mode, shows information about the computation |
+|  --normalize   | write output normalized to the origin |
 |  --obj      |            write output in wavefront obj format (3D coordinates) |
 |  &lt;filename&gt; |           input type is either wavefront obj or GML format |
 

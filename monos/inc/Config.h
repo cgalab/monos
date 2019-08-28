@@ -15,6 +15,7 @@ using Args = std::pair<int,char**>;
 static struct option long_options[] = {
 		{ "help"        , no_argument      , 0, 'h'},
 		{ "verbose"     , no_argument      , 0, 'v'},
+		{ "normalize"   , no_argument      , 0, 'n'},
 		{ "obj"         , required_argument, 0, 'o'},
 		{ 0, 0, 0, 0}
 };
@@ -28,8 +29,9 @@ public:
 		FILE *f = err ? stderr : stdout;
 
 		fprintf(f,"Usage: %s [options] <OBJ|GRAPHML file>\n", progname);
-		fprintf(f,"  Options: --obj | -o <filename>      write output.\n");
-		fprintf(f,"           --verbose | -v             print processing information.\n");
+		fprintf(f,"  Options: --obj \t| -o <filename> \t write output\n");
+		fprintf(f,"           --verbose \t| -v \t\t\t print processing information\n");
+		fprintf(f,"           --normalize \t| -n \t\t\t write output normalized to the origin\n");
 		fprintf(f,"\n");
 		fprintf(f,"Input format can be .gml/.graphml (GraphML) or .obj (Wavefront Object).\n");
 		fprintf(f,"Parsing input from cin assumes graphml format.");
@@ -64,8 +66,9 @@ public:
 
 	bool 			use_stdin = false;
 
-	bool 			verbose = false;
-	bool			silent  = true;
+	bool 			verbose   = false;
+	bool			silent    = true;
+	bool 			normalize = false;
 	bool 			gui;
 
 	OutputType  	outputType;
