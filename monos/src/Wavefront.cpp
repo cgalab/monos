@@ -465,7 +465,6 @@ bool Wavefront::hasParallelBisector(const Event& event) const {
 
 Event Wavefront::getEdgeEvent(const uint& aIdx, const uint& bIdx, const uint& cIdx, const ChainRef& it) const {
 	Event e;
-//	Ray abRay, bcRay;
 
 	/* compute bisector from edges */
 	auto abBis = constructBisector(aIdx, bIdx);
@@ -1177,6 +1176,7 @@ void Wavefront::reset() {
 	lowerSkeleton.clear();
 	upperChain.clear();
 	lowerChain.clear();
+	data.lines.clear();
 	InitializeEventsAndPathsPerEdge();
 	InitializeNodes();
 }
