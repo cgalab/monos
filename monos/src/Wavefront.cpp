@@ -1024,8 +1024,13 @@ uint Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
 	} else if (arc.isRay()) {
 		return arc.firstNodeIdx;
 	} else {
-		LOG(ERROR) << "Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
-		return arc.firstNodeIdx;
+		LOG(ERROR) << "(R) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
+		if(arc.secondNodeIdx == MAX) {
+			return arc.firstNodeIdx;
+		} else {
+			const auto& Nb = nodes[arc.secondNodeIdx];
+			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
+		}
 	}
 }
 
@@ -1037,8 +1042,13 @@ uint Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
 	} else if (arc.isRay()) {
 		return arc.firstNodeIdx;
 	} else {
-		LOG(ERROR) << "Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
-		return arc.firstNodeIdx;
+		LOG(ERROR) << "(L) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
+		if(arc.secondNodeIdx == MAX) {
+			return arc.firstNodeIdx;
+		} else {
+			const auto& Nb = nodes[arc.secondNodeIdx];
+			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
+		}
 	}
 }
 

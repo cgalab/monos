@@ -120,7 +120,7 @@ public:
 	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 
 	Node* getNode(const uint& idx) {return &nodes[idx];}
-	Arc* getArc(const uint& idx) {return &arcList[idx];}
+	Arc* getArc(const uint& idx) {assert(idx < arcList.size()); return &arcList[idx];}
 	Arc* getArc(const MonotonePathTraversal& path) {
 		if(path.currentArcIdx == MAX) {
 			return nullptr;

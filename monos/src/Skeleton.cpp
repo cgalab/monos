@@ -467,6 +467,14 @@ Intersection Skeleton::getIntersectionIfSimple(const Bisector& bis, const Inters
 	Point Pa = pair.first.getIntersection();
 	Point Pb = pair.second.getIntersection();
 
+	if(pair.first.empty()) {
+		assert(!pair.second.empty());
+		return pair.second;
+	} else if(pair.second.empty()) {
+		assert(!pair.first.empty());
+		return pair.first;
+	}
+
 	if(bis.is_vertical()) {
 		LOG(INFO) << "getIntersectionIfSimple";
 		Exact distA = CGAL::abs(sourceNode->point.y() - Pa.y());
@@ -638,6 +646,7 @@ uint Skeleton::handleMerge(const Intersection& intersection, const uint& edgeIdx
 
 	/* update the targets of the relevant arcs */
 	for(auto arcIdx : intersection.getArcs()) {
+		LOG(INFO) << "update the targets of " << arcIdx; fflush(stdout);
 		if(arcIdx < MAX) {
 			auto arc = wf.getArc(arcIdx);
 			/* TODO: parallel-bisectors, direction unclear */

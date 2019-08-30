@@ -54,6 +54,8 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	ui->statusBar->addWidget(xycoord, 0);
 
 	time_changed();
+	on_actionResize_triggered();
+	on_actionResize_triggered();
 }
 
 MainWindow::~MainWindow() {}
