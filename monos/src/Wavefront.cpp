@@ -775,6 +775,7 @@ uint Wavefront::addArcRay(const uint& nodeAIdx, const uint& edgeLeft, const uint
 	auto arcIdx = arcList.size();
 	arcList.push_back(arc);
 	nodeA->arcs.push_back(arcIdx);
+	LOG(INFO) << "+/ adding ray: " << arc;
 
 	return arcIdx;
 }
@@ -971,7 +972,7 @@ bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arc
 	auto Nb = &nodes[NbIdx];
 
 	/* left endpoints are adjacent, check right endpoints */
-	if(NaIdx == NbIdx) {
+	if(NaIdx == NbIdx || Na->point == Nb->point) {
 		NaIdx = getRightmostNodeIdxOfArc(arcA);
 		NbIdx = getRightmostNodeIdxOfArc(arcB);
 		Na = &nodes[NaIdx];
@@ -1066,12 +1067,15 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 		auto ie = pathFinder[edgeIdx];
 		Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
 		uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
-		LOG(INFO) << "distantArcIdx arc idx " << distantArcIdx;
+		LOG(INFO) << "initial/distantArcIdx " << initialArcIdx << " / " << distantArcIdx;
 
 		if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
 			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
 		} else {
 			Arc&  distantArc    = arcList[distantArcIdx];
+
+			LOG(INFO) << "isArcLeftOfArc " << initialArc << " || " << distantArc;
+
 			if(isArcLeftOfArc(initialArc,distantArc)) {
 				path =  MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx,upper);
 			} else {

@@ -82,7 +82,7 @@ bool Skeleton::SingleMergeStep() {
 	if(isVerticalIntersectionButSimple(bis,intersectionPair) || isIntersectionSimple(intersectionPair)) {
 		bool onUpperChain;
 		auto intersection = getIntersectionIfSimple(bis,intersectionPair,onUpperChain);
-		LOG(INFO) << "-- handleMerge " << intersection;
+		LOG(INFO) << "-- handleMerge upper:" << onUpperChain << ", point: " << intersection;
 		newNodeIdx = handleMerge(intersection,upperChainIndex,lowerChainIndex,bis);
 		Arc* modifiedArc = &wf.arcList[*intersection.getArcs().rbegin()];
 		if(onUpperChain) {
@@ -189,6 +189,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 
 	while( !EndOfBothChains() && ( !upperIntersection.isDone() || !lowerIntersection.isDone() ) ) {
 		/* check which arc lies further to the left */
+		LOG(INFO) << "arc check, arc_u " << *arc_u << ", arc_l: " << *arc_l;
 		localOnUpperChain = wf.isArcLeftOfArc(arc_u,arc_l); // && !upperIntersection.isDone();
 
 		if( localOnUpperChain && upperIntersection.isDone()) {localOnUpperChain = false;}
@@ -247,6 +248,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 				} else {				pathBackupLower = wf.lowerPath;}
 
 				if(!wf.nextMonotoneArcOfPath(*path)) {
+					LOG(INFO) << "OK";
 					Edge e = data.getEdge(path->edgeIdx);
 					if(do_intersect(bis,e)) {
 						LOG(INFO) << "intersecting input edge (done)";
@@ -257,6 +259,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 						LOG(INFO) << "I do not think we should iterate to the next face just like that!";
 					}
 				} else {
+					LOG(INFO) << "OK(2)";
 					if(localOnUpperChain) {
 						arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
 					} else {
@@ -469,9 +472,11 @@ Intersection Skeleton::getIntersectionIfSimple(const Bisector& bis, const Inters
 
 	if(pair.first.empty()) {
 		assert(!pair.second.empty());
+		onUpperChain = false;
 		return pair.second;
 	} else if(pair.second.empty()) {
 		assert(!pair.first.empty());
+		onUpperChain = true;
 		return pair.first;
 	}
 
