@@ -61,8 +61,17 @@ std::ostream& operator<< (std::ostream& os, const Event& event) {
 }
 
 std::ostream& operator<< (std::ostream& os, const Arc& arc) {
-    os << "N(" << arc.firstNodeIdx << "," << arc.secondNodeIdx << ")"
-    		<< " E(" << arc.leftEdgeIdx << "," << arc.rightEdgeIdx << ")";
+	if(arc.firstNodeIdx == MAX) {
+		os << "N(MAX,";
+	} else {
+		os << "N(" << arc.firstNodeIdx << ",";
+	}
+	if(arc.secondNodeIdx == MAX) {
+		os << "MAX)";
+	} else {
+		os << arc.secondNodeIdx << ")";
+	}
+    os << " E(" << arc.leftEdgeIdx << "," << arc.rightEdgeIdx << ")";
     switch(arc.type) {
     case ArcType::DISABLED : os << " disabled"; break;
     case ArcType::RAY : os << " ray: " << arc.ray; break;

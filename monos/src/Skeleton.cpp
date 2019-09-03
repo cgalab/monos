@@ -180,7 +180,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	/* while iterate we may iterate one arc to far, this is an easy way to step back */
 	pathBackupLower = wf.lowerPath; pathBackupUpper = wf.upperPath;
 
-	LOG(INFO) << "findNextIntersectingArc start "  << upperIntersection.isDone() << ", " << lowerIntersection.isDone();
+	LOG(INFO) << "findNextIntersectingArc start | upper: "  << upperIntersection.isDone() << ", lower: " << lowerIntersection.isDone();
 	arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
 	arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
 
@@ -189,7 +189,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 
 	while( !EndOfBothChains() && ( !upperIntersection.isDone() || !lowerIntersection.isDone() ) ) {
 		/* check which arc lies further to the left */
-		LOG(INFO) << "arc check, arc_u " << *arc_u << ", arc_l: " << *arc_l;
+
 		localOnUpperChain = wf.isArcLeftOfArc(arc_u,arc_l); // && !upperIntersection.isDone();
 
 		if( localOnUpperChain && upperIntersection.isDone()) {localOnUpperChain = false;}
@@ -563,6 +563,7 @@ uint Skeleton::handleDoubleMerge(IntersectionPair& intersectionPair, const uint&
 
 	} else {
 		if(bis.is_vertical()) {
+			LOG(INFO) << "vertical bisector";
 			auto upperArc = wf.getArc(intersectionPair.first.getFirstArcIdx());
 			auto lowerArc = wf.getArc(intersectionPair.second.getFirstArcIdx());
 
@@ -583,6 +584,9 @@ uint Skeleton::handleDoubleMerge(IntersectionPair& intersectionPair, const uint&
 				intersectionPair.first.clear();
 				LOG(INFO) << "<- set addGhostNode true (handleDoubleMerge)";
 				addGhostNode = true;
+			} else {
+				newNodeIdx = handleMerge(intersectionPair.first,edgeIdxA,edgeIdxB,bis);
+				arcs = intersectionPair.second.getArcs();
 			}
 
 		} else if(intersectionPair.first.getIntersection() == intersectionPair.second.getIntersection()) {
@@ -598,6 +602,8 @@ uint Skeleton::handleDoubleMerge(IntersectionPair& intersectionPair, const uint&
 			arcs = std::set<uint>();
 		}
 	}
+
+	LOG(INFO) << "newNodeIdx: " << newNodeIdx;
 
 	auto newNode = wf.getNode(newNodeIdx);
 

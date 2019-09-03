@@ -1,7 +1,17 @@
 #include "Wavefront.h"
 
 std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
-	os << "path-edge (" << path.edgeIdx << ") - current:" << path.currentArcIdx << " opposite: " << path.oppositeArcIdx;
+	os << "path-edge (" << path.edgeIdx << ") - current:";
+	if(path.currentArcIdx == MAX) {
+		os << "MAX" << " opposite: ";
+	} else {
+		os << path.currentArcIdx << " opposite: ";
+	}
+	if(path.oppositeArcIdx == MAX) {
+		os << "MAX";
+	} else {
+		os << path.oppositeArcIdx;
+	}
 	if(path.iterateAwayFromEdge) {
 		os << " away ";
 	} else {
@@ -979,7 +989,7 @@ bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arc
 		Nb = &nodes[NbIdx];
 	}
 
-	bool pointAmonotoneSmaller = data.monotoneSmaller(line,Na->point,Nb->point);
+	bool pointAmonotoneSmaller = (Na->point != Nb->point) && data.monotoneSmaller(line,Na->point,Nb->point);
 
 	if(arcA.isEdge() && arcB.isEdge()) {
 		/* 1st: both arcs are edges */
