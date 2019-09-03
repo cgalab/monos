@@ -440,7 +440,16 @@ bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) con
 bool Data::monotoneSmaller(const Point& a, const Point& b) const {
 	assert(a != b);
 	Line perpL = Line(b,perpMonotonDir);
-	return perpL.has_on_positive_side(a);
+
+	if(perpL.has_on_positive_side(a)) {
+		return true;
+	} else if(perpL.has_on_negative_side(a)) {
+		return false;
+	} else {
+		Line L = Line(a,monotonicityLine.direction());
+		return L.has_on_positive_side(b);
+	}
+	return false;
 }
 bool Data::rayPointsLeft(const Ray& ray) const {
 	Point Pa = monotonicityLine.point(0);

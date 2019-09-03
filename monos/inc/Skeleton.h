@@ -131,6 +131,8 @@ private:
 
 	void removeRaysFromIntersection(Intersection& intersection);
 
+	uint getNextEdgeIdxFromIntersection(const Intersection& intersection, bool onUpperChain);
+
 	uint getAVerticalArc(const Intersection& intersection) const;
 	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
 	bool intersectionHasVerticalCoallignedArc(const IntersectionPair& pair) const;

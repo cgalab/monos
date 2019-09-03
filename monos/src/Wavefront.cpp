@@ -541,12 +541,12 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			cP = data.eB(bIdx);
 
 			Line bisLine = CGAL::bisector(a,b.opposite());
-			Point pBis = bisLine.point();
+			Point pBis = intersectionA + bisLine.to_vector();
 			Ray bis(intersectionA,pBis);
 
-			if(pBis == intersectionA) {
-				bis = Ray(pBis,bisLine.direction());
-			}
+//			if(pBis == intersectionA) {
+//				bis = Ray(pBis,bisLine.direction());
+//			}
 
 			if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
 				bis = bis.opposite();

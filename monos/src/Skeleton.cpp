@@ -97,37 +97,16 @@ bool Skeleton::SingleMergeStep() {
 		LOG(INFO) << "-- handleDoubleMerge!";
 		newNodeIdx = handleDoubleMerge(intersectionPair,upperChainIndex,lowerChainIndex,bis);
 
-		Point Pu = data.eA(wf.startLowerEdgeIdx);
-		Point Pl = data.eB(wf.startLowerEdgeIdx);
-		uint lowerArc = MAX, upperArc = MAX;
+		uint nextUpperChainIndex = getNextEdgeIdxFromIntersection(intersectionPair.first,true);
+		uint nextLowerChainIndex = getNextEdgeIdxFromIntersection(intersectionPair.second,false);
 
-		for(auto aIdx : intersectionPair.first.getArcs()) {
-			auto arcIt = wf.getArc(aIdx);
-			/* arc of upper skeleton */
-			Point PCheck = data.eA(arcIt->leftEdgeIdx);
-			if(Pu == PCheck || data.monotoneSmaller(Pu,PCheck)) {
-				upperArc = aIdx;
-				Pu = PCheck;
-			}
-		}
-
-		for(auto aIdx : intersectionPair.second.getArcs()) {
-			auto arcIt = wf.getArc(aIdx);
-			/* arc of lower skeleton */
-			Point PCheck = data.eB(arcIt->rightEdgeIdx);
-			if(Pl == PCheck || data.monotoneSmaller(Pl,PCheck)) {
-				lowerArc = aIdx;
-				Pl = PCheck;
-			}
-		}
-
-		if(upperArc != MAX) {
-			upperChainIndex = wf.getArc(upperArc)->leftEdgeIdx;
+		if(nextUpperChainIndex != MAX) {
+			upperChainIndex = nextUpperChainIndex;
 			wf.initPathForEdge(true,upperChainIndex);
 		}
 
-		if(lowerArc != MAX) {
-			lowerChainIndex = wf.getArc(lowerArc)->rightEdgeIdx;
+		if(nextLowerChainIndex != MAX) {
+			lowerChainIndex = nextLowerChainIndex;
 			wf.initPathForEdge(false,lowerChainIndex);
 		}
 	}
@@ -153,6 +132,27 @@ bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "";
 
 	return !EndOfBothChains();
+}
+
+uint Skeleton::getNextEdgeIdxFromIntersection(const Intersection& intersection, bool onUpperChain) {
+	Point P = (onUpperChain) ? data.eA(wf.startLowerEdgeIdx): data.eB(wf.startLowerEdgeIdx);
+	uint arcIdx = MAX;
+
+	for(auto aIdx : intersection.getArcs()) {
+		auto arcIt = wf.getArc(aIdx);
+		/* arc of upper skeleton */
+		Point PCheck = (onUpperChain) ? data.eA(arcIt->leftEdgeIdx) : data.eB(arcIt->rightEdgeIdx);
+		if(P == PCheck || data.monotoneSmaller(P,PCheck)) {
+			arcIdx = aIdx;
+			P = PCheck;
+		}
+	}
+
+	if(arcIdx == MAX) {
+		return MAX;
+	} else {
+		return (onUpperChain) ? wf.getArc(arcIdx)->leftEdgeIdx : wf.getArc(arcIdx)->rightEdgeIdx;
+	}
 }
 
 /* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
@@ -351,7 +351,7 @@ void Skeleton::checkAndAddCollinearArcs(IntersectionPair& pair) {
 
 	for(auto arcIdx : sourceNode->arcs) {
 		auto arc = wf.getArc(arcIdx);
-	LOG(INFO) << "arc: " << *arc;
+		LOG(INFO) << "arc: " << *arc;
 		if(arc->has_on(intersection)) {
 			if(!wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
 				LOG(INFO) << "checkAndAddCollinearArcs (upper): " << arcIdx;
@@ -537,21 +537,27 @@ uint Skeleton::handleDoubleMerge(IntersectionPair& intersectionPair, const uint&
 
 		wf.addArc(sourceNodeIdx,newNodeIdx,edgeIdxA,edgeIdxB,bis.is_vertical(),bis.is_horizontal());
 
-		for(auto arcIdx : arcs) {
-			if(arcIdx < MAX) {
-				auto arc = wf.getArc(arcIdx);
-				if(upperNodeIdx == arc->firstNodeIdx && !arc->is_vertical()) {
-					arc->disable();
-				} else {
-					/* TODO: parallel-bisectors, direction unclear */
-					LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
-					updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,intersectionPair.first.getIntersection());
-					LOG(INFO) << "after update";
+		uint run = 0;
+		while(run++ < 2) {
+			for(auto arcIdx : arcs) {
+				if(arcIdx < MAX) {
+					auto arc = wf.getArc(arcIdx);
+					if(upperNodeIdx == arc->firstNodeIdx && arc->firstNodeIdx != lowerNodeIdx && !arc->is_vertical()) {
+						arc->disable();
+					} else {
+						/* TODO: parallel-bisectors, direction unclear */
+						LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
+						updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,intersectionPair.first.getIntersection());
+						LOG(INFO) << "after update";
+					}
 				}
 			}
+
+			arcs = intersectionPair.second.getArcs();
 		}
 
-		arcs = intersectionPair.second.getArcs();
+		arcs = std::set<uint>();
+
 
 		if( intersectionHasVerticalCoallignedArc(intersectionPair)
 				||
