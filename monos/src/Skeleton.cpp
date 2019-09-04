@@ -36,6 +36,18 @@ void Skeleton::finishMerge() {
 	wf.addArc(mergeEndNodeIdx(),sourceNodeIdx,lowerChainIndex,upperChainIndex,e.is_vertical(),e.is_horizontal());
 	computationFinished = true;
 	LOG(INFO) << "Merge Finished!";
+
+	/* debugging: */
+//	for(auto nIdx : {40,41}) {
+//		auto node = wf.getNode(nIdx);
+//		LOG(INFO) << nIdx << " -- " << *node;
+//		for(auto aIdx : node->arcs) {
+//			auto arc = wf.getArc(aIdx);
+//			LOG(INFO) << *arc;
+//		}
+//		LOG(INFO) << "--";
+//	}
+
 }
 
 void Skeleton::MergeUpperLowerSkeleton() {
@@ -121,10 +133,6 @@ bool Skeleton::SingleMergeStep() {
 
 	nodeZeroEdgeRemoval(*sourceNode);
 
-	auto debugArc = wf.getNode(1315);
-	if(debugArc != nullptr) {
-		LOG(WARNING) << "### debug node 1315: " << *debugArc;
-	}
 
 	/* addGhostNode is set to true on certain conditions to handle a ghost node in the next
 	 * merge round */
@@ -1036,25 +1044,26 @@ bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {
 		auto arcs = &secondNode->arcs;
 
 		/* minor hack */
-		if(arc->isAA() && arc->isEdge() && arc->firstNodeIdx > arc->secondNodeIdx) {
-			secondNode = &wf.nodes[arc->firstNodeIdx];
-			arcs = &secondNode->arcs;
-		}
+//		if(arc->isAA() && arc->isEdge() && arc->firstNodeIdx > arc->secondNodeIdx) {
+//			secondNode = &wf.nodes[arc->firstNodeIdx];
+//			arcs = &secondNode->arcs;
+//		}
 
-		LOG(INFO) << " arcs:" << arcs->size() << " " << *secondNode;
 
 		/* remove reference to 'arcIdx' from node */
 		if(!secondNode->removeArc(arcIdxIt)) {return false;}
-		//if(secondNode->isGhostNode())        {return false;}
+		if(secondNode->isGhostNode())        {return false;}
+
 
 		if(arcs->size() < 2 && !secondNode->isTerminal()) {
+			LOG(INFO) << " arcs:" << arcs->size() << " " << *secondNode;
 			/* degree one means that only one path is left */
 			bool nextArcFound = false;
 			for(auto a : *arcs) {
 				if(a != arcIdxIt) {
 					auto nextArc = &wf.arcList[a];
 
-//					if(	 //arc->secondNodeIdx == nextArc->firstNodeIdx &&
+//					if(	arc->secondNodeIdx == nextArc->firstNodeIdx &&
 //					   (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
 //					) {
 						/* iterate arcs */
@@ -1097,6 +1106,7 @@ bool Skeleton::removePath(const uint& arcIdx, const uint& edgeIdx)  {
 void Skeleton::nodeZeroEdgeRemoval(Node& node) {
 	auto arcs = node.arcs;
 	for(auto aIdx : arcs) {
+		LOG(INFO) << "checking: " << aIdx;
 		auto arc = wf.getArc(aIdx);
 		if(arc->hasZeroLength()) {
 			arc->disable();
@@ -1143,6 +1153,8 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 			auto e = data.e(edgeIdx);
 			std::vector<Node*> tN = {{&wf.nodes[e[0]],&wf.nodes[e[1]]}};
 
+			LOG(INFO) << "Edge: " << edgeIdx;
+
 			/* we walk from the right (index 1) terminal node along the boudnary of the
 			 * induced face to the first (index 0) terminal node */
 			auto arcIdx = tN[1]->arcs.front();
@@ -1164,6 +1176,7 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 				for(auto newArcIdx : n->arcs) {
 					if(arcIdx != newArcIdx) {
 						arcIt = wf.getArc(newArcIdx);
+						LOG(INFO)<< *arcIt;
 						if(arcIt->isDisable()) {continue;}
 						if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
 							found  = true;

@@ -251,9 +251,6 @@ public:
 		if(firstNodeIdx == secondNodeIdx) {
 			return true;
 		}
-		if(CGAL::squared_distance(point(0),point(1)) == 0) {
-			return true;
-		}
 		return false;
 	}
 

@@ -33,7 +33,7 @@ std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
 	} else {
 		os << "l ";
 	}
-	os << bis.point(0) << " dir: " << bis.direction();
+	os << bis.point(0).x().doubleValue() << "," <<  bis.point(0).y().doubleValue() << " dir: " << bis.direction();
     return os;
 }
 
@@ -45,7 +45,7 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 	} else {
 		os << "d ";
 	}
-	os << "time: " << node.time << ", point: " << node.point;
+	os << "time: " << node.time.doubleValue() << ", point: " << node.point.x().doubleValue() << "," << node.point.y().doubleValue();
 	os << std::boolalpha << " g: " << node.ghost;
 	os << ", arcs: ";
 	for(auto a : node.arcs) {
@@ -55,7 +55,7 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 }
 
 std::ostream& operator<< (std::ostream& os, const Event& event) {
-    os << "(" << event.eventTime.doubleValue() << " : " << event.eventPoint << ")["
+    os << "(" << event.eventTime.doubleValue() << " : " << event.eventPoint.x().doubleValue() << "," << event.eventPoint.y().doubleValue() << ")["
     		<< event.edges[0] << ","
 			<< event.edges[1] << ","
 			<< event.edges[2] << "]";
@@ -78,8 +78,8 @@ std::ostream& operator<< (std::ostream& os, const Arc& arc) {
     os << " E(" << arc.leftEdgeIdx << "," << arc.rightEdgeIdx << ")";
     switch(arc.type) {
     case ArcType::DISABLED : os << " disabled"; break;
-    case ArcType::RAY : os << " ray: " << arc.ray; break;
-    case ArcType::NORMAL : os << " edge: " << arc.edge; break;
+    case ArcType::RAY : os << " ray"; break; 		//: " << arc.ray; break;
+    case ArcType::NORMAL : os << " edge"; break; 	//: " << arc.edge; break;
     }
     return os;
 }
