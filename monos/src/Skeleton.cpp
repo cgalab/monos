@@ -238,7 +238,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 			} else if(arc->isEdge() && isNodeIntersectionAndVerticalBisector(bis,arc->secondNodeIdx)) {
 				P = wf.getNode(arc->secondNodeIdx)->point;
 			} else {
-				P = intersectBisectorArc(bis,*arc);
+				P = wf.intersectBisectorArc(bis,*arc);
 			}
 
 			/* in case of a ghost-bisector we have to find the path-path-intersection */
@@ -373,11 +373,14 @@ void Skeleton::checkAndAddCollinearArcs(IntersectionPair& pair) {
 	if(intersection == INFPOINT) {
 		intersection = pair.second.getIntersection();
 	}
+//	if(pair.first.getIntersection() != INFPOINT && pair.second.getIntersection() != INFPOINT) {
+//		intersection = (data.monotoneSmaller(pair.first.getIntersection(),pair.second.getIntersection())) ? pair.first.getIntersection() : pair.second.getIntersection();
+//	}
 	assert(intersection != INFPOINT);
 
 	for(auto arcIdx : sourceNode->arcs) {
 		auto arc = wf.getArc(arcIdx);
-		LOG(INFO) << "arc: " << *arc;
+		LOG(INFO) << "checkAndAddCollinearArcs - arc: " << *arc;
 		if(arc->has_on(intersection)) {
 			if(!wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
 				LOG(INFO) << "checkAndAddCollinearArcs (upper): " << arcIdx;
@@ -926,12 +929,13 @@ void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 			auto arc = wf.getArc(chosenArcIdx);
 			PGhost = Point(arc->point(0).x(),newNodePoint.y());
 
-			if(wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
-				removePath(chosenArcIdx,lowerChainIndex);
-			} else {
-				removePath(chosenArcIdx,upperChainIndex);
-			}
+//			if(wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
+//				removePath(chosenArcIdx,lowerChainIndex);
+//			} else {
+//				removePath(chosenArcIdx,upperChainIndex);
+//			}
 
+			LOG(INFO) << "sourceNode: " << *sourceNode << ", chosenArc: " << chosenArcIdx;
 			if(sourceNode->degree() > 2) {
 				auto newSourceNodeIdx = wf.addNode(PGhost,sourceNode->time);
 
@@ -950,6 +954,7 @@ void Skeleton::handleSourceGhostNode(Bisector& bis, IntersectionPair& pair) {
 				sourceNode->arcs.push_back(chosenArcIdx);
 			} else {
 				sourceNode->point = PGhost;
+
 				for(auto arcIdx : sourceNode->arcs) {
 					wf.updateArcNewNode(arcIdx,sourceNodeIdx);
 				}
@@ -1153,8 +1158,6 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 			auto e = data.e(edgeIdx);
 			std::vector<Node*> tN = {{&wf.nodes[e[0]],&wf.nodes[e[1]]}};
 
-			LOG(INFO) << "Edge: " << edgeIdx;
-
 			/* we walk from the right (index 1) terminal node along the boudnary of the
 			 * induced face to the first (index 0) terminal node */
 			auto arcIdx = tN[1]->arcs.front();
@@ -1176,7 +1179,6 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 				for(auto newArcIdx : n->arcs) {
 					if(arcIdx != newArcIdx) {
 						arcIt = wf.getArc(newArcIdx);
-						LOG(INFO)<< *arcIt;
 						if(arcIt->isDisable()) {continue;}
 						if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
 							found  = true;

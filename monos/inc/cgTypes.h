@@ -391,7 +391,7 @@ Point intersectElements(const T& a, const U& b) {
 				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
 				return Point(e->point(0));
 			} else {
-				LOG(WARNING) << "Intersection forms a segment/ray/line";
+				LOG(WARNING) << "# Intersection forms a segment/ray/line";
 				return intersectionPoint;
 			}
 		}
@@ -403,7 +403,6 @@ uint getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
 Point intersectArcArc(const Arc& arcA, const Arc& arcB);
 Point intersectRayArc(const Ray& ray, const Arc& arc);
-Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
 Point intersectBisectorEdge(const Bisector& bis, const Edge& edge);
 
 template<class T, class U>

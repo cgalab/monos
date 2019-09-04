@@ -78,6 +78,7 @@ public:
 
 	Bisector constructBisector(const uint& aIdx, const uint& bIdx) const;
 	Bisector getBisectorWRTMonotonicityLine(const Bisector& bisector) const;
+	Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
 	void disableEdge(uint edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
 
 	/* call simplification from monos class */

@@ -47,7 +47,7 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 	}
 	os << "time: " << node.time.doubleValue() << ", point: " << node.point.x().doubleValue() << "," << node.point.y().doubleValue();
 	os << std::boolalpha << " g: " << node.ghost;
-	os << ", arcs: ";
+	os << ", arcs " << node.arcs.size() << ": ";
 	for(auto a : node.arcs) {
 		os << a << " ";
 	}
@@ -81,6 +81,11 @@ std::ostream& operator<< (std::ostream& os, const Arc& arc) {
     case ArcType::RAY : os << " ray"; break; 		//: " << arc.ray; break;
     case ArcType::NORMAL : os << " edge"; break; 	//: " << arc.edge; break;
     }
+    if(arc.is_vertical()) {
+    	os << " -v- ";
+    } else if(arc.is_horizontal()) {
+    	os << " -h- ";
+    }
     return os;
 }
 
@@ -105,74 +110,6 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 	}
 }
 
-Point intersectBisectorArc(const Bisector& bis, const Arc& arc) {
-	auto lRef = bis.supporting_line();
-
-	if(arc.isAA() || bis.isAA()) {
-		LOG(WARNING) << "AA elements might cause problems!";
-
-		if(arc.isEdge() && !bis.isAA()) {
-			if(lRef.has_on_positive_side(arc.point(0)) && lRef.has_on_positive_side(arc.point(1))) {
-				return INFPOINT;
-			}
-			if(lRef.has_on_negative_side(arc.point(0)) && lRef.has_on_negative_side(arc.point(1))) {
-				return INFPOINT;
-			}
-		}
-
-		Point P = INFPOINT;
-
-		if(!arc.is_vertical() && arc.isEdge()) {
-			P = intersectElements(bis.supporting_line(),arc.edge);
-			return P;
-		} else if(!arc.is_vertical() && arc.isRay()) {
-			P = intersectElements(bis.supporting_line(),arc.ray);
-			return P;
-		} else {
-			P = intersectElements(bis.supporting_line(),arc.supporting_line());
-		}
-		LOG(INFO) << "P: " << P;
-		if(P != INFPOINT) {
-			auto arcSup = arc.supporting_line();
-			auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
-			if(arc.isEdge()) {
-				auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
-
-				if(P != arc.point(0) && P != arc.point(1) && (arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P)) )  {
-					return INFPOINT;
-				}
-			} else {
-				if(P != arc.point(0) && arcNormalLineA.has_on_positive_side(P))  {
-					return INFPOINT;
-				}
-			}
-		}
-
-		return P;
-
-	} else if(arc.isEdge()) {
-		Point a = arc.edge.point(0);
-		Point b = arc.edge.point(1);
-
-		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-			(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
-		) {
-			return INFPOINT;
-		} else {
-			if(bis.isRay()) {
-				return intersectElements(bis.ray,arc.edge);
-			} else {
-				return intersectElements(bis.line,arc.edge);
-			}
-		}
-	} else {
-		if(bis.isRay()) {
-			return intersectElements(bis.ray,arc.ray);
-		} else {
-			return intersectElements(bis.line,arc.ray);
-		}
-	}
-}
 
 Point intersectBisectorEdge(const Bisector& bis, const Edge& edge) {
 	if(bis.isRay()) {

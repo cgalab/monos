@@ -1154,6 +1154,87 @@ uint Wavefront::getPossibleRayIdx(const Node& node, uint edgeIdx) const {
 	return arcIdx;
 }
 
+Point Wavefront::intersectBisectorArc(const Bisector& bis, const Arc& arc) {
+	auto lRef = bis.supporting_line();
+
+	if(arc.isAA() || bis.isAA()) {
+		LOG(WARNING) << "AA elements might cause problems!";
+		LOG(INFO) << "arc: " << arc;
+
+		Point P = INFPOINT;
+
+		if(arc.isEdge() && !bis.isAA()) {
+
+			Edge bisA = data.getEdge(bis.eIdxA);
+			Edge bisB = data.getEdge(bis.eIdxB);
+
+			if(	bisA.supporting_line().has_on(arc.point(0)) ||
+				bisB.supporting_line().has_on(arc.point(0))) {
+				return arc.point(0);
+			} else if(bisA.supporting_line().has_on(arc.point(1)) ||
+				      bisB.supporting_line().has_on(arc.point(1))) {
+				return arc.point(1);
+			}
+
+			if(lRef.has_on_positive_side(arc.point(0)) && lRef.has_on_positive_side(arc.point(1))) {
+				return INFPOINT;
+			}
+			if(lRef.has_on_negative_side(arc.point(0)) && lRef.has_on_negative_side(arc.point(1))) {
+				return INFPOINT;
+			}
+		}
+
+		if(!arc.is_vertical() && arc.isEdge()) {
+			P = intersectElements(bis.supporting_line(),arc.edge);
+			return P;
+		} else if(!arc.is_vertical() && arc.isRay()) {
+			P = intersectElements(bis.supporting_line(),arc.ray);
+			return P;
+		} else {
+			P = intersectElements(bis.supporting_line(),arc.supporting_line());
+		}
+		LOG(INFO) << "P: " << P;
+		if(P != INFPOINT) {
+			auto arcSup = arc.supporting_line();
+			auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
+			if(arc.isEdge()) {
+				auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
+
+				if(P != arc.point(0) && P != arc.point(1) && (arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P)) )  {
+					return INFPOINT;
+				}
+			} else {
+				if(P != arc.point(0) && arcNormalLineA.has_on_positive_side(P))  {
+					return INFPOINT;
+				}
+			}
+		}
+
+		return P;
+
+	} else if(arc.isEdge()) {
+		Point a = arc.edge.point(0);
+		Point b = arc.edge.point(1);
+
+		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
+			(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
+		) {
+			return INFPOINT;
+		} else {
+			if(bis.isRay()) {
+				return intersectElements(bis.ray,arc.edge);
+			} else {
+				return intersectElements(bis.line,arc.edge);
+			}
+		}
+	} else {
+		if(bis.isRay()) {
+			return intersectElements(bis.ray,arc.ray);
+		} else {
+			return intersectElements(bis.line,arc.ray);
+		}
+	}
+}
 
 bool Wavefront::isArcPerpendicular(const Arc& arc) const {
 	Point Aproj = data.monotonicityLine.projection(arc.point(0));
