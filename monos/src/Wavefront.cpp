@@ -269,26 +269,55 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	skeleton.push_back(nodeIdx);
 	LOG(INFO) << "adding node: " << node;
 
-	bool singleLeft = true;
+	std::set<uint> mainEdges;
+	std::set<uint> leftEdges;
+	std::set<uint> rightEdges;
+	std::set<std::pair<uint,uint>> pairs;
 	for(auto event : eventList) {
-		auto idx = event->mainEdge;
-		auto paths = pathFinder[idx];
-		if(singleLeft) {
-			Edge eS(getNode(paths[0])->point,getNode(nodeIdx)->point);
-			addArc(paths[0],nodeIdx,event->leftEdge,event->mainEdge,eS.is_vertical(),eS.is_horizontal());
-			singleLeft = false;
-		}
-		Edge e(getNode(paths[1])->point,getNode(nodeIdx)->point);
-		addArc(paths[1],nodeIdx,event->mainEdge,event->rightEdge,e.is_vertical(),e.is_horizontal());
+		leftEdges.insert(event->leftEdge);
+		rightEdges.insert(event->rightEdge);
 
-		/* update path finder for left and right edge */
-		pathFinder[idx][1] = nodeIdx;
-		pathFinder[idx][0] = nodeIdx;
+		std::vector<uint> va = {event->mainEdge,event->leftEdge },
+				          vb = {event->mainEdge,event->rightEdge};
+
+		for(auto v : { va, vb } ) {
+			auto ta = std::pair<uint,uint>(v[0],v[1]);
+			pairs.insert(ta);
+		}
 	}
+
+	std::set<uint> doneNeighbour;
+
+	for(auto p : pairs) {
+		if(doneNeighbour.find(p.second) != doneNeighbour.end()) {continue;}
+
+		LOG(INFO) << "pair: " << p.first << " -- " << p.second;
+
+		auto paths = pathFinder[p.first];
+		Node *n;
+		uint pIdx = MAX;
+		if(leftEdges.find(p.second) != leftEdges.end()) {
+			pIdx = paths[0];
+		}
+		if(rightEdges.find(p.second) != rightEdges.end()) {
+			pIdx = paths[1];
+		}
+		assert(pIdx != MAX);
+		n = getNode(pIdx);
+		Edge e(n->point,node.point);
+		addArc(pIdx,nodeIdx,p.first,p.second,e.is_vertical(),e.is_horizontal());
+
+		doneNeighbour.insert(p.first);
+	}
+
+	LOG(WARNING) << "TODO: Do some testing here!";
 
 	auto chainIt = chain.begin();
 	for(auto event : eventList) {
-		/* remove this edges from the chain (wavefront) */
+		/* update path finder for left and right edge */
+		pathFinder[event->mainEdge][0] = nodeIdx;
+		pathFinder[event->mainEdge][1] = nodeIdx;
+			/* remove this edges from the chain (wavefront) */
 		chainIt = chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge);
 	}
@@ -543,10 +572,6 @@ Bisector Wavefront::constructBisector(const uint& aIdx, const uint& bIdx) const 
 			Line bisLine = CGAL::bisector(a,b.opposite());
 			Point pBis = intersectionA + bisLine.to_vector();
 			Ray bis(intersectionA,pBis);
-
-//			if(pBis == intersectionA) {
-//				bis = Ray(pBis,bisLine.direction());
-//			}
 
 			if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
 				bis = bis.opposite();
@@ -982,11 +1007,21 @@ bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arc
 	auto Nb = &nodes[NbIdx];
 
 	/* left endpoints are adjacent, check right endpoints */
-	if(NaIdx == NbIdx || Na->point == Nb->point) {
-		NaIdx = getRightmostNodeIdxOfArc(arcA);
+	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
 		NbIdx = getRightmostNodeIdxOfArc(arcB);
-		Na = &nodes[NaIdx];
 		Nb = &nodes[NbIdx];
+	}
+	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
+		NbIdx = getLeftmostNodeIdxOfArc(arcB);
+		Nb = &nodes[NbIdx];
+		NaIdx = getRightmostNodeIdxOfArc(arcA);
+		Na = &nodes[NaIdx];
+	}
+	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
+		NbIdx = getRightmostNodeIdxOfArc(arcB);
+		Nb = &nodes[NbIdx];
+		NaIdx = getRightmostNodeIdxOfArc(arcA);
+		Na = &nodes[NaIdx];
 	}
 
 	bool pointAmonotoneSmaller = (Na->point != Nb->point) && data.monotoneSmaller(line,Na->point,Nb->point);

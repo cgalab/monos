@@ -125,6 +125,10 @@ public:
 	bool rayPointsLeft(const Ray& ray) const;
 	Point pointOnMonotonicityLine(const Point p) const { return monotonicityLine.projection(p); }
 
+	bool pointsEqualIfProjectedToMonotonicityLine(const Point a, const Point b) const {
+		return pointOnMonotonicityLine(a) == pointOnMonotonicityLine(b);
+	}
+
 	const BasicInput& getBasicInput() const {return basicInput;}
 
 	void setGui(const bool _gui) { gui = _gui; }

@@ -137,6 +137,8 @@ private:
 	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
 	bool intersectionHasVerticalCoallignedArc(const IntersectionPair& pair) const;
 
+	void nodeZeroEdgeRemoval(Node& node);
+
 	void initNextChainAndPath(bool upperChain);
 
 	Data& data;

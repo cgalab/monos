@@ -47,6 +47,10 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 	}
 	os << "time: " << node.time << ", point: " << node.point;
 	os << std::boolalpha << " g: " << node.ghost;
+	os << ", arcs: ";
+	for(auto a : node.arcs) {
+		os << a << " ";
+	}
     return os;
 }
 

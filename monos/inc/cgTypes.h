@@ -225,7 +225,7 @@ public:
 		if(is_vertical() && p.x() != point(0).x()) {
 			auto yMin = point(0).y();
 			auto yMax = point(1).y();
-			if(yMin < yMax) {std::swap(yMin,yMax);}
+			if(yMin > yMax) {std::swap(yMin,yMax);}
 
 			if( p.y() < yMin || p.y() > yMax || p.x() != point(0).x()) {
 				return false;
@@ -234,7 +234,7 @@ public:
 		if(is_horizontal()) {
 			auto xMin = point(0).x();
 			auto xMax = point(1).x();
-			if(xMin < xMax) {std::swap(xMin,xMax);}
+			if(xMin > xMax) {std::swap(xMin,xMax);}
 
 			if( p.x() < xMin || p.x() > xMax || p.y() != point(0).y()) {
 				return false;
@@ -245,6 +245,16 @@ public:
 		} else {
 			return ray.has_on(p);
 		}
+	}
+
+	bool hasZeroLength() const {
+		if(firstNodeIdx == secondNodeIdx) {
+			return true;
+		}
+		if(CGAL::squared_distance(point(0),point(1)) == 0) {
+			return true;
+		}
+		return false;
 	}
 
 	uint getCommonNodeIdx(const Arc& arc) {
