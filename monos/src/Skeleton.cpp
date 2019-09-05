@@ -218,7 +218,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 //			/* all good, done in 'handleGhostVertex' */
 //			LOG(INFO) << "(if) handleGhostVertex";
 //		} else
-			if(isValidArc(path->currentArcIdx)) {
+		if(isValidArc(path->currentArcIdx)) {
 			/* classical intersection detection on current paths arc */
 			Point P = INFPOINT;
 
@@ -287,15 +287,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	LOG(INFO) << std::boolalpha << "AFTER success: " << intersection->isDone() << ", path: " << *path;
 	LOG(INFO) << "findNextIntersectingArc END";
 
-	IntersectionPair intersectionPair = std::make_pair(upperIntersection,lowerIntersection);
-
-//	if(!sourceNode->isGhostNode() || (sourceNode->isGhostNode() && sourceNode->degree() > 2) ) {
-//		if(!data.isEdgeCollinearAndInteriorRight(upperChainIndex,lowerChainIndex)) {
-//			checkAndAddCollinearArcs(intersectionPair);
-//		}
-//	}
-
-	return intersectionPair;
+	return std::make_pair(upperIntersection,lowerIntersection);
 }
 
 void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {
@@ -361,35 +353,22 @@ void Skeleton::checkAndHandlePossibleSourceGhostNode(IntersectionPair& pair, Bis
 	}
 	assert(intersection != INFPOINT);
 
-
+	if(data.isEdgeCollinearAndInteriorRight(upperChainIndex,lowerChainIndex)) {
+		return;
+	}
 
 	for(auto arcIdx : sourceNode->arcs) {
 		auto arc = wf.getArc(arcIdx);
-		LOG(INFO) << "checkAndAddCollinearArcs - arc: " << *arc;
-//		if(arc->is_vertical()) { // && !hasArcCurrentChainIndices(*arc)) {
-//			/* only if vertical arc is undirected */
-//			bool isUndirectedArc = 	wf.hasArcParallelEdges(*arc);
-//			if(isUndirectedArc) {
-//				if(!wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
-//					LOG(INFO) << "checkAndAddCollinearArcs (upper): " << arcIdx;
-//					pair.first.add(intersection,arcIdx);
-//				} else /* lower chain */ {
-//					LOG(INFO) << "checkAndAddCollinearArcs (lower): " << arcIdx;
-//					pair.second.add(intersection,arcIdx);
-//				}
-//			}
-//		} else
 		if(!arc->isAA() && arc->has_on(intersection)) {
 			if(!wf.isEdgeOnLowerChain(arc->leftEdgeIdx)) {
-				LOG(INFO) << "checkAndAddCollinearArcs (upper): " << arcIdx;
+				LOG(INFO) << "checkAndAddArc (upper): " << arcIdx;
 				pair.first.add(intersection,arcIdx);
 				upperChainIndex = arc->rightEdgeIdx;
 			} else /* lower chain */ {
-				LOG(INFO) << "checkAndAddCollinearArcs (lower): " << arcIdx;
+				LOG(INFO) << "checkAndAddArc (lower): " << arcIdx;
 				pair.second.add(intersection,arcIdx);
 				lowerChainIndex = arc->leftEdgeIdx;
 			}
-
 		}
 	}
 
