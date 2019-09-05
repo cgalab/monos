@@ -214,11 +214,7 @@ public:
 	void disable() {type = ArcType::DISABLED;}
 	bool isDisable() const {return type == ArcType::DISABLED;}
 	bool isAA() const {
-		if(isEdge()) {
-			return edge.is_vertical() || edge.is_horizontal();
-		} else {
-			return ray.is_vertical() || ray.is_horizontal();
-		}
+		return is_vertical() || is_horizontal();
 	}
 
 	bool has_on(const Point p) const {
@@ -349,6 +345,11 @@ struct Node {
 
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));
+	}
+
+	bool hasArc(const uint arcIdx) {
+		auto idx = std::find(arcs.begin(),arcs.end(),arcIdx);
+		return idx != arcs.end();
 	}
 
 	bool removeArc(const uint arcIdx) {

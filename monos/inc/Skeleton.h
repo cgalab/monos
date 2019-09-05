@@ -36,6 +36,13 @@ public:
 		addArc(arcIdx);
 	}
 
+	void remove(const uint arcIdx) {
+		auto it = arcs.find(arcIdx);
+		if(it != arcs.end()) {
+			arcs.erase(it);
+		}
+	}
+
 	void setIntersection(Point P) {intersection = P;}
 	Point getIntersection() const {return intersection;}
 
@@ -80,9 +87,8 @@ public:
 
 private:
 	IntersectionPair findNextIntersectingArc(Bisector& bis);
-	bool isIntersectionSimple(const IntersectionPair& pair) const;
-	bool isVerticalIntersectionButSimple(const Bisector& bis, const IntersectionPair& pair) const;
 
+	bool isIntersectionSimple(IntersectionPair& pair, const Bisector& bis) const;
 	Intersection getIntersectionIfSimple(const Bisector& bis, const IntersectionPair& pair, bool& onUpperChain) const;
 
 	bool removePath(const uint& arcIdx, const uint& edgeIdx);
@@ -111,7 +117,7 @@ private:
 	bool EndOfLowerChain() const {return lowerChainIndex == wf.endLowerEdgeIdx;  }
 	bool EndOfChain(bool upper) { return (upper) ? EndOfUpperChain() : EndOfLowerChain();}
 
-	bool hasCollinearEdges(const Arc& arcA, const Arc& arcB) const;
+	bool hasCollinearEdges(const Arc& arcA, const Arc& arcB, bool avoidChainEdges=false) const;
 	void CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p);
 
 	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
@@ -121,8 +127,11 @@ private:
 
 	void reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Intersection& intersection);
 	void multiEventCheck(const Bisector& bis, IntersectionPair& pair);
-	void checkAndAddCollinearArcs(IntersectionPair& pair);
+	void checkAndHandlePossibleSourceGhostNode(IntersectionPair& pair, Bisector& bis);
 
+	bool hasArcCurrentChainIndices(const Arc& arc) const {
+		return arc.leftEdgeIdx == lowerChainIndex || arc.rightEdgeIdx == lowerChainIndex || arc.leftEdgeIdx == upperChainIndex || arc.rightEdgeIdx == upperChainIndex;
+	}
 	bool areNextInputEdgesCollinear() const;
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
 	void handleSourceGhostNode(Bisector& bis, IntersectionPair& pair);

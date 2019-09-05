@@ -108,6 +108,10 @@ public:
 		return nodes.size() - 1;
 	}
 
+	bool hasArcParallelEdges(const Arc& arc) const {
+		return CGAL::parallel(data.getEdge(arc.leftEdgeIdx).supporting_line(),data.getEdge(arc.rightEdgeIdx).supporting_line());
+	}
+
 	bool isArcPerpendicular(const Arc& arc) const;
 	bool isArcInSkeleton(const uint& arcIdx) const;
 	inline bool liesOnFace(const Arc& arc, const uint edgeIdx) const {

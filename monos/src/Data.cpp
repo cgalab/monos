@@ -76,6 +76,16 @@ bool Data::isEdgeCollinearAndInteriorRight(const uint& i, const uint& j) const {
 	}
 	return false;
 }
+bool Data::isEdgeCollinearAndInteriorLeft(const uint& i, const uint& j) const {
+	if(isEdgeCollinear(i,j)) {
+		auto lI = getEdge(i).supporting_line();
+		auto lJ = getEdge(j).supporting_line();
+		auto nEI = lI.perpendicular(lI.point(0)).direction();
+		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
+		return nEI == nEJ && nEJ == monotonicityLine.opposite().direction();
+	}
+	return false;
+}
 
 bool Data::loadFile(const std::string& fileName) {
 	std::ifstream in;

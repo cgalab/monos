@@ -208,7 +208,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			if(e->mainEdge == *(e->chainEdge))  {
 				LOG(INFO) << "event is still true!";
 			}
-			LOG(INFO) << *e;
+//			LOG(INFO) << *e;
 
 			points.insert(e->eventPoint);
 			eventEdges.insert(e->edges[0]);
@@ -317,7 +317,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		/* update path finder for left and right edge */
 		pathFinder[event->mainEdge][0] = nodeIdx;
 		pathFinder[event->mainEdge][1] = nodeIdx;
-			/* remove this edges from the chain (wavefront) */
+		/* remove this edges from the chain (wavefront) */
 		chainIt = chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge);
 	}
@@ -363,7 +363,6 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		LOG(INFO) << "chain is at beginning with size: " << chain.size();
 	}
 }
-
 
 void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event) {
 	/* build skeleton from event */
@@ -1159,7 +1158,6 @@ Point Wavefront::intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 
 	if(arc.isAA() || bis.isAA()) {
 		LOG(WARNING) << "AA elements might cause problems!";
-		LOG(INFO) << "arc: " << arc;
 
 		Point P = INFPOINT;
 
@@ -1168,10 +1166,10 @@ Point Wavefront::intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 			Edge bisA = data.getEdge(bis.eIdxA);
 			Edge bisB = data.getEdge(bis.eIdxB);
 
-			if(	bisA.supporting_line().has_on(arc.point(0)) ||
+			if(	bisA.supporting_line().has_on(arc.point(0)) &&
 				bisB.supporting_line().has_on(arc.point(0))) {
 				return arc.point(0);
-			} else if(bisA.supporting_line().has_on(arc.point(1)) ||
+			} else if(bisA.supporting_line().has_on(arc.point(1)) &&
 				      bisB.supporting_line().has_on(arc.point(1))) {
 				return arc.point(1);
 			}
@@ -1193,7 +1191,7 @@ Point Wavefront::intersectBisectorArc(const Bisector& bis, const Arc& arc) {
 		} else {
 			P = intersectElements(bis.supporting_line(),arc.supporting_line());
 		}
-		LOG(INFO) << "P: " << P;
+
 		if(P != INFPOINT) {
 			auto arcSup = arc.supporting_line();
 			auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
