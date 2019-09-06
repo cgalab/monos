@@ -65,7 +65,6 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 			events[event.mainEdge] = event;
 			auto te = TimeEdge(event.eventTime,event.mainEdge);
 			eventTimes.insert(te);
-			LOG(INFO) << event;
 		}
 
 		/* iterate over the chainIterator */
@@ -93,6 +92,13 @@ bool Wavefront::ComputeSkeleton(bool lower) {
 	/* 	filling the priority queue 		*/
 	/************************************/
 	if(!InitSkeletonQueue(chain,skeleton)) {return false;}
+
+	/* DEBUG PRINT QUEUE */
+	LOG(INFO) << "------------------------- EVENT QUEUE -----------------------";
+	for(auto e : eventTimes) {
+		auto event = &events[e.edgeIdx];
+		LOG(INFO) << *event;
+	}
 
 	/*********************************************/
 	/* compute skeleton by working through queue */
@@ -125,7 +131,7 @@ bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
 }
 
 bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
-	LOG(INFO) << "SingleDequeue :: ";
+	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
 	auto etIt  = eventTimes.begin();
 	auto event = &events[etIt->edgeIdx];
 	auto eventTime = etIt->time;
@@ -208,7 +214,6 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			if(e->mainEdge == *(e->chainEdge))  {
 				LOG(INFO) << "event is still true!";
 			}
-//			LOG(INFO) << *e;
 
 			points.insert(e->eventPoint);
 			eventEdges.insert(e->edges[0]);
@@ -291,8 +296,6 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	for(auto p : pairs) {
 		if(doneNeighbour.find(p.second) != doneNeighbour.end()) {continue;}
 
-		LOG(INFO) << "pair: " << p.first << " -- " << p.second;
-
 		auto paths = pathFinder[p.first];
 		Node *n;
 		uint pIdx = MAX;
@@ -310,13 +313,17 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		doneNeighbour.insert(p.first);
 	}
 
-	LOG(WARNING) << "TODO: Do some testing here!";
-
-	auto chainIt = chain.begin();
 	for(auto event : eventList) {
 		/* update path finder for left and right edge */
-		pathFinder[event->mainEdge][0] = nodeIdx;
-		pathFinder[event->mainEdge][1] = nodeIdx;
+		pathFinder[event->leftEdge ][1] = nodeIdx;
+		pathFinder[event->mainEdge ][0] = nodeIdx;
+		pathFinder[event->mainEdge ][1] = nodeIdx;
+		pathFinder[event->rightEdge][0] = nodeIdx;
+	}
+
+	auto chainIt = chain.begin();
+
+	for(auto event : eventList) {
 		/* remove this edges from the chain (wavefront) */
 		chainIt = chain.erase(event->chainEdge);
 		disableEdge(event->mainEdge);
@@ -357,7 +364,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 				updateInsertEvent(e2);
 			}
 		} else {
-			LOG(WARNING) << "EQUAL indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
+			LOG(INFO) << "EQUAL indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
 		}
 	} else {
 		LOG(INFO) << "chain is at beginning with size: " << chain.size();
@@ -401,6 +408,7 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 			/* last node on path of both edges must be the same, get that node */
 			auto endNodeIdx = pathFinder[aEdgeIdx][1];
 			auto node = &nodes[endNodeIdx];
+			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 			Ray bis;
 
 			/* compute bisector between the two edges */
@@ -435,6 +443,8 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 			}
 
 			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical(),bis.is_horizontal());
+
+			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 
 			/* iterate over remaining chain */
 			aEdgeIdx = bEdgeIdx;
@@ -1113,7 +1123,7 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 		uint  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
 		LOG(INFO) << "initial/distantArcIdx " << initialArcIdx << " / " << distantArcIdx;
 
-		if(distantArcIdx == INFINITY || distantArcIdx == initialArcIdx) {
+		if(distantArcIdx == MAX || distantArcIdx == initialArcIdx) {
 			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
 		} else {
 			Arc&  distantArc    = arcList[distantArcIdx];
@@ -1141,7 +1151,7 @@ void Wavefront::initPathForEdge(const bool upper, const uint edgeIdx) {
 }
 
 uint Wavefront::getPossibleRayIdx(const Node& node, uint edgeIdx) const {
-	uint arcIdx = INFINITY;
+	uint arcIdx = MAX;
 	for(auto a : node.arcs) {
 		auto& arc = arcList[a];
 		if(arc.type == ArcType::RAY && liesOnFace(arc,edgeIdx)) {

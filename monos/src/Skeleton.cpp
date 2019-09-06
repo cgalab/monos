@@ -76,7 +76,6 @@ bool Skeleton::SingleMergeStep() {
 	 * This means that the next arc is a ghost arc that will end at that ghost node,
 	 * therefore its position is not yet fixed and we have to move it 'now'. */
 	checkAndHandlePossibleSourceGhostNode(intersectionPair,bis);
-//	handleSourceGhostNode(bis,intersectionPair);
 
 	/**
 	 * we distinguish between 'simple' intersections, meaning an intersection point is left of the other
@@ -213,11 +212,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 		LOG(INFO) << "# intersect arc: " << *arc << ", and bisector " << bis;
 
 
-//		if(handleGhostVertex(*path,bis,*intersection)) {
-//			/* detect and handle possible ghost vertex */
-//			/* all good, done in 'handleGhostVertex' */
-//			LOG(INFO) << "(if) handleGhostVertex";
-//		} else
 		if(isValidArc(path->currentArcIdx)) {
 			/* classical intersection detection on current paths arc */
 			Point P = INFPOINT;
@@ -250,7 +244,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 					reevaluateIntersectionIfMultipleArcs(bis, *intersection);
 					intersection->setDone();
 				}
-			} else {
+			} else /* P == INFPOINT */ {
 				LOG(INFO) << "## TEST THIS when P = INFPOINT!?!";
 
 				/* while iterate we may iterate one arc to far, this is an easy way to step back */
@@ -259,7 +253,9 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 
 				if(!wf.nextMonotoneArcOfPath(*path)) {
 					Edge e = data.getEdge(path->edgeIdx);
-					if(do_intersect(bis,e)) {
+					if(path->edgeIdx != wf.startLowerEdgeIdx &&
+					   path->edgeIdx != wf.endUpperEdgeIdx   &&
+					   do_intersect(bis,e)) {
 						LOG(INFO) << "intersecting input edge (done)";
 						intersection->setDone();
 					} else 	{

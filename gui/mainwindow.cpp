@@ -167,6 +167,7 @@ void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 
 	while(!lowerChainDone || !upperChainDone) {
 		on_actionEventStep_triggered();
+		time_changed();
 	}
 
 	time_changed();
@@ -181,6 +182,7 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 	while(!mergeDone) {
 		on_actionEventStep_triggered();
+		time_changed();
 	}
 
 	time_changed();
