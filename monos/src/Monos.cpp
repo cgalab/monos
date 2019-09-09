@@ -78,6 +78,11 @@ void Monos::destruct() {
 }
 
 void Monos::run() {
+	clock_t begin, end;
+	if(config.timings) {
+		begin = clock();
+	}
+
 	if(!init()) {return;}
 
 	if(!wf->ComputeSkeleton(true)) {return;}
@@ -93,7 +98,15 @@ void Monos::run() {
 	s->MergeUpperLowerSkeleton();
 	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
 
+	if(config.timings) {
+		end = clock();
+	}
 	write();
+
+	if(config.timings) {
+		double time_spent = 0.0 + (double)(end - begin) / CLOCKS_PER_SEC;
+		std::cout << time_spent << "," << config.fileName << std::endl;
+	}
 }
 
 void Monos::write() {

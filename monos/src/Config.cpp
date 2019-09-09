@@ -27,6 +27,10 @@ bool Config::evaluateArguments(Args args) {
 			outputType = OutputType::OBJ;
 			break;
 
+		case 't':
+			timings = true;
+			break;
+
 		default:
 			std::cerr << "Invalid option " << (char)r << std::endl;
 			validConfig = false;
