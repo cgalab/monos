@@ -9,10 +9,15 @@ import socket
 import time
 import resource
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
 # returns 1 if timeout 0 otherwise
 def run_single_monos(args, polygons, timeout):
-    cmds = [[os.path.abspath(args.monos), '--t', f] for f in polygons ]
-    print(cmds)
+    cmds = [[os.path.abspath(args.monos), '--t', f] for f in polygons]
     
     procs = [subprocess.Popen(cmd, stdin=None, stderr=None, shell=False) for cmd in cmds]
     for proc in procs:
@@ -29,40 +34,22 @@ def run_single_monos(args, polygons, timeout):
             proc.kill()
             outs, errs = proc.communicate()
 
-
-#    try:
-#        start = time.time()
-#        if timeout != 0:
-#            procs = subprocess.Popen(cmd, stdin=None, stderr=None, shell=False, timeout=timeout)
-#            #o = subprocess.check_output(cmd, stdin=None, stderr=None, shell=False, timeout=timeout)
-#        else:
-#            o = subprocess.Popen(cmd, stdin=None, stderr=None, shell=False)
-#            #o = subprocess.check_output(cmd, stdin=None, stderr=None, shell=False)
-#        elapsed = time.time() - start
-#    except subprocess.CalledProcessError as e:
-#        print(e)
-#        return 1
-#    except subprocess.TimeoutExpired:
-#        pass
-#        return 1
-#    
-
     return 0
 
 def run_monos(args, tempDir, polygon, polygonPath):
-    retVal = 0
     if polygonPath:
         absPath = os.path.abspath(polygonPath)
-        print(absPath)
-        files = [f for f in os.listdir(absPath) if f.lower().endswith(('.obj', '.gml', '.graphml'))] 
+        files = [absPath + '/' + f for f in os.listdir(absPath) if f.lower().endswith(('.obj', '.gml', '.graphml'))] 
+        
+        # get list of list in chunks of num-threads
+        files = chunks(files,args.threads)
+
         for f in files:
-            retVal = run_single_monos(args,absPath + '/' + f,args.timeout)
+            run_single_monos(args,f,args.timeout)
     elif polygon and not polygonPath and polygon.lower().endswith(('.obj', '.gml', '.graphml')):
-        retVal = run_single_monos(args,os.path.abspath(polygon),args.timeout)
+        run_single_monos(args,[os.path.abspath(polygon)],args.timeout)
     else:
         print("no input provided")
-
-    #print("to beat    : %15d"%(to_beat, ))
 
 def main():
     runner_info = '%s@%s'%(getpass.getuser(), socket.gethostname())
