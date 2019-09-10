@@ -18,7 +18,9 @@ def chunks(l, n):
 # returns 1 if timeout 0 otherwise
 def run_single_monos(args, polygons, timeout):
     cmds = [[os.path.abspath(args.monos), '--t', f] for f in polygons]
-    
+   
+    print(polygons)
+
     procs = [subprocess.Popen(cmd, stdin=None, stderr=None, shell=False) for cmd in cmds]
     for proc in procs:
         try:

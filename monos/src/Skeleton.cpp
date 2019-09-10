@@ -112,9 +112,6 @@ bool Skeleton::SingleMergeStep() {
 		}
 	}
 
-//	/* the new node may reside on an arc that is not in the current focus */
-//	checkAndRepairCollinearArcs();
-
 	/* we iterate the sourcenode to the newly added node and go on merging */
 	LOG(INFO) << "changing idx from old: " << sourceNodeIdx << " to " << newNodeIdx;
 	sourceNodeIdx = newNodeIdx;
@@ -211,8 +208,10 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 		LOG(INFO) << "# BEFORE path: " << *path;
 		LOG(INFO) << "# intersect arc: " << *arc << ", and bisector " << bis;
 
-
-		if(isValidArc(path->currentArcIdx)) {
+		if(secondIntersectionDoneAndWeCatchedUp(bis,upperIntersection,lowerIntersection,*arc_u,*arc_l,localOnUpperChain)) {
+			/* we have catched up with the other chain */
+			intersection->setDone();
+		} else if(isValidArc(path->currentArcIdx)) {
 			/* classical intersection detection on current paths arc */
 			Point P = INFPOINT;
 
@@ -284,6 +283,25 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 	LOG(INFO) << "findNextIntersectingArc END";
 
 	return std::make_pair(upperIntersection,lowerIntersection);
+}
+
+bool Skeleton::secondIntersectionDoneAndWeCatchedUp(Bisector& bis, Intersection& upper, Intersection& lower, const Arc& arc_u, const Arc& arc_l, const bool localOnUpperChain) const {
+	bool secondChainDone = (localOnUpperChain) ? !lower.empty() > 0 : !upper.empty();
+
+	if(secondChainDone) {
+		auto arc = (localOnUpperChain) ? arc_u : arc_l;
+		Point Pint = (localOnUpperChain) ? lower.getIntersection() : upper.getIntersection();
+		uint nodeIdx = wf.getLeftmostNodeIdxOfArc(arc);
+		if(nodeIdx != MAX) {
+			Point Parc = wf.getNode(nodeIdx)->point;
+			if(data.monotoneSmaller(Pint,Parc)) {
+				LOG(INFO) << "!! -- Second Chain has caught up!";
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 void Skeleton::multiEventCheck(const Bisector& bis, IntersectionPair& pair) {

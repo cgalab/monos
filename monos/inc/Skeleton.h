@@ -136,6 +136,7 @@ private:
 	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
 	void handleSourceGhostNode(Bisector& bis, IntersectionPair& pair);
 
+	bool secondIntersectionDoneAndWeCatchedUp(Bisector& bis, Intersection& upper, Intersection& lower, const Arc& arc_u, const Arc& arc_l, const bool localOnUpperChain) const;
 	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
 
 	void removeRaysFromIntersection(Intersection& intersection);
