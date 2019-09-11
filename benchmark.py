@@ -2,54 +2,57 @@
 
 import os
 import tempfile
-import subprocess
 import argparse
 import getpass
 import socket
 import time
 import resource
+import threading
+from multiprocessing import Pool
+from subprocess import CalledProcessError, STDOUT, check_output
 
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
+monos_path = ""
+timeout = 0
+#lock = threading.Lock()
 
+def get_polygons(polygon_path, polygon):
+    files = []
+    if polygon_path:
+        abs_path = os.path.abspath(polygon_path)
+        files = [abs_path + '/' + f for f in os.listdir(abs_path) if f.lower().endswith(('.obj', '.gml', '.graphml'))] 
+    elif polygon and polygon.lower().endswith(('.obj', '.gml', '.graphml')):
+        files = [polygon]
+    else:
+        print("no input provided")
+    return files
 
-# returns 1 if timeout 0 otherwise
-def run_single_monos(args, polygons, timeout):
-    cmds = [[os.path.abspath(args.monos), '--t', f] for f in polygons]
-   
-    procs = [subprocess.Popen(cmd, stdin=None, stderr=None, shell=False) for cmd in cmds]
-    for proc in procs:
-        try:
-            if timeout != 0:
-                outs, errs = proc.communicate(timeout=timeout)
-            else:
-                outs, errs = proc.communicate()
-        except subprocess.CalledProcessError as e:
-            print(e)
-            proc.kill()
-            outs, errs = proc.communicate()
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            outs, errs = proc.communicate()
+def get_command_for_file(monos_path,polygon):
+    return [os.path.abspath(monos_path), '--t', polygon] 
+
+def run_monos_instance(polygon):
+    cmd = get_command_for_file(monos_path,polygon)
+    try:
+        output = check_output(cmd, stderr=STDOUT, timeout=timeout)
+        #lock.acquire()
+        print(output)
+        #lock.release()
+    except CalledProcessError:
+        #lock.acquire()
+        print("0,0,",polygon)
+        #lock.release()
 
     return 0
 
-def run_monos(args, tempDir, polygon, polygonPath):
-    if polygonPath:
-        absPath = os.path.abspath(polygonPath)
-        files = [absPath + '/' + f for f in os.listdir(absPath) if f.lower().endswith(('.obj', '.gml', '.graphml'))] 
-        
-        # get list of list in chunks of num-threads
-        files = chunks(files,args.threads)
+def start_benchmark(args, tempDir):
+    timeout = args.timeout
+    monos_path = args.monos
 
-        for f in files:
-            run_single_monos(args,f,args.timeout)
-    elif polygon and not polygonPath and polygon.lower().endswith(('.obj', '.gml', '.graphml')):
-        run_single_monos(args,[os.path.abspath(polygon)],args.timeout)
-    else:
-        print("no input provided")
+    polygons = get_polygons(args.polygon_path, args.polygon)
+    #process_info = [PInfo(args.monos,poly,args.timeout,lock) for poly in polygons]
+
+    pool = Pool(processes=args.num_threads)
+    pool.map(run_monos_instance, polygons)
+
 
 def main():
     runner_info = '%s@%s'%(getpass.getuser(), socket.gethostname())
@@ -57,16 +60,15 @@ def main():
     parser = argparse.ArgumentParser(description='run monos for benchmarking')
 
     parser.add_argument('monos', help='path to monos executable')
-    parser.add_argument('--polygon', action="store", dest="polygon", default="", help='a single input polygon')
-    parser.add_argument('--polygon-path', action="store", dest="polygonPath", default="", help='path to the input polygons')
-
-    parser.add_argument('--timeout', dest='timeout', type=int, action="store", default=0, help='timeout in seconds to kill monos')
-    parser.add_argument('--threads', dest='threads', type=int, action="store", default=1, help='use <number> parallel instances')
+    parser.add_argument('--polygon',        action="store", dest="polygon",               default="", help='a single input polygon')
+    parser.add_argument('--polygon-path',   action="store", dest="polygon_path",          default="", help='path to the input polygons')
+    parser.add_argument('--timeout',        action="store", dest='timeout',     type=int, default=0,  help='timeout in seconds to kill monos')
+    parser.add_argument('--threads',        action="store", dest='num_threads', type=int, default=1,  help='use <number> parallel instances (default: 1)')
 
     args = parser.parse_args()
 
     with tempfile.TemporaryDirectory() as tempDir:
-        run_monos(args, tempDir, args.polygon, args.polygonPath)
+        start_benchmark(args, tempDir)
 
 
 if __name__ == "__main__":
