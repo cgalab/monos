@@ -42,7 +42,7 @@ def start_benchmark(args, tempDir):
             a = polygon.rfind('p')
             a = polygon[0:a].rfind('p')
             b = polygon.rfind('.')
-            timeout = 5*int(polygon[a+1:b])
+            timeout = 2*int(polygon[a+1:b])
             if timeout < 0 and timeout > 1000000:
                 timeout = 0
         run_monos_instance(polygon, args.monos, timeout)

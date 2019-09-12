@@ -27,14 +27,15 @@ Blender.
 
 # Usage
 
-<code>monos [--verbose][--normalize] [--obj &lt;filename&gt;] &lt;filename&gt;</code>
+<code>monos [--verbose][--timings][--normalize] [--out &lt;filename&gt;] &lt;filename&gt;</code>
 
-| options        | description           |
+| options       | description           |
 | -------------:|:------------- |
-|  --help           |         print help |
+|  --help            |         print help |
 |  --verbose           |         verbose mode, shows information about the computation |
 |  --normalize   | write output normalized to the origin |
-|  --obj      |            write output in wavefront obj format (3D coordinates) |
+|  --out      |            write output in wavefront obj format (3D coordinates) |
+|  --timings      |            print <vertex count>,<time spent in computation>,<filename>   |
 |  &lt;filename&gt; |           input type is either wavefront obj or GML format |
 
 # Submodules
