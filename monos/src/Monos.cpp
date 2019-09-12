@@ -107,7 +107,7 @@ void Monos::run() {
 		double time_spent = 0.0 + (double)(end - begin) / CLOCKS_PER_SEC;
 		if(config.verbose) {
 			LOG(INFO) << "number of vertices: " << data->getPolygon().size();
-			LOG(INFO) << "time spent: " << time_spent;
+			LOG(INFO) << "time spent: " << time_spent << " seconds";
 			LOG(INFO) << "filename: " << config.fileName;
 		} else {
 			std::cout << data->getPolygon().size() << "," << time_spent << "," << config.fileName << std::endl;

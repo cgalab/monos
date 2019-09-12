@@ -7,13 +7,7 @@ import getpass
 import socket
 import time
 import resource
-import threading
-from multiprocessing import Pool
-from subprocess import CalledProcessError, STDOUT, check_output
-
-monos_path = ""
-timeout = 0
-#lock = threading.Lock()
+from subprocess import CalledProcessError,TimeoutExpired, check_output
 
 def get_polygons(polygon_path, polygon):
     files = []
@@ -29,29 +23,29 @@ def get_polygons(polygon_path, polygon):
 def get_command_for_file(monos_path,polygon):
     return [os.path.abspath(monos_path), '--t', polygon] 
 
-def run_monos_instance(polygon):
+def run_monos_instance(polygon, monos_path, timeout):
     cmd = get_command_for_file(monos_path,polygon)
     try:
-        output = check_output(cmd, stderr=STDOUT, timeout=timeout)
-        #lock.acquire()
-        print(output)
-        #lock.release()
+        output = check_output(cmd, stdin=None, stderr=None, shell=False, timeout=timeout)
+        print(output.decode("utf-8").rstrip())
     except CalledProcessError:
-        #lock.acquire()
         print("0,0,",polygon)
-        #lock.release()
-
-    return 0
+    except TimeoutExpired:
+        print("0,0,",polygon)
 
 def start_benchmark(args, tempDir):
-    timeout = args.timeout
-    monos_path = args.monos
-
     polygons = get_polygons(args.polygon_path, args.polygon)
-    #process_info = [PInfo(args.monos,poly,args.timeout,lock) for poly in polygons]
+    timeout = args.timeout
 
-    pool = Pool(processes=args.num_threads)
-    pool.map(run_monos_instance, polygons)
+    for polygon in polygons:
+        if timeout == 0:
+            a = polygon.rfind('p')
+            a = polygon[0:a].rfind('p')
+            b = polygon.rfind('.')
+            timeout = 5*int(polygon[a+1:b])
+            if timeout < 0 and timeout > 1000000:
+                timeout = 0
+        run_monos_instance(polygon, args.monos, timeout)
 
 
 def main():
@@ -63,7 +57,6 @@ def main():
     parser.add_argument('--polygon',        action="store", dest="polygon",               default="", help='a single input polygon')
     parser.add_argument('--polygon-path',   action="store", dest="polygon_path",          default="", help='path to the input polygons')
     parser.add_argument('--timeout',        action="store", dest='timeout',     type=int, default=0,  help='timeout in seconds to kill monos')
-    parser.add_argument('--threads',        action="store", dest='num_threads', type=int, default=1,  help='use <number> parallel instances (default: 1)')
 
     args = parser.parse_args()
 
