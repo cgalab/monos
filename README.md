@@ -29,14 +29,14 @@ Blender.
 
 <code>monos [--verbose][--timings][--normalize] [--out &lt;filename&gt;] &lt;filename&gt;</code>
 
-| options       | description           |
+| options       | description   |
 | -------------:|:------------- |
-|  --help            |         print help |
-|  --verbose           |         verbose mode, shows information about the computation |
-|  --normalize   | write output normalized to the origin |
-|  --out      |            write output in wavefront obj format (3D coordinates) |
-|  --timings      |            print <vertex count>,<time spent in computation>,<filename>   |
-|  &lt;filename&gt; |           input type is either wavefront obj or GML format |
+|  --help       | print help    |
+|  --verbose    | verbose mode, shows information about the computation |
+|  --normalize  | write output normalized to the origin                 |
+|  --out        | write output in wavefront obj format (3D coordinates) |
+|  --timings    | print &lt;vertex count&gt;,&lt;time spent in computation&gt;,&lt;filename&gt;   |
+| &lt;filename&gt; | input type is either wavefront obj or GML format   |
 
 # Submodules
 
