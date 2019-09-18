@@ -2,7 +2,8 @@ library(ggplot2)
 library(scales)
 library(reshape2)
 
-filenames <- list.files(path = "~/devel/ord/monos/plot/", pattern = "*.csv", full.names = TRUE)
+#filenames <- list.files(path = "~/devel/ord/monos/plot/", pattern = "*.csv", full.names = TRUE)
+filenames <- list.files(path = "/scratch/gue/test-data/", pattern = "*.csv", full.names = TRUE)
 
 df <- data.frame()
 
@@ -38,7 +39,7 @@ ggplot(data = df, aes(x = SIZE)) +
                       values = c("green", "blue", "red", "magenta", "orange", "black")) +
   xlab("# vertices") +
   ylab("time [sec]") + 
-  coord_cartesian(xlim=c(1,1000), ylim=c(0, 50)) +
+  coord_cartesian(xlim=c(1,10000), ylim=c(0, 500)) +
   guides(colour = guide_legend(override.aes = list(size = 5, alpha=1)))+
   theme_bw() + 
   theme(#plot.background = element_blank(),panel.grid.major = element_blank(),

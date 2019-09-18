@@ -208,10 +208,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 		LOG(INFO) << "# BEFORE path: " << *path;
 		LOG(INFO) << "# intersect arc: " << *arc << ", and bisector " << bis;
 
-		if(secondIntersectionDoneAndWeCatchedUp(bis,upperIntersection,lowerIntersection,*arc_u,*arc_l,localOnUpperChain)) {
-			/* we have catched up with the other chain */
-			intersection->setDone();
-		} else if(isValidArc(path->currentArcIdx)) {
+		if(isValidArc(path->currentArcIdx)) {
 			/* classical intersection detection on current paths arc */
 			Point P = INFPOINT;
 
@@ -251,22 +248,27 @@ IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
 				} else {				pathBackupLower = wf.lowerPath;}
 
 				if(!wf.nextMonotoneArcOfPath(*path)) {
-					Edge e = data.getEdge(path->edgeIdx);
-					if(path->edgeIdx != wf.startLowerEdgeIdx &&
-					   path->edgeIdx != wf.endUpperEdgeIdx   &&
-					   do_intersect(bis,e)) {
-						LOG(INFO) << "intersecting input edge (done)";
+					if(secondIntersectionDoneAndWeCatchedUp(bis,upperIntersection,lowerIntersection,*arc_u,*arc_l,localOnUpperChain)) {
+						/* we have catched up with the other chain */
 						intersection->setDone();
-					} else 	{
-						if(handleGhostVertex(*path,bis,*intersection)) {
-							/* detect and handle possible ghost vertex */
-							/* all good, done in 'handleGhostVertex' */
-							LOG(INFO) << "(if) handleGhostVertex";
-						}
+					} else {
+						Edge e = data.getEdge(path->edgeIdx);
+						if(path->edgeIdx != wf.startLowerEdgeIdx &&
+								path->edgeIdx != wf.endUpperEdgeIdx   &&
+								do_intersect(bis,e)) {
+							LOG(INFO) << "intersecting input edge (done)";
+							intersection->setDone();
+						} else 	{
+							if(handleGhostVertex(*path,bis,*intersection)) {
+								/* detect and handle possible ghost vertex */
+								/* all good, done in 'handleGhostVertex' */
+								LOG(INFO) << "(if) handleGhostVertex";
+							}
 
-						/* iterate over path */ LOG(WARNING) << "///////////////// next chain index! ";
-						intersection->setDone();
-						LOG(INFO) << "I do not think we should iterate to the next face just like that!";
+							/* iterate over path */ LOG(WARNING) << "///////////////// next chain index! ";
+							intersection->setDone();
+							LOG(INFO) << "I do not think we should iterate to the next face just like that!";
+						}
 					}
 				} else {
 					if(localOnUpperChain) {
@@ -1187,7 +1189,12 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 		if(cfg.normalize) {
 			getNormalizer(data.bbox,xt,xm,yt,ym,zt,zm);
 			zm = 0.1;
+		} else {
+			xm = 1.0/INTOFFSET;
+			ym = 1.0/INTOFFSET;
 		}
+
+		zm /= INTOFFSET;
 		uint errorCnt = 20;
 
 		std::ofstream outfile (cfg.outputFileName,std::ofstream::binary);
@@ -1197,9 +1204,10 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 
 		/* write points/nodes into file */
 		for(auto n : wf.nodes) {
-			double x = (n.point.x().doubleValue() - xt) * xm;
-			double y = (n.point.y().doubleValue() - yt) * ym;
-			outfile << "v " << x << " " << y << " " << CGAL::sqrt(n.time).doubleValue() * zm << std::endl;
+			double x = (n.point.x().doubleValue() - xt)   * xm;
+			double y = (n.point.y().doubleValue() - yt)   * ym;
+			double z = CGAL::sqrt(n.time).doubleValue()   * zm;
+			outfile << "v " << x << " " << y << " " << z << std::endl;
 		}
 
 		/* write faces induced by the skeleton into file */

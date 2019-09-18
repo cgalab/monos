@@ -30,7 +30,7 @@
 #define NIL    -1
 #define NOLIST -2
 #define ZSCALE 0.5
-#define OBJSCALE 5
+#define OBJSCALE 10
 
 
 /*

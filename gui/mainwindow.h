@@ -22,6 +22,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     explicit MainWindow(const std::string& title, Monos& _monos);
     ~MainWindow();
   private:
+    int merge_counter = 0;
     bool first_show_event = true;
     bool did_finish = false;
 

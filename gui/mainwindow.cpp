@@ -223,6 +223,8 @@ void MainWindow::on_actionEventStep_triggered() {
 	}
 
 	if(bothChainsDone && !mergeDone) {
+		LOG(INFO) << " -------------------- || Merge-Step: " << ++merge_counter << "|| -------------------- " ;
+
 		if(!monos.s->SingleMergeStep()) {
 			monos.s->finishMerge();
 			mergeDone = true;
