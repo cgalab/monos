@@ -39,7 +39,7 @@ ggplot(data = df, aes(x = SIZE)) +
                       values = c("green", "blue", "red", "magenta", "orange", "black")) +
   xlab("# vertices") +
   ylab("time [sec]") + 
-  coord_cartesian(xlim=c(1,10000), ylim=c(0, 500)) +
+  coord_cartesian(xlim=c(1,4500), ylim=c(0, 650)) +
   guides(colour = guide_legend(override.aes = list(size = 5, alpha=1)))+
   theme_bw() + 
   theme(#plot.background = element_blank(),panel.grid.major = element_blank(),

@@ -1,0 +1,4 @@
+1000,75.3198,/scratch/gue/test-data/monotone-polygons/poly-s10-p1000.graphml
+2000,550.895,/scratch/gue/test-data/monotone-polygons/poly-s10-p2000.graphml
+3000,1749.1,/scratch/gue/test-data/monotone-polygons/poly-s10-p3000.graphml
+segfault,/scratch/gue/test-data/monotone-polygons/poly-s10-p4000.graphml
