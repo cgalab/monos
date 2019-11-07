@@ -54,7 +54,6 @@ void Skeleton::MergeUpperLowerSkeleton() {
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
 
-
 	/* we start the bisector from the source node from the "left" since the merge line is monotone */
 	Bisector bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
 	Bisector bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);

@@ -26,7 +26,11 @@ def get_command_for_file(monos_path,polygon):
 def run_monos_instance(polygon, monos_path, timeout):
     cmd = get_command_for_file(monos_path,polygon)
     try:
-        output = check_output(cmd, stdin=None, stderr=None, shell=False, timeout=timeout)
+        if timeout is not 1:
+            output = check_output(cmd, stdin=None, stderr=None, shell=False, timeout=timeout)
+        else:
+            output = check_output(cmd, stdin=None, stderr=None, shell=False)
+            
         print(output.decode("utf-8").rstrip())
     except CalledProcessError:
         print("0,0,",polygon)
