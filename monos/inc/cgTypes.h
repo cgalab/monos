@@ -37,6 +37,15 @@
 #include <CGAL/intersections.h>
 #include <CGAL/squared_distance_2.h>
 
+/*			for testing and timing 			*/
+#include <CGAL/Polygon_2.h>
+#include <CGAL/create_straight_skeleton_2.h>
+#include <boost/shared_ptr.hpp>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+using Kie 			 	= CGAL::Exact_predicates_inexact_constructions_kernel;
+/*			end for testing and timing 		*/
+
+
 using K 			 	= CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
 
 using Vector         	= K::Vector_2;
@@ -59,6 +68,60 @@ using ChainRef			= Chain::iterator;
 using PartialSkeleton 	= std::list<uint>;
 using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 
+
+/*			for testing and timing 			*/
+using CGALPoint 		= Kie::Point_2;
+using CGALPoly  		= CGAL::Polygon_2<Kie>;
+using CGALSS    		= CGAL::Straight_skeleton_2<Kie>;
+using CGALSSPtr			= boost::shared_ptr<CGALSS>;
+using K_to_IK 			= CGAL::Cartesian_converter<K,Kie>;
+
+template<class K>
+void print_point ( CGAL::Point_2<K> const& p, std::stringstream& stsr)
+{
+  stsr << "v " << p.x() << " " << p.y() << std::endl;
+}
+
+template<class K>
+void write_straight_skeleton( CGAL::Straight_skeleton_2<K> const& ss, std::stringstream& stsr)
+{
+  typedef CGAL::Straight_skeleton_2<K> Ss ;
+
+  typedef typename Ss::Vertex_const_handle     Vertex_const_handle ;
+  typedef typename Ss::Halfedge_const_handle   Halfedge_const_handle ;
+  typedef typename Ss::Halfedge_const_iterator Halfedge_const_iterator ;
+
+  Halfedge_const_handle null_halfedge ;
+  Vertex_const_handle   null_vertex ;
+
+//  std::cout << "Straight skeleton with " << ss.size_of_vertices()
+//            << " vertices, " << ss.size_of_halfedges()
+//            << " halfedges and " << ss.size_of_faces()
+//            << " faces" << std::endl ;
+
+  std::vector<CGAL::Point_2<K>> points;
+
+  for ( Halfedge_const_iterator i = ss.halfedges_begin(); i != ss.halfedges_end(); ++i )
+  {
+//	  points.push_back(i->opposite()->vertex()->point());
+	  points.push_back(i->vertex()->point());
+//    print_point(i->opposite()->vertex()->point()) ;
+//    std::cout << "->" ;
+//    print_point(i->vertex()->point());
+//    std::cout << " " << ( i->is_bisector() ? "bisector" : "contour" ) << std::endl;
+  }
+
+  for(unsigned long i = 0; i < points.size(); ++i) {
+	  print_point(points[i],stsr);
+//	  print_point(points[i+1],stsr);
+  }
+
+  for(unsigned long i = 0; i < points.size(); ++i) {
+	  stsr << "e " << i+1 << " " << i+2 << std::endl;
+  }
+
+}
+/*			end for testing and timing 		*/
 
 #include "gml/BasicInput.h"
 #include "gml/GMLGraph.h"

@@ -18,6 +18,10 @@ bool Config::evaluateArguments(Args args) {
 			resetLogging(true);
 			break;
 
+		case 'c':
+			run_cgal_code = true;
+			break;
+
 		case 'n':
 			normalize = true;
 			break;

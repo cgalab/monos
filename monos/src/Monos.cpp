@@ -83,24 +83,41 @@ void Monos::run() {
 		begin = clock();
 	}
 
-	if(!init()) {return;}
+	if(!config.run_cgal_code) {
 
-	if(!wf->ComputeSkeleton(true)) {return;}
-	if(config.verbose) {LOG(INFO) << "lower skeleton done";}
+		/**************************************************************/
+		/*				MONOTONE SKELETON APPROACH 					  */
+		/**************************************************************/
 
-	if(!wf->ComputeSkeleton(false)) {return;}
-	if(config.verbose) {LOG(INFO) << "upper skeleton done";}
+		if(!init()) {return;}
 
-	/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
-	 * their incidences. */
-	wf->SortArcsOnNodes();
+		if(!wf->ComputeSkeleton(true)) {return;}
+		if(config.verbose) {LOG(INFO) << "lower skeleton done";}
 
-	s->MergeUpperLowerSkeleton();
-	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
+		if(!wf->ComputeSkeleton(false)) {return;}
+		if(config.verbose) {LOG(INFO) << "upper skeleton done";}
+
+		/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
+		 * their incidences. */
+		wf->SortArcsOnNodes();
+
+		s->MergeUpperLowerSkeleton();
+		if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
+
+	} else {
+		/**************************************************************/
+		/*				CGAL included SKELETON APPROACH				  */
+		/**************************************************************/
+
+		s->runCGALCode();
+		s->computationFinished = true;
+
+	}
 
 	if(config.timings) {
 		end = clock();
 	}
+
 	write();
 
 	if(config.timings) {

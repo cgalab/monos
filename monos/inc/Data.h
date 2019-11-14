@@ -93,6 +93,10 @@ public:
 	const Point& eA(const uint& edgeIdx) const {return v(e(edgeIdx)[0]);}
 	const Point& eB(const uint& edgeIdx) const {return v(e(edgeIdx)[1]);}
 
+	Point getFirstPointOfEdge(unsigned long edgeIdx) {
+		return inputVertices[polygon[edgeIdx][0]];
+	}
+
 	void setEdgeWeight(const uint edgeIdx, const Exact weigth) {
 		edgeWeights[edgeIdx] = weigth;
 		if(gui) {basicInput.set_weight(edgeIdx,weigth);}

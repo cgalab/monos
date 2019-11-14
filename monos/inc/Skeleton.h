@@ -85,6 +85,9 @@ public:
 
 	bool computationFinished = false;
 
+	/*************************** CGALs CODE ************************/
+	void runCGALCode();
+	CGALSSPtr cgalSS;
 private:
 	IntersectionPair findNextIntersectingArc(Bisector& bis);
 
@@ -162,6 +165,7 @@ private:
 	bool addGhostNode = false;
 
 	uint upperChainIndex = 0, lowerChainIndex = 0;
+
 };
 
 #endif /* SKELETON_H_ */

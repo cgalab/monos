@@ -1201,62 +1201,86 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 				<< cfg.fileName << ") - "
 				<< currentTimeStamp() <<  std::endl;
 
-		/* write points/nodes into file */
-		for(auto n : wf.nodes) {
-			double x = (n.point.x().doubleValue() - xt)   * xm;
-			double y = (n.point.y().doubleValue() - yt)   * ym;
-			double z = CGAL::sqrt(n.time).doubleValue()   * zm;
-			outfile << "v " << x << " " << y << " " << z << std::endl;
-		}
+		if(!cfg.run_cgal_code) {
 
-		/* write faces induced by the skeleton into file */
-		for(uint edgeIdx = 0; edgeIdx < data.getPolygon().size(); ++edgeIdx) {
-			auto e = data.e(edgeIdx);
-			std::vector<Node*> tN = {{&wf.nodes[e[0]],&wf.nodes[e[1]]}};
+			/* write points/nodes into file */
+			for(auto n : wf.nodes) {
+				double x = (n.point.x().doubleValue() - xt)   * xm;
+				double y = (n.point.y().doubleValue() - yt)   * ym;
+				double z = CGAL::sqrt(n.time).doubleValue()   * zm;
+				outfile << "v " << x << " " << y << " " << z << std::endl;
+			}
 
-			/* we walk from the right (index 1) terminal node along the boudnary of the
-			 * induced face to the first (index 0) terminal node */
-			auto arcIdx = tN[1]->arcs.front();
-			auto srcNodeIdx = e[1];
-			auto arcIt = wf.getArc(arcIdx);
+			/* write faces induced by the skeleton into file */
+			for(uint edgeIdx = 0; edgeIdx < data.getPolygon().size(); ++edgeIdx) {
+				auto e = data.e(edgeIdx);
+				std::vector<Node*> tN = {{&wf.nodes[e[0]],&wf.nodes[e[1]]}};
 
-			outfile << "f " << e[0]+1 << " " << e[1]+1;
+				/* we walk from the right (index 1) terminal node along the boudnary of the
+				 * induced face to the first (index 0) terminal node */
+				auto arcIdx = tN[1]->arcs.front();
+				auto srcNodeIdx = e[1];
+				auto arcIt = wf.getArc(arcIdx);
 
-			do {
-				auto nextNodeIdx = arcIt->getSecondNodeIdx(srcNodeIdx);
+				outfile << "f " << e[0]+1 << " " << e[1]+1;
 
-				if(nextNodeIdx == INFINITY) {LOG(WARNING) << "infinite node in list!"; break;}
+				do {
+					auto nextNodeIdx = arcIt->getSecondNodeIdx(srcNodeIdx);
 
-				/* +1 is the standard OBJ offset for references */
-				outfile << " " << nextNodeIdx+1;
+					if(nextNodeIdx == INFINITY) {LOG(WARNING) << "infinite node in list!"; break;}
 
-				auto n = &wf.nodes[nextNodeIdx];
-				bool found = false;
-				for(auto newArcIdx : n->arcs) {
-					if(arcIdx != newArcIdx) {
-						arcIt = wf.getArc(newArcIdx);
-						if(arcIt->isDisable()) {continue;}
-						if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
-							found  = true;
-							arcIdx = newArcIdx;
-							break;
+					/* +1 is the standard OBJ offset for references */
+					outfile << " " << nextNodeIdx+1;
+
+					auto n = &wf.nodes[nextNodeIdx];
+					bool found = false;
+					for(auto newArcIdx : n->arcs) {
+						if(arcIdx != newArcIdx) {
+							arcIt = wf.getArc(newArcIdx);
+							if(arcIt->isDisable()) {continue;}
+							if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
+								found  = true;
+								arcIdx = newArcIdx;
+								break;
+							}
 						}
 					}
-				}
 
-				if(!n->isTerminal() && !found) {
-					LOG(WARNING) << "did not find a next arc! current node: " << nextNodeIdx << " " << *n;
-					--errorCnt;
-				}
+					if(!n->isTerminal() && !found) {
+						LOG(WARNING) << "did not find a next arc! current node: " << nextNodeIdx << " " << *n;
+						--errorCnt;
+					}
 
-				srcNodeIdx = nextNodeIdx;
+					srcNodeIdx = nextNodeIdx;
 
-			} while(arcIt->secondNodeIdx != e[0] && arcIt->firstNodeIdx != e[0] && errorCnt > 0);
+				} while(arcIt->secondNodeIdx != e[0] && arcIt->firstNodeIdx != e[0] && errorCnt > 0);
 
-			outfile << std::endl;
-
+				outfile << std::endl;
+			}
+		} else {
+			LOG(INFO) << "CGAL output";
+			std::stringstream stsr;
+			write_straight_skeleton(*cgalSS, stsr);
+			outfile << stsr.rdbuf();
 		}
 
 		outfile.close();
 	}
 }
+
+/*************************** CGALs CODE ************************/
+
+void Skeleton::runCGALCode() {
+	CGALPoly cgalPoly;
+	K_to_IK k_to_ik;
+	auto& myPoly = data.getPolygon();
+	for(unsigned long idx = 0; idx < myPoly.size(); ++idx) {
+		auto myP = data.getFirstPointOfEdge(idx);
+		auto P = k_to_ik(myP);
+		cgalPoly.push_back(P);
+	}
+	LOG(INFO) << "start CGAL computation.....";
+
+	cgalSS = CGAL::create_interior_straight_skeleton_2(cgalPoly.vertices_begin(), cgalPoly.vertices_end());
+}
+

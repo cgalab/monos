@@ -18,6 +18,7 @@ using Args = std::pair<int,char**>;
 static struct option long_options[] = {
 		{ "help"        , no_argument      , 0, 'h'},
 		{ "verbose"     , no_argument      , 0, 'v'},
+		{ "cgal"   		, no_argument      , 0, 'c'},
 		{ "normalize"   , no_argument      , 0, 'n'},
 		{ "timings"     , no_argument      , 0, 't'},
 		{ "out"         , required_argument, 0, 'o'},
@@ -35,6 +36,7 @@ public:
 		fprintf(f,"Usage: %s [options] <OBJ|GRAPHML file>\n", progname);
 		fprintf(f,"  Options: --out \t| -o <filename> \t write output\n");
 		fprintf(f,"           --verbose \t| -v \t\t\t print processing information\n");
+		fprintf(f,"           --cgal \t| -c \t\t\t use cgal implementation (for timing and testing)\n");
 		fprintf(f,"           --timings \t| -t \t\t\t print timings [ms]\n");
 		fprintf(f,"           --normalize \t| -n \t\t\t write output normalized to the origin\n");
 		fprintf(f,"\n");
@@ -75,6 +77,8 @@ public:
 	bool 			normalize = false;
 	bool 			timings   = false;
 	bool 			gui;
+
+	bool			run_cgal_code = false;
 
 	OutputType  	outputType;
 	std::string		outputFileName;
