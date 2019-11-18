@@ -1,6 +1,3 @@
 [submodule "monos/easyloggingpp"]
 	path = monos/easyloggingpp
 	url = https://github.com/weaselp/easyloggingpp
-[submodule "monos/src/gml"]
-	path = monos/src/gml
-	url = git@gitlab.cosy.sbg.ac.at:cg/ord/gml.git

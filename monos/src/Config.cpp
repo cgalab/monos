@@ -1,15 +1,15 @@
 #include "Config.h"
 
 
-bool Config::evaluateArguments(Args args) {
+bool Config::evaluateArguments(int argc, char *argv[]) {
 	while (1) {
 		int option_index = 0;
-		int r = getopt_long(args.first, args.second, "hO:R:", long_options, &option_index);
+		int r = getopt_long(argc, argv, "hO:R:", long_options, &option_index);
 
 		if (r == -1) break;
 		switch (r) {
 		case 'h':
-			usage(args.second[0], 0);
+			usage(argv[0], 0);
 			break;
 
 		case 'v':
@@ -18,17 +18,12 @@ bool Config::evaluateArguments(Args args) {
 			resetLogging(true);
 			break;
 
-		case 'c':
-			run_cgal_code = true;
-			break;
-
 		case 'n':
 			normalize = true;
 			break;
 
 		case 'o':
 			outputFileName = std::string(optarg);
-			outputType = OutputType::OBJ;
 			break;
 
 		case 't':
@@ -42,13 +37,13 @@ bool Config::evaluateArguments(Args args) {
 		}
 	}
 
-	if (args.first - optind > 1) {
-		usage(args.second[0], 1);
+	if (argc - optind > 1) {
+		usage(argv[0], 1);
 	}
 
 	use_stdin = true;
-	if (args.first - optind == 1) {
-		std::string fn(args.second[optind]);
+	if (argc - optind == 1) {
+		std::string fn(argv[optind]);
 		if (fn != "-") {
 			fileName  = fn;
 			use_stdin = false;

@@ -14,8 +14,10 @@ int main(int argc, char *argv[]) {
 	setupEasylogging(argc, argv);
 	QApplication a(argc, argv);
 
-	Args argPair({argc,argv});
-	Monos monos(argPair,true);
+	Config config(argc, argv, true);
+	if(!config.isValid()) {return 0;}
+
+	Monos monos(config);
 
 	std::string title =
 #ifdef CMAKE_BUILD_TYPE

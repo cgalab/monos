@@ -26,14 +26,15 @@
 #include "Data.h"
 #include "cgTypes.h"
 #include "Definitions.h"
+#include "BasicInput.h"
 
 #include "Wavefront.h"
 #include "Skeleton.h"
 
 class Monos {
 public:
-	Monos(Args args, bool gui = false);
-	virtual ~Monos();
+	Monos(const Config& cfg);
+	~Monos();
 
 	/**
 	 * a full run of monos
@@ -43,28 +44,36 @@ public:
 	/**
 	 * verify valid config, initialize BBox, chain decomp.
 	 * */
+	bool readInput();
 	bool init();
 	void write();
-	void reset();
-
-	void constructorInit(bool gui);
-	void reinitialize(const std::string& fileName, bool gui);
-	void destruct();
 
 	/**
 	 * enable stepping trough the computation
 	 * */
-	bool initSkeletonQueue(bool lower) {return wf->InitSkeletonQueue(lower);}
-	bool computeSingleSkeletonEvent(bool lower) {return wf->ComputeSingleSkeletonEvent(lower);}
-	bool finishSkeleton(bool lower)    {return wf->FinishSkeleton(lower);   }
+	bool initSkeletonQueue(bool lower) {
+		return false;
+//		return wf->InitSkeletonQueue(lower);
+	}
+	bool computeSingleSkeletonEvent(bool lower) {
+		return false;
+//		return wf->ComputeSingleSkeletonEvent(lower);
+	}
+	bool finishSkeleton(bool lower) {
+		return false;
+		//return wf->FinishSkeleton(lower);
+	}
 
-//	Point intersect(Line a, Line b);
-//	void minimumExample();
+	const Config&   config;
 
-	Data			*data;
-	Config 			config;
-	Wavefront 		*wf;
-	Skeleton		*s;
+	const BasicInput* getBasicInput() {return &input;}
+
+	Data			*data 	= nullptr;
+	Wavefront 		*wf 	= nullptr;
+	Skeleton		*s 		= nullptr;
+
+	BasicInput		input;
+private:
 };
 
 #endif /* MONOS_H_ */

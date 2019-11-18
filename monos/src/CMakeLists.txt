@@ -1,7 +1,7 @@
 set(SRC_LIST  
                main.cpp cgTypes.cpp Data.cpp Skeleton.cpp
                Wavefront.cpp tools.cpp Monos.cpp Config.cpp
-               gml/BasicInput.cpp gml/GMLGraph.cpp
+               BasicInput.cpp BGLGraph.cpp
                easyloggingpp/src/easylogging++.cc
 )
 

@@ -19,11 +19,17 @@
 
 #include "cgTypes.h"
 
-std::ostream& operator<< (std::ostream& os, const BBox& box) {
-	os << "box l,r [" << box.xMinIdx << "," << box.xMaxIdx << "]";
-	os << " b,t [" << box.yMinIdx << "," << box.yMaxIdx << "]";
-	os << " m-min,m-max [" << box.monotoneMinIdx << "," << box.monotoneMaxIdx << "]";
+std::ostream& operator<< (std::ostream& os, const Vertex& vertex) {
+	os << "v " << vertex.id << ": " << vertex.p;
+	return os;
+}
+std::ostream& operator<< (std::ostream& os, const Edge& edge) {
+	os << "e " << edge.id << ": " << edge.u << " -> " << edge.v;
+	return os;
+}
 
+std::ostream& operator<< (std::ostream& os, const BBox& box) {
+	os << "bbox monMin/monMax: " << box.monMin << " | " << box.monMax;
 	return os;
 }
 
@@ -90,11 +96,11 @@ std::ostream& operator<< (std::ostream& os, const Arc& arc) {
 }
 
 
-Exact normalDistance(const Line& l, const Point& p) {
+NT normalDistance(const Line& l, const Point& p) {
 	return CGAL::squared_distance(l,p);
 }
 
-bool do_intersect(const Bisector& bis, const Edge& edge) {
+bool do_intersect(const Bisector& bis, const Segment& edge) {
 	return (bis.isRay()) ? CGAL::do_intersect(bis.ray,edge) : CGAL::do_intersect(bis.line,edge);
 }
 
@@ -111,7 +117,7 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 }
 
 
-Point intersectBisectorEdge(const Bisector& bis, const Edge& edge) {
+Point intersectBisectorEdge(const Bisector& bis, const Segment& edge) {
 	if(bis.isRay()) {
 		return intersectElements(bis.ray,edge);
 	} else {
@@ -139,7 +145,7 @@ Point intersectRayArc(const Ray& ray, const Arc& arc) {
 	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
 }
 
-uint getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB) {
+ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB) {
 	for(auto i : {arcA.firstNodeIdx,arcA.secondNodeIdx}) {
 		for(auto j : {arcB.firstNodeIdx,arcB.secondNodeIdx}) {
 			if(i != MAX && j != MAX && i == j) {

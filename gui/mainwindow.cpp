@@ -1,10 +1,9 @@
 #include "mainwindow.h"
 #include "weightdialog.h"
 
-#include "ui_weightDialog.h"
 #include "ui_mainwindow.h"
 
-#include "gml/GMLGraph.h"
+#include "BGLGraph.h"
 
 MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	CGAL::Qt::DemosMainWindow(),
@@ -35,7 +34,7 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	/* general init. of monos */
 	monos.init();
 
-	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput(), &monos.data->getPolygon(), &monos.data->getWeights(), &monos.data->getVertices());
+	input_gi = std::make_shared<InputGraphicsItem>(monos.getBasicInput());
 	scene.addItem(input_gi.get());
 
 	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
@@ -91,49 +90,6 @@ void MainWindow::on_actionResize_triggered() {
 	ui->gV->fitInView(br, Qt::KeepAspectRatio);
 }
 
-void MainWindow::on_actionDefineWeight_triggered() {
-	if(!monos.config.isValid()) {return;}
-
-	std::string wt = "Weight";
-	weightDialog = new WeightDialog(wt);
-	weightDialog->setGeometry(this->x(), this->y(),184,134);
-	weightDialog->show();
-	auto spinBox = weightDialog->ui->edgeSelect;
-	spinBox->setRange(0, monos.data->getPolygon().size()-1);
-	spinBox->setSingleStep(1);
-	spinBox->setValue(0);
-	updateWeightValue(0);
-	connect(weightDialog->ui->pushButtonOK,SIGNAL(clicked()),this,SLOT(on_actionDefineWeightDialogClosed()));
-	connect(weightDialog->ui->weightInput, SIGNAL(returnPressed()),this,SLOT(on_actionDefineWeightDialogClosed()));
-	connect(weightDialog->ui->edgeSelect, QOverload<int>::of(&QSpinBox::valueChanged),
-	    [=](int i){ updateWeightValue(i); });
-}
-
-
-
-void MainWindow::updateWeightValue(int idx) {
-	Exact weight = monos.data->w(idx);
-	weightDialog->ui->weightInput->setText(QString::fromStdString(std::to_string(weight.doubleValue())));
-}
-
-void MainWindow::on_actionDefineWeightDialogClosed() {
-	bool ok 	 = false;
-	uint edgeIdx = weightDialog->ui->edgeSelect->value();
-	auto weight  = weightDialog->ui->weightInput->text().toDouble(&ok);
-
-	if(ok) {
-		monos.data->setEdgeWeight(edgeIdx,Exact(weight));
-	}
-}
-
-void MainWindow::on_actionResetAll_triggered() {
-	monos.reset();
-
-	onLowerChain = firstStart = true;
-	lowerChainDone = upperChainDone = bothChainsDone = mergeDone = false;
-
-	on_actionResize_triggered();
-}
 
 void MainWindow:: showEvent(QShowEvent *) {}
 
@@ -219,19 +175,19 @@ void MainWindow::on_actionEventStep_triggered() {
 	} else if(lowerChainDone && upperChainDone && !bothChainsDone) {
 		monos.finishSkeleton(onLowerChain);
 		bothChainsDone = true;
-		monos.s->initMerge();
+//		monos.s->initMerge();
 	}
 
 	if(bothChainsDone && !mergeDone) {
 		LOG(INFO) << " -------------------- || Merge-Step: " << ++merge_counter << "|| -------------------- " ;
 
-		if(!monos.s->SingleMergeStep()) {
-			monos.s->finishMerge();
-			mergeDone = true;
-			if(!monos.data->lines.empty()) {
-				monos.data->lines.clear();
-			}
-		}
+//		if(!monos.s->SingleMergeStep()) {
+//			monos.s->finishMerge();
+//			mergeDone = true;
+//			if(!monos.data->lines.empty()) {
+//				monos.data->lines.clear();
+//			}
+//		}
 	}
 
 	on_actionResize_triggered();
@@ -252,20 +208,20 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *e) {
 }
 
 void MainWindow::dropEvent(QDropEvent *e) {
-    foreach (const QUrl &url, e->mimeData()->urls()) {
-        QString fileName = url.toLocalFile();
-        LOG(INFO) << "Dropped file:" << fileName.toStdString();
-        if (fileName.endsWith(".obj") || fileName.endsWith(".graphml")) {
-
-        	monos.reinitialize(fileName.toStdString(),true);
-
-        	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput(), &monos.data->getPolygon(), &monos.data->getWeights(), &monos.data->getVertices());
-        	scene.addItem(input_gi.get());
-
-        	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
-        	scene.addItem(skeleton_gi.get());
-
-        	on_actionResize_triggered();
-        }
-    }
+//    foreach (const QUrl &url, e->mimeData()->urls()) {
+//        QString fileName = url.toLocalFile();
+//        LOG(INFO) << "Dropped file:" << fileName.toStdString();
+//        if (fileName.endsWith(".obj") || fileName.endsWith(".graphml")) {
+//
+//        	monos.reinitialize(fileName.toStdString(),true);
+//
+//        	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput(), &monos.data->getPolygon(), &monos.data->getWeights(), &monos.data->getVertices());
+//        	scene.addItem(input_gi.get());
+//
+//        	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
+//        	scene.addItem(skeleton_gi.get());
+//
+//        	on_actionResize_triggered();
+//        }
+//    }
 }

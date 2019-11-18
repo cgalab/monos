@@ -15,12 +15,9 @@
 #include "cgTypes.h"
 
 InputGraphicsItem::
-InputGraphicsItem(const BasicInput * const input, const Polygon * const polygon,const InputWeights * const weights, const InputPoints * const points)
+InputGraphicsItem(const BasicInput * const input)
   : Base()
   , input(input)
-  , polygon(polygon)
-  , weights(weights)
-  , points(points)
   , painterostream(0)
   , vertices_pen(QPen(::Qt::black, 3))
   , segments_pen(QPen(::Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin))
@@ -60,16 +57,10 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 
 		font.setPointSize(10);
 		painter->setFont(font);
-		for (uint i = 0; i < polygon->size(); ++i) {
-			IndexEdge ie = polygon->at(i);
-			const auto A = points->at(ie[0]);
-			const auto B = points->at(ie[1]);
-			const auto e = Edge(A,B);
+		for (ul i = 0; i < input->edges().size(); ++i) {
+			const auto e = input->get_segment(input->get_edge(i));
 			const QPointF p(transform.map(convert( CGAL::midpoint(e.source(), e.target()) )));
 			std::string t = "e#"+std::to_string(i);
-			if(weights->at(i) != CORE_ONE) {
-				t += "(" + std::to_string(weights->at(i).doubleValue()) + ")";
-			}
 			painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
 		}
 	}

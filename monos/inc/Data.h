@@ -40,86 +40,51 @@
 #include "Config.h"
 #include "Definitions.h"
 
-enum class MonotoneType    : uint {START=0,END};
-
-struct MonotoneVector {
-	MonotoneVector(Vector _v, MonotoneType _t, uint _i) :
-		vector(_v),type(_t),id(_i) {}
-	Vector vector;
-	MonotoneType type = {MonotoneType::START};
-	uint id = {0};
-	friend std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv);
-};
-
-struct MonVectCmp {
-	bool operator()(const MonotoneVector &first, const MonotoneVector &second) const {
-		Point A = ORIGIN + first.vector;
-		Point B = ORIGIN + second.vector;
-
-		return   CGAL::left_turn(A,ORIGIN,B) ||
-				(CGAL::collinear(A,ORIGIN,B) && A.x() < ORIGIN.x() && B.x() > ORIGIN.x()) ||
-				(CGAL::collinear(A,ORIGIN,B) && A.y() < ORIGIN.y() && B.y() > ORIGIN.y()) ||
-				(CGAL::collinear(A,ORIGIN,B) &&
-						( (A.x() < ORIGIN.x() && B.x() < ORIGIN.x()) ||
-						  (A.x() > ORIGIN.x() && B.x() > ORIGIN.x()) ||
-						  (A.y() < ORIGIN.y() && B.y() < ORIGIN.y()) ||
-						  (A.y() > ORIGIN.y() && B.y() > ORIGIN.y()) ) &&
-						first.type == MonotoneType::END);
-	}
-};
-
+#include "BasicInput.h"
 
 
 class Data {
-	using EdgeIterator = std::vector<IndexEdge,CORE::allocator<IndexEdge>>::iterator;
+	using EdgeIterator = EdgeList::const_iterator;
+	using VertexIterator = VertexList::const_iterator;
 
 public:
-	Data(bool gui = false):gui(gui)  {}
-	~Data() {}
+	Data(const BasicInput& input_, const bool gui_ = false):
+		gui(gui_),
+		input(input_) {
 
-	void initialize(const Config& cfg);
-	BBox computeBoundingBox() const;
-
-	const InputPoints&  getVertices() const { return inputVertices; }
-	const Polygon&      getPolygon()  const { return polygon; }
-	const InputWeights& getWeights()  const { return edgeWeights; }
-
-	const IndexEdge e(const uint& idx) const { assert(idx < polygon.size() ); return polygon[idx]; }
-	const Point& v(const uint& idx) const { assert(idx < inputVertices.size()); return inputVertices[idx]; }
-	const Exact w(const uint& idx) const { assert(idx < inputVertices.size()); return edgeWeights[idx]; }
-	Edge getEdge(const uint& idx) const;
-	Edge getEdge(const EdgeIterator& it) const;
-
-	const Point& eA(const uint& edgeIdx) const {return v(e(edgeIdx)[0]);}
-	const Point& eB(const uint& edgeIdx) const {return v(e(edgeIdx)[1]);}
-
-	Point getFirstPointOfEdge(unsigned long edgeIdx) {
-		return inputVertices[polygon[edgeIdx][0]];
+		assignBoundingBox();
 	}
 
-	void setEdgeWeight(const uint edgeIdx, const Exact weigth) {
-		edgeWeights[edgeIdx] = weigth;
-		if(gui) {basicInput.set_weight(edgeIdx,weigth);}
-	}
+	~Data() {delete bbox;}
 
-	Exact normalDistance(const uint& edgeIdx, const Point& p) const {
-		Line l(getEdge(edgeIdx));
+
+	const VertexList& getVertices() const { return input.vertices(); }
+	const EdgeList&   getPolygon()  const { return input.edges();    }
+
+	const Edge e(const ul& idx) const { return input.get_edge(idx); }
+	const Vertex& v(const ul& idx) const { return getVertices()[idx]; }
+	const Point& p(const ul& idx) const { return v(idx).p; }
+	Segment get_segment(const ul& idx) const {return input.get_segment(e(idx));}
+	Segment get_segment(const EdgeIterator& it) const {return input.get_segment(e(it->id));}
+
+	const Point& eA(const ul& edgeIdx) const {return get_segment(edgeIdx).source();}
+	const Point& eB(const ul& edgeIdx) const {return get_segment(edgeIdx).target();}
+
+	NT normalDistance(const ul& edgeIdx, const Point& p) const {
+		Line l(get_segment(edgeIdx));
 		return CGAL::squared_distance(l,p);
 	}
 
-	bool isEdgeCollinear(const uint& i, const uint& j) const;
-	bool isEdgeCollinear(const Edge& eA, const Edge& eB) const;
-	bool isEdgeCollinearAndInteriorRight(const uint& i, const uint& j) const;
-	bool isEdgeCollinearAndInteriorLeft(const uint& i, const uint& j) const;
-	bool isEdgeCollinearAndCommonInteriorDirection(const uint& i, const uint& j) const;
-	bool isEdgesParallel(const uint& i, const uint& j) const {
-		return isLinesParallel(getEdge(i).supporting_line(),getEdge(j).supporting_line());
+
+	bool isEdgeCollinear(const ul& i, const ul& j) const;
+	bool isEdgeCollinear(const Segment& eA, const Segment& eB) const;
+	bool isEdgeCollinearAndInteriorRight(const ul& i, const ul& j) const;
+	bool isEdgeCollinearAndInteriorLeft(const ul& i, const ul& j) const;
+	bool isEdgeCollinearAndCommonInteriorDirection(const ul& i, const ul& j) const;
+	bool isEdgesParallel(const ul& i, const ul& j) const {
+		return isLinesParallel(get_segment(i).supporting_line(),get_segment(j).supporting_line());
 	}
 
-	Edge confineRayToBBox(const Ray& ray) const;
-
-	void addPolyToOBJ(const Config& cfg) const;
-	void printInput() const;
 
 	/* verify if the input polygon is monotone, if required we rotate
 	 * the vertices such that x-monotonicity holds for P */
@@ -134,47 +99,46 @@ public:
 		return pointOnMonotonicityLine(a) == pointOnMonotonicityLine(b);
 	}
 
-	const BasicInput& getBasicInput() const {return basicInput;}
-
-	void setGui(const bool _gui) { gui = _gui; }
-
-	BBox 			bbox;
 	Line			monotonicityLine;
 	Direction		perpMonotonDir;
-	bool 			gui;
 	bool			isMonotone = false;
 
-	// gui debug
-	std::vector<Edge> lines;
-	void visualizeBisector(Edge edge) {
-		if(gui) {
-			if(!lines.empty()) {lines.pop_back();}
-			lines.push_back(edge);
+	BBox			*bbox;
+
+
+	std::vector<Segment> lines;
+//	void visualizeBisector(Segment edge) {
+//		if(gui) {
+//			if(!lines.empty()) {lines.pop_back();}
+//			lines.push_back(edge);
+//		}
+//	}
+
+	EdgeIterator findEdgeWithVertex(const Vertex& v) const {
+		for(auto eit = getPolygon().begin(); eit != getPolygon().end(); ++eit) {
+			if(eit->u == v.id) {
+				return eit;
+			}
 		}
+		return getPolygon().end();
 	}
 
 
-private:
-	bool loadFile(const std::string& fileName);
+	EdgeIterator cNext(EdgeIterator it) {return (std::next(it) == getPolygon().end()) ? getPolygon().begin(): std::next(it);}
+	EdgeIterator cPrev(EdgeIterator it) {return (it == getPolygon().begin()) ? std::prev(getPolygon().end()) : std::prev(it);}
 
-	bool parseOBJ(const std::vector<std::string>& lines);
-	bool parseGML(std::istream &istream);
-	bool parsePOLY(const std::vector<std::string>& lines);
+	/* write output & debug misc */
+	void addPolyToOBJ(const Config& cfg) const;
+	void printInput() const;
+
+private:
+	void assignBoundingBox();
 
 	Line getMonotonicityLineFromVector(const Vector a, const Vector b) const;
 	bool testMonotonicityLineOnPolygon(const Line line) const;
 
-	/** Input: vertices as 2D coordinates, polygon as edge "list"
-	 *  with index to the inputVertices
-	 **/
-	InputPoints		inputVertices;
-	Polygon 		polygon;
-	/* for every edge in polygon we store a strictly positive edge weight */
-	InputWeights	edgeWeights;
-
-
-	GMLGraph		gml;
-	BasicInput		basicInput;
+	const bool 			gui;
+	const BasicInput& 	input;
 };
 
 #endif /* DATA_H_ */

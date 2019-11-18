@@ -45,14 +45,9 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
 	void on_actionResize_triggered();
     void on_actionToggleFullscreen_triggered();
 
-    void on_actionResetAll_triggered();
-
     void on_actionEventStep_triggered();
     void on_actionTimeForwardAfterChains_triggered();
     void on_actionFinishComputation_triggered();
-
-    void on_actionDefineWeight_triggered();
-    void on_actionDefineWeightDialogClosed();
 
     void dragEnterEvent(QDragEnterEvent *e);
     void dropEvent(QDropEvent *e);
@@ -65,8 +60,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     NT drawing_time_offset_increment;
 
     Monos& monos;
-
-    WeightDialog* weightDialog;
 
     std::shared_ptr<InputGraphicsItem> input_gi;
     std::shared_ptr<ArcGraphicsItem>   skeleton_gi;

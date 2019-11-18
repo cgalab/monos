@@ -9,12 +9,12 @@
 int main(int argc, char *argv[]) {
 	setupEasylogging(argc, argv);
 
-	Args argPair({argc,argv});
+	Config config(argc, argv);
 
-	/* start */
-	Monos monos(argPair);
-
-	monos.run();
+	if(config.isValid()) {
+		Monos monos(config);
+		monos.run();
+	}
 
 	return 0;
 }

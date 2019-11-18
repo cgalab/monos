@@ -5,7 +5,7 @@
 
 #include <QPen>
 
-#include "gml/BasicInput.h"
+#include "BasicInput.h"
 #include "cgTypes.h"
 
 class InputGraphicsItem :
@@ -16,9 +16,6 @@ class InputGraphicsItem :
 
   private:
     const BasicInput * const input;
-    const Polygon * const polygon;
-    const InputWeights * const weights;
-    const InputPoints * const points;
     CGAL::Qt::PainterOstream<K> painterostream;
     QPen vertices_pen;
     QPen segments_pen;
@@ -31,7 +28,7 @@ class InputGraphicsItem :
     void updateBoundingBox();
 
   public:
-    InputGraphicsItem(const BasicInput * const input, const Polygon * const polygon, const InputWeights * const weights, const InputPoints * const points);
+    InputGraphicsItem(const BasicInput * const input);
 
     QRectF boundingRect() const { return bounding_rect; };
 

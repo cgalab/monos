@@ -17,106 +17,69 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <exception>
 
 #include "Monos.h"
 #include "Data.h"
+#include "BGLGraph.h"
+#include "BasicInput.h"
 
-
-Monos::Monos(Args args, bool gui):
-config(args,gui) {
-	/* evaluate arguments */
-	if(!config.isValid() && !gui) {return;}
-
-	constructorInit(gui);
-}
+Monos::Monos(const Config& cfg):config(cfg) {}
 
 Monos::~Monos() {
-	destruct();
-}
-
-void Monos::constructorInit(bool gui) {
-	data = new Data(gui);
-
-	/* load data: input and bbox */
-	data->initialize(config);
-	if(config.verbose) {
-		LOG(INFO) << "input loaded";
-	}
-
-	if(config.verbose) {
-		data->printInput();
-		LOG(INFO) << "print input done";
-	}
-
-	wf = new Wavefront(*data);
-	s  = new Skeleton(*data,*wf);
-
-	/* initialize wavefront and skeleton */
-	wf->InitializeEventsAndPathsPerEdge();
-	wf->InitializeNodes();
-}
-
-void Monos::reinitialize(const std::string& fileName, bool gui) {
-	if(fileExists(fileName)) {
-		if(config.verbose) {
-			LOG(INFO) << "File " << fileName << " exists, reloading!";
-		}
-		destruct();
-
-		config.setNewInputfile(fileName);
-		constructorInit(gui);
-	}
-}
-
-void Monos::destruct() {
 	delete data;
 	delete wf;
 	delete s;
 }
 
+
+bool Monos::readInput() {
+	std::ifstream in;
+	if(fileExists(config.fileName)) {
+		in.open(config.fileName);
+		BGLGraph gml = BGLGraph::create_from_graphml(in);
+		input = BasicInput();
+		input.add_graph(gml);
+		return true;
+	}
+	return false;
+}
+
+
 void Monos::run() {
 	clock_t begin, end;
-	if(config.timings) {
-		begin = clock();
-	}
 
-	if(!config.run_cgal_code) {
+	if(!readInput()) {return;}
 
-		/**************************************************************/
-		/*				MONOTONE SKELETON APPROACH 					  */
-		/**************************************************************/
+	/****************** TIMING START ******************************/
+	if(config.timings) {begin = clock();}
 
-		if(!init()) {return;}
+	/**************************************************************/
+	/*				MONOTONE SKELETON APPROACH 					  */
+	/**************************************************************/
 
-		if(!wf->ComputeSkeleton(true)) {return;}
-		if(config.verbose) {LOG(INFO) << "lower skeleton done";}
+	if(!init()) {return;}
 
-		if(!wf->ComputeSkeleton(false)) {return;}
-		if(config.verbose) {LOG(INFO) << "upper skeleton done";}
+//	if(!wf->ComputeSkeleton(true)) {return;}
+//	if(config.verbose) {LOG(INFO) << "lower skeleton done";}
+//
+//	if(!wf->ComputeSkeleton(false)) {return;}
+//	if(config.verbose) {LOG(INFO) << "upper skeleton done";}
+//
+//	/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
+//	 * their incidences. */
+//	wf->SortArcsOnNodes();
+//
+//	s->MergeUpperLowerSkeleton();
+//	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
 
-		/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
-		 * their incidences. */
-		wf->SortArcsOnNodes();
 
-		s->MergeUpperLowerSkeleton();
-		if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
-
-	} else {
-		/**************************************************************/
-		/*				CGAL included SKELETON APPROACH				  */
-		/**************************************************************/
-
-		s->runCGALCode();
-		s->computationFinished = true;
-
-	}
-
-	if(config.timings) {
-		end = clock();
-	}
+	/****************** TIMING END ********************************/
+	if(config.timings) {end = clock();}
 
 	write();
 
@@ -133,33 +96,30 @@ void Monos::run() {
 }
 
 void Monos::write() {
-	if(config.outputType != OutputType::NONE && s->computationFinished) {
-		s->writeOBJ(config);
+	if(s->computationFinished) {
+		//s->writeOBJ(config);
 		data->addPolyToOBJ(config);
 		if(config.verbose) {LOG(INFO) << "output written";}
 	}
 }
 
 
-void Monos::reset() {
-	wf->reset();
-	init();
-}
-
 bool Monos::init() {
-	if(!config.isValid()) {return false;}
+	data = new Data(input,config.gui);
 
-	/* verfify monotonicity -- if required, rotate to assure
-	 * that P is x-monotone */
+	/* verify monotonicity and compute monotonicity line */
 	if(!data->ensureMonotonicity()) {
 		if(config.verbose) {LOG(WARNING) << "polygon is not monotone!";}
-		exit(1);
 		return false;
 	}
 
-	/* compute BBox and min/max monotonicity vertices */
-	data->bbox = data->computeBoundingBox();
-
+	wf = new Wavefront(*data);
+	s  = new Skeleton(*data,*wf);
+	LOG(INFO) << "OK!"; fflush(stdout);
+	/* initialize wavefront and skeleton */
+	wf->InitializeEventsAndPathsPerEdge();
+	wf->InitializeNodes();
+	LOG(INFO) << "OK (2)!"; fflush(stdout);
 	/* debug */
 	if(config.verbose) {LOG(INFO) << "monotonicity line: " << data->monotonicityLine.to_vector();}
 

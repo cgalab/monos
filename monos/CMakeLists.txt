@@ -39,8 +39,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(monoslib
   src/cgTypes.cpp
-  src/gml/GMLGraph.cpp
-  src/gml/BasicInput.cpp
+  src/BGLGraph.cpp
+  src/BasicInput.cpp
   src/Config.cpp
   src/tools.cpp
   src/Data.cpp

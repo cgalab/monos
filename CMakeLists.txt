@@ -78,6 +78,6 @@ configure_file (
 )
 include_directories("${PROJECT_BINARY_DIR}")
 
-subdirs (monos gl gui cc)
+subdirs (monos gui cc)
 
 enable_testing()

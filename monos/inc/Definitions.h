@@ -24,14 +24,16 @@
 #include <vector>
 #include <assert.h>
 
+#include <limits>
+
 #include "../easyloggingpp/src/easylogging++.h"
 
 
 #define NIL    -1
-#define NOLIST -2
 #define ZSCALE 0.5
 #define OBJSCALE 10
 
+#define smallEPS 0.00000001
 
 /*
  * OBJ files index starting at one, we read the input
@@ -44,12 +46,14 @@
 
 #define INFPOINT Point(std::numeric_limits<double>::max(),std::numeric_limits<double>::max())
 
-enum class OutputType : uint {OBJ=0,NONE};
-enum class NodeType   : uint {TERMINAL=0,NORMAL,DISABLED};
-enum class ArcType    : uint {NORMAL=0,RAY,DISABLED};
-enum class BisType    : uint {RAY,LINE};
+using ul = unsigned long;
+using sl = signed long;
 
-using uint = uint;
-#define MAX std::numeric_limits<uint>::max()
+enum class NodeType   		: ul {TERMINAL=0,NORMAL,DISABLED};
+enum class ArcType    		: ul {NORMAL=0,RAY,DISABLED};
+enum class BisType    	   	: ul {RAY,LINE};
+enum class MonotoneType    	: ul {START=0,END};
+
+#define MAX std::numeric_limits<sl>::max()
 
 #endif

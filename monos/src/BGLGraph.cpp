@@ -1,14 +1,13 @@
 
-#include "GMLGraph.h"
+#include "BGLGraph.h"
 
-
-GMLGraph
-GMLGraph::
+BGLGraph
+BGLGraph::
 create_from_graphml(std::istream &istream) {
-  typedef GMLGraph::vertex_property_type VertexPropertyType;
-  typedef GMLGraph::edge_property_type   EdgePropertyType;
+  typedef BGLGraph::vertex_property_type VertexPropertyType;
+  typedef BGLGraph::edge_property_type   EdgePropertyType;
 
-  GMLGraph graph;
+  BGLGraph graph;
   graph.dp.property("vertex-coordinate-x", boost::get(&VertexPropertyType::x, graph));
   graph.dp.property("vertex-coordinate-y", boost::get(&VertexPropertyType::y, graph));
   graph.dp.property("edge-weight",          boost::get(&EdgePropertyType::weight, graph));
@@ -20,8 +19,8 @@ create_from_graphml(std::istream &istream) {
 
 
 std::ostream&
-operator<<(std::ostream& os, const GMLGraph& g) {
-  typedef GMLGraph::vertex_descriptor VertexType;
+operator<<(std::ostream& os, const BGLGraph& g) {
+  typedef BGLGraph::vertex_descriptor VertexType;
   auto index_map = boost::get(boost::vertex_index, g);
 
   os << "vertices(g):" << std::endl;

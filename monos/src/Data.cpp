@@ -26,60 +26,38 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 	return os;
 }
 
-void Data::initialize(const Config& cfg) {
-	/* load input vertices/polygon and weights */
-	if(cfg.isValid()) {
-		if(cfg.use_stdin) {
-			if(!parseGML(std::cin)) {exit(1);}
-		} else if (!loadFile(cfg.fileName)) {
-			exit(1);
-		}
-	}
-}
-
-Edge Data::getEdge(const uint& idx) const {
-	assert(idx < (uint)polygon.size());
-	return Edge( eA(idx), eB(idx) );
-}
-
-Edge Data::getEdge(const EdgeIterator& it) const {
-	return getEdge(it - polygon.begin());
-}
-
-bool Data::isEdgeCollinear(const Edge& eA, const Edge& eB) const {
+bool Data::isEdgeCollinear(const Segment& eA, const Segment& eB) const {
 	return CGAL::parallel(eA,eB) && CGAL::collinear(eA.point(0),eA.point(1),eB.point(0));
 }
 
-bool Data::isEdgeCollinear(const uint& i, const uint& j) const {
-	auto eA = getEdge(i);
-	auto eB = getEdge(j);
-	return isEdgeCollinear(eA,eB);
+bool Data::isEdgeCollinear(const ul& i, const ul& j) const {
+	return isEdgeCollinear(get_segment(i),get_segment(j));
 }
 
-bool Data::isEdgeCollinearAndCommonInteriorDirection(const uint& i, const uint& j) const {
+bool Data::isEdgeCollinearAndCommonInteriorDirection(const ul& i, const ul& j) const {
 	if(isEdgeCollinear(i,j)) {
-		auto lI = getEdge(i).supporting_line();
-		auto lJ = getEdge(j).supporting_line();
+		auto lI = get_segment(i).supporting_line();
+		auto lJ = get_segment(j).supporting_line();
 		auto nEI = lI.perpendicular(lI.point(0)).direction();
 		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
 		return nEI == nEJ;
 	}
 	return false;
 }
-bool Data::isEdgeCollinearAndInteriorRight(const uint& i, const uint& j) const {
+bool Data::isEdgeCollinearAndInteriorRight(const ul& i, const ul& j) const {
 	if(isEdgeCollinear(i,j)) {
-		auto lI = getEdge(i).supporting_line();
-		auto lJ = getEdge(j).supporting_line();
+		auto lI = get_segment(i).supporting_line();
+		auto lJ = get_segment(j).supporting_line();
 		auto nEI = lI.perpendicular(lI.point(0)).direction();
 		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
 		return nEI == nEJ && nEJ == monotonicityLine.direction();
 	}
 	return false;
 }
-bool Data::isEdgeCollinearAndInteriorLeft(const uint& i, const uint& j) const {
+bool Data::isEdgeCollinearAndInteriorLeft(const ul& i, const ul& j) const {
 	if(isEdgeCollinear(i,j)) {
-		auto lI = getEdge(i).supporting_line();
-		auto lJ = getEdge(j).supporting_line();
+		auto lI = get_segment(i).supporting_line();
+		auto lJ = get_segment(j).supporting_line();
 		auto nEI = lI.perpendicular(lI.point(0)).direction();
 		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
 		return nEI == nEJ && nEJ == monotonicityLine.opposite().direction();
@@ -87,175 +65,19 @@ bool Data::isEdgeCollinearAndInteriorLeft(const uint& i, const uint& j) const {
 	return false;
 }
 
-bool Data::loadFile(const std::string& fileName) {
-	std::ifstream in;
-	if(fileExists(fileName)) {
-		in.open(fileName);
-		std::string extension = (fileName.find(".")  != std::string::npos) ? fileName.substr(fileName.find_last_of(".")+1) : "";
-		transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
-		if( extension == "gml" || extension == "graphml" ) {
-			LOG(INFO) << "parsing gml" << std::endl;
-			if(!parseGML(in)) {return false;}
-		} else {
-			std::vector<std::string> lines;
-			for(std::string line; getline(in, line);) {
-				lines.push_back(line);
-			}
-
-			if(extension == "obj") {
-				/* wavefront obj format - https://en.wikipedia.org/wiki/Wavefront_.obj_file */
-				if(!parseOBJ(lines)) {return false;}
-			} else if(extension == "poly") {
-				/* triangle's poly file format - https://www.cs.cmu.edu/~quake/triangle.poly.html */
-				if(!parsePOLY(lines)) {return false;}
-			}
-		}
-		return true;
-	}
-
-	return false;
-}
-
-
-bool Data::parseOBJ(const std::vector<std::string>& lines) {
-	std::vector<std::vector<uint>> faces;
-
-	InputPoints 	points;
-	Polygon			poly;
-	InputWeights 	weights;
-
-	for(auto l : lines) {
-		std::istringstream buf(l);
-		std::istream_iterator<std::string> beg(buf), end;
-		std::vector<std::string> tokens(beg, end);
-
-		auto isVertex  = false;
-		auto isFacet   = false;
-
-		bool setX=true, setY=true, setZ=true;
-		double p_x=-INFINITY, p_y=-INFINITY, p_z=-INFINITY;
-
-		std::vector<uint> facetList;
-
-		for(auto& s : tokens) {
-			/* comments, and not supported or needed obj parameters */
-			if(s == "#" || s == "o" || s == "vt" || s == "vn" ||
-			   s == "g" || s == "usemtl" || s == "s" || s == "off" ||
-			   s == "mtllib" || s == "Ka" || s == "Kd" || s == "Ks" ||
-			   s == "d" || s == "newmtl" || s == "illum" || *s.begin() == 'm' ||
-			   *s.begin() == '-' || *s.begin() == 'b' || s == "l") {
-				break;
-			}
-
-			if(isVertex) {
-				if(setX) {
-					p_x = atof(s.c_str());
-					setX = false;
-				} else if(setY){
-					p_y = atof(s.c_str());
-					setY = false;
-				} else if(setZ) {
-					p_z = atof(s.c_str());
-					setZ = false;
-				}
-			} else if(isFacet) {
-				facetList.push_back(std::atoi(s.c_str()));
-			}
-
-			if(s == "v") {isVertex  = true;}
-			if(s == "f") {isFacet   = true;}
-		}
-
-		if(!setX && !setY) {
-			points.push_back(Point(p_x,p_y));
-		}
-
-		if(!facetList.empty()) {
-			faces.push_back(facetList);
-		}
-	}
-
-	if(!faces.empty()) {
-		auto face = faces[0];
-		for(uint i=0; i < face.size(); ++i) {
-			poly.push_back( {{face[i]+OBJOFFSET,face[(i+1)%face.size()]+OBJOFFSET }} );
-			/* input weights are realized via GraphML -- .gml files*/
-			weights.push_back(1.0);
-		}
-	} else {
-		LOG(WARNING) << "More than one face!";
-	}
-
-	/* initialize const input variables */
-	inputVertices 	= points;
-	polygon 		= poly;
-	edgeWeights 	= weights;
-
-	/* construct BasicInput for GUI */
-	if(gui)  {
-		basicInput.add_list(inputVertices,polygon);
-	}
-	return !inputVertices.empty() && !polygon.empty();
-}
-
-bool Data::parsePOLY(const std::vector<std::string>& lines) {
-	LOG(INFO) << "POLY: no yet supported!" << lines.size();
-	return false;
-}
-
-
-bool Data::parseGML(std::istream &istream) {
-	gml = GMLGraph::create_from_graphml(istream);
-	basicInput = BasicInput();
-	basicInput.add_graph(gml);
-
-	InputPoints 	points;
-
-	for(auto v : basicInput.vertices()) {
-		points.push_back(v.p);
-	}
-
-	/* iterate over edges to construct polygon */
-	auto edges = basicInput.edges();
-
-	Polygon			poly(edges.size());
-	InputWeights 	weights(edges.size());
-
-	for(uint i=0; i < edges.size(); ++i) {
-		auto edge = edges[i];
-		auto min = std::min(edge.u,edge.v);
-		auto max = std::max(edge.u,edge.v);
-		assert(min != max);
-
-		if(min != 0 || (min == 0 && max == 1) ) {
-			poly[min] = {{edge.u, edge.v}};
-			weights[min] = edge.weight;
-		} else {
-			poly[max] = {{edge.v, edge.u}};
-			weights[max] = edge.weight;
-		}
-	}
-
-	/* initialize const input variables */
-	inputVertices 	= points;
-	polygon 		= poly;
-	edgeWeights 	= weights;
-
-	return !inputVertices.empty() && !polygon.empty();
-}
 
 bool Data::ensureMonotonicity() {
-	assert(polygon.size() > 2);
+	assert(input.edges().size() > 2);
 
-	auto edgeIt = polygon.begin();
-	IndexEdge edgeA, edgeB;
+	auto edgeIt = input.edges().begin();
+	auto edgeB  = edgeIt;
+	auto edgeA  = edgeB;
+
 	Vector vA, vB, intervalA, intervalB;
 	Point corner;
 
-	edgeB  	= *edgeIt;
-	edgeA  	= edgeB;
-	vB 		= getEdge(edgeIt).to_vector();
+	vB 		= input.get_segment(*edgeIt).to_vector();
 
 	++edgeIt;
 
@@ -263,16 +85,16 @@ bool Data::ensureMonotonicity() {
 	intervalB = vA;
 
 	std::set<MonotoneVector,MonVectCmp> intervals;
-	uint idCnt = 0;
+	ul idCnt = 0;
 
 	/* iterate over polygon and obtaining the 'monotonicity angle'
 	 * if it exists. */
 	do {
 		edgeA = edgeB;
-		edgeB = *edgeIt;
+		edgeB = edgeIt;
 		vA = vB;
-		vB = getEdge(edgeIt).to_vector();
-		corner = v(edgeA[1]);
+		vB = input.get_segment(*edgeIt).to_vector();
+		corner = v(edgeA->v).p;
 		LOG(INFO) << ": " << vB;
 		/* ensure the vertex is reflex */
 		if(CGAL::right_turn(corner-vA,corner,corner+vB)) {
@@ -288,7 +110,7 @@ bool Data::ensureMonotonicity() {
 
 			idCnt+=2;
 		}
-	} while(++edgeIt != polygon.end());
+	} while(++edgeIt != input.edges().end());
 
 	if(intervals.empty()) {
 		/* polygon is convex, let us choose the x-axis */
@@ -396,9 +218,9 @@ bool Data::ensureMonotonicity() {
 
 /* test if given line is a line where the input polygon is monotone to */
 bool Data::testMonotonicityLineOnPolygon(const Line line) const {
-	uint startIdx = 0;
+	ul startIdx = 0;
 	Point pStart  = eA(startIdx);
-	for(uint i = startIdx+1; i < polygon.size(); ++i) {
+	for(ul i = startIdx+1; i < input.edges().size(); ++i) {
 		auto p = eA(i);
 		if(monotoneSmaller(line,p,pStart)) {
 			startIdx = i; pStart = p;
@@ -421,7 +243,7 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 			monotone = false;
 		}
 
-		if(++idxIt >= polygon.size()) {idxIt = 0;}
+		if(++idxIt >= input.edges().size()) {idxIt = 0;}
 	} while(monotone && idxIt != startIdx);
 
 	return monotone;
@@ -467,64 +289,46 @@ bool Data::rayPointsLeft(const Ray& ray) const {
 	return monotoneSmaller(Pb,Pa);
 }
 
-BBox Data::computeBoundingBox() const {
-	auto box = BBox(0,0,0,0,v(0).x(),v(0).x(),v(0).y(),v(0).y(),0,0,v(0),v(0));
-	for(uint i=0; i < inputVertices.size(); ++i) {
-		if(i!= box.xMinIdx && v(i).x() < v(box.xMinIdx).x()) {box.xMinIdx = i;}
-		if(i!= box.xMaxIdx && v(i).x() > v(box.xMaxIdx).x()) {box.xMaxIdx = i;}
-		if(i!= box.yMinIdx && v(i).y() < v(box.yMinIdx).y()) {box.yMinIdx = i;}
-		if(i!= box.yMaxIdx && v(i).y() > v(box.yMaxIdx).y()) {box.yMaxIdx = i;}
+void Data::assignBoundingBox() {
+	auto xMin   = getVertices().begin();
+	auto xMax   = getVertices().begin();
+	auto yMin   = getVertices().begin();
+	auto yMax   = getVertices().begin();
+	auto monMin = getVertices().begin();
+	auto monMax = getVertices().begin();
 
-		if(i != box.monotoneMinIdx && monotoneSmaller(v(i),v(box.monotoneMinIdx))) {
-			box.monotoneMinIdx = i;
-		}
-		if(i != box.monotoneMaxIdx && monotoneSmaller(v(box.monotoneMaxIdx),v(i))) {
-			box.monotoneMaxIdx = i;
-		}
+	for(auto v = getVertices().begin(); v != getVertices().end(); ++v ) {
+		if(v->id != xMin->id && v->p.x() < xMin->p.x()) {xMin = v;}
+		if(v->id != xMax->id && v->p.x() > xMax->p.x()) {xMax = v;}
+		if(v->id != yMin->id && v->p.y() < yMin->p.y()) {yMin = v;}
+		if(v->id != yMax->id && v->p.y() > yMax->p.y()) {yMax = v;}
+
+		if(v->id != monMin->id && monotoneSmaller(v->p,monMin->p)) {monMin = v;}
+		if(v->id != monMax->id && monotoneSmaller(monMax->p,v->p)) {monMax = v;}
 	}
 
-	box.xMin = v(box.xMinIdx).x();
-	box.xMax = v(box.xMaxIdx).x();
-	box.yMin = v(box.yMinIdx).y();
-	box.yMax = v(box.yMaxIdx).y();
-
-	box.top    = Edge(Point(box.xMax,box.yMax),Point(box.xMin,box.yMax));
-	box.bottom = Edge(Point(box.xMin,box.yMin),Point(box.xMax,box.yMin));
-	box.left   = Edge(Point(box.xMin,box.yMax),Point(box.xMin,box.yMin));
-	box.right  = Edge(Point(box.xMax,box.yMin),Point(box.xMax,box.yMax));
-
-	box.monotoneMin = v(box.monotoneMinIdx);
-	box.monotoneMax = v(box.monotoneMaxIdx);
-
-	LOG(INFO) << box;
-
-	return box;
+	bbox = new BBox {
+			{xMin->p, xMin->id},
+			{xMax->p, xMax->id},
+			{yMin->p, yMin->id},
+			{yMax->p, yMax->id},
+			{monMin->p, monMin->id},
+			{monMax->p, monMax->id}
+	};
 }
-
-Edge Data::confineRayToBBox(const Ray& ray) const {
-	Point iA(ray.source()), iB(INFPOINT);
-
-	for(auto e : {bbox.top, bbox.bottom, bbox.left, bbox.right}) {
-		auto intersection = intersectElements<Ray,Edge>(ray,e);
-		if( intersection != INFPOINT && intersection != iA) {
-			iB = intersection;
-		}
-	}
-	return Edge(iA,iB);
-}
-
 
 
 void Data::printInput() const {
 	std::stringstream ss;
 	ss << "Input Vertices: " << std::endl;
-	for(auto point : inputVertices) {
-		ss << "(" << point.x() << "," << point.y() << ") ";
+	for(auto v : input.vertices()) {
+		ss << "(" << v.p.x() << "," << v.p.y() << ") ";
 	}
 	ss << std::endl << "Input Polygon: " << std::endl;
-	uint cnt = 0;
-	for(auto edge : polygon) {
-		ss << "(" << edge[0] << "," << edge[1] << ")N[" << getEdge(cnt++).to_vector() << "] ";
+	ul cnt = 0;
+	for(auto edge : input.edges()) {
+		auto seg = input.get_segment(edge);
+		ss << "[" << edge.id <<  "](" << seg.source() << " -> " << seg.target() << ") | ";
 	}
 	LOG(INFO) << ss.str();
 }
@@ -548,18 +352,16 @@ bool Data::isAbove(const Point& a, const Point &b) const {
  * the file
  * */
 void Data::addPolyToOBJ(const Config& cfg) const {
-	if(cfg.outputType == OutputType::OBJ) {
-		double xt, yt, zt, xm, ym, zm;
-		getNormalizer(bbox,xt,xm,yt,ym,zt,zm);
+	double xt, yt, zt, xm, ym, zm;
+	getNormalizer(*bbox,xt,xm,yt,ym,zt,zm);
 
-		std::ofstream outfile (cfg.outputFileName,std::ofstream::binary | std::ofstream::app);
+	std::ofstream outfile (cfg.outputFileName,std::ofstream::binary | std::ofstream::app);
 
-		outfile << "f";
-		for(auto e : polygon) {
-			outfile << " " << e[0]+1;
-		}
-
-		outfile << std::endl;
-		outfile.close();
+	outfile << "f";
+	for(auto e : getPolygon()) {
+		outfile << " " << e.u+1;
 	}
+
+	outfile << std::endl;
+	outfile.close();
 }

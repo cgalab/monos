@@ -37,15 +37,6 @@
 #include <CGAL/intersections.h>
 #include <CGAL/squared_distance_2.h>
 
-/*			for testing and timing 			*/
-#include <CGAL/Polygon_2.h>
-#include <CGAL/create_straight_skeleton_2.h>
-#include <boost/shared_ptr.hpp>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-using Kie 			 	= CGAL::Exact_predicates_inexact_constructions_kernel;
-/*			end for testing and timing 		*/
-
-
 using K 			 	= CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
 
 using Vector         	= K::Vector_2;
@@ -54,98 +45,103 @@ using Line           	= K::Line_2;
 using Ray            	= K::Ray_2;
 using Circle         	= K::Circle_2;
 using Direction      	= K::Direction_2;
-using Edge       	 	= K::Segment_2;
+using Segment      	 	= K::Segment_2;
 using Intersect		 	= K::Intersect_2;
 using Transformation 	= CGAL::Aff_transformation_2<K>;
-using Exact          	= K::FT;
+using NT 	         	= K::FT;
 
-using InputPoints   	= std::vector<Point>;
-using InputWeights  	= std::vector<Exact>;
-using IndexEdge 		= std::array<uint,2>;
-using Polygon   		= std::vector<IndexEdge>;
-using Chain 			= std::list<uint>;
+using Chain 			= std::list<ul>;
 using ChainRef			= Chain::iterator;
-using PartialSkeleton 	= std::list<uint>;
+using PartialSkeleton 	= std::list<ul>;
+
 using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
-
-
-/*			for testing and timing 			*/
-using CGALPoint 		= Kie::Point_2;
-using CGALPoly  		= CGAL::Polygon_2<Kie>;
-using CGALSS    		= CGAL::Straight_skeleton_2<Kie>;
-using CGALSSPtr			= boost::shared_ptr<CGALSS>;
-using K_to_IK 			= CGAL::Cartesian_converter<K,Kie>;
-
-template<class K>
-void print_point ( CGAL::Point_2<K> const& p, std::stringstream& stsr)
-{
-  stsr << "v " << p.x() << " " << p.y() << std::endl;
-}
-
-template<class K>
-void write_straight_skeleton( CGAL::Straight_skeleton_2<K> const& ss, std::stringstream& stsr)
-{
-  typedef CGAL::Straight_skeleton_2<K> Ss ;
-
-  typedef typename Ss::Vertex_const_handle     Vertex_const_handle ;
-  typedef typename Ss::Halfedge_const_handle   Halfedge_const_handle ;
-  typedef typename Ss::Halfedge_const_iterator Halfedge_const_iterator ;
-
-  Halfedge_const_handle null_halfedge ;
-  Vertex_const_handle   null_vertex ;
-
-//  std::cout << "Straight skeleton with " << ss.size_of_vertices()
-//            << " vertices, " << ss.size_of_halfedges()
-//            << " halfedges and " << ss.size_of_faces()
-//            << " faces" << std::endl ;
-
-  std::vector<CGAL::Point_2<K>> points;
-
-  for ( Halfedge_const_iterator i = ss.halfedges_begin(); i != ss.halfedges_end(); ++i )
-  {
-	  points.push_back(i->opposite()->vertex()->point());
-	  points.push_back(i->vertex()->point());
-//    print_point(i->opposite()->vertex()->point()) ;
-//    std::cout << "->" ;
-//    print_point(i->vertex()->point());
-//    std::cout << " " << ( i->is_bisector() ? "bisector" : "contour" ) << std::endl;
-  }
-
-  for(unsigned long i = 0; i < points.size(); ++i) {
-	  print_point(points[i],stsr);
-//	  print_point(points[i+1],stsr);
-  }
-
-  for(unsigned long i = 0; i < points.size(); ++i) {
-	  stsr << "e " << i+1 << " " << i+2 << std::endl;
-  }
-
-}
-/*			end for testing and timing 		*/
-
-#include "gml/BasicInput.h"
-#include "gml/GMLGraph.h"
 
 static Point ORIGIN = Point(0,0);
 
+class Vertex {
+public:
+	const Point p;
+	const unsigned id;
+
+	Vertex(const Point& p, unsigned id)
+	: p(p)
+	, id(id)
+	{}
+	friend std::ostream& operator<< (std::ostream& os, const Vertex& vertex);
+};
+
+class Edge {
+public:
+	const unsigned u, v;
+	const unsigned id;
+	const NT weight;
+
+	Edge(unsigned u, unsigned v, unsigned id, const NT &weight=1.0)
+	: u(u)
+	, v(v)
+	, id(id)
+	, weight(weight) {}
+
+	inline bool has(const unsigned idx) const {return u == idx || v == idx;}
+
+	friend std::ostream& operator<< (std::ostream& os, const Edge& edge);
+};
+
+using VertexList = std::vector<Vertex>;
+using EdgeList = std::vector<Edge>;
+using VertexIdxPair = std::pair<unsigned,unsigned>;
+
+class BBox {
+public:
+	Vertex xMin, xMax, yMin, yMax;
+	Vertex monMin, monMax;
+};
+
+struct MonotoneVector {
+	MonotoneVector(Vector _v, MonotoneType _t, ul _i) :
+		vector(_v),type(_t),id(_i) {}
+	Vector vector;
+	MonotoneType type = {MonotoneType::START};
+	ul id = {0};
+	friend std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv);
+};
+
+struct MonVectCmp {
+	bool operator()(const MonotoneVector &first, const MonotoneVector &second) const {
+		Point A = ORIGIN + first.vector;
+		Point B = ORIGIN + second.vector;
+
+		return   CGAL::left_turn(A,ORIGIN,B) ||
+				(CGAL::collinear(A,ORIGIN,B) && A.x() < ORIGIN.x() && B.x() > ORIGIN.x()) ||
+				(CGAL::collinear(A,ORIGIN,B) && A.y() < ORIGIN.y() && B.y() > ORIGIN.y()) ||
+				(CGAL::collinear(A,ORIGIN,B) &&
+						( (A.x() < ORIGIN.x() && B.x() < ORIGIN.x()) ||
+						  (A.x() > ORIGIN.x() && B.x() > ORIGIN.x()) ||
+						  (A.y() < ORIGIN.y() && B.y() < ORIGIN.y()) ||
+						  (A.y() > ORIGIN.y() && B.y() > ORIGIN.y()) ) &&
+						first.type == MonotoneType::END);
+	}
+};
+
+
 class Bisector {
 public:
-	Bisector(Ray r,  uint idxA, uint idxB) :type(BisType::RAY), ray(r),  eIdxA(idxA), eIdxB(idxB)  {}
-	Bisector(Line l, uint idxA, uint idxB) :type(BisType::LINE),line(l), eIdxA(idxA), eIdxB(idxB) {}
+	Bisector(Ray r,  ul idxA, ul idxB) :type(BisType::RAY), ray(r),  eIdxA(idxA), eIdxB(idxB)  {}
+	Bisector(Line l, ul idxA, ul idxB) :type(BisType::LINE),line(l), eIdxA(idxA), eIdxB(idxB) {}
 
 	BisType type;
 	Ray     ray;
 	Line    line;
 
 
-	uint eIdxA, eIdxB;
+	ul eIdxA, eIdxB;
 
 	bool isRay()  const { return type == BisType::RAY; }
 	bool isLine() const { return type == BisType::LINE;}
 
 	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
 	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
-	Point point(uint i = 0) const { return supporting_line().point(i); }
+	Point point(ul i = 0) const { return supporting_line().point(i); }
 	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
 
 	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
@@ -189,38 +185,11 @@ private:
 };
 
 
-/** stores the indices of the three input points that define max/min x/y*/
-struct BBox {
-	BBox(uint _xMinIdx = MAX, uint _xMaxIdx = MAX, uint _yMinIdx = MAX, uint _yMaxIdx = MAX,
-  		 Exact _xMin = 0, Exact _xMax = 0, Exact _yMin = 0, Exact _yMax = 0,
-		 uint _monMinIdx = 0, uint _monMaxIdx = 0, Point monMin=INFPOINT, Point monMax=INFPOINT):
-		 xMinIdx(_xMinIdx),xMaxIdx(_xMaxIdx), yMinIdx(_yMinIdx), yMaxIdx(_yMaxIdx),
-		 xMin(_xMin),xMax(_xMax),yMin(_yMin),yMax(_yMax),
-		 monotoneMinIdx(_monMinIdx),monotoneMaxIdx(_monMaxIdx),
-		 monotoneMin(monMin), monotoneMax(monMax) {}
-
-	uint xMinIdx, xMaxIdx, yMinIdx, yMaxIdx;
-	Exact xMin, xMax, yMin, yMax;
-
-	Edge top, bottom, left, right;
-
-	uint  monotoneMinIdx, monotoneMaxIdx;
-	Point monotoneMin,    monotoneMax;
-
-	bool outside(const Point& p) const {return p.x() < xMin || xMax < p.x() ||
-			       	   	   	   	  p.y() < yMin || yMax < p.y();  }
-	bool onBoundary(const Point& p) const {return inside(p) && (p.x() == xMin || xMax == p.x() ||
-			       	   	   	   	  p.y() == yMin || yMax == p.y());  }
-	bool inside(const Point& p) const {return !outside(p);}
-
-	friend std::ostream& operator<< (std::ostream& os, const BBox& box);
-};
-
 class Event {
-	using EventEdges = std::array<uint, 3>;
+	using EventEdges = std::array<ul, 3>;
 
 public:
-	Event(Exact time = 0, Point point = INFPOINT, uint edgeA = 0, uint edgeB = 0, uint edgeC = 0, ChainRef ref = ChainRef()):
+	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
 		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {
 			leftEdge  = edges[0];
 			mainEdge  = edges[1];
@@ -230,11 +199,11 @@ public:
 
 	bool isEvent()   const { return eventPoint != INFPOINT;}
 
-	Exact         	eventTime;
+	NT	         	eventTime;
 	Point  			eventPoint;
 
 	EventEdges		edges;
-	uint 			mainEdge, leftEdge, rightEdge;
+	ul 				mainEdge, leftEdge, rightEdge;
 
 	ChainRef 		chainEdge;
 
@@ -252,9 +221,9 @@ public:
 };
 
 typedef struct _TimeEdge {
-	_TimeEdge(Exact t, uint e):time(t),edgeIdx(e) {}
-	Exact time;
-	uint  edgeIdx;
+	_TimeEdge(NT t, ul e):time(t),edgeIdx(e) {}
+	NT  time;
+	ul  edgeIdx;
 } TimeEdge;
 
 struct TimeEdgeCmp {
@@ -265,13 +234,13 @@ struct TimeEdgeCmp {
 
 class Arc {
 public:
-	Arc(ArcType t, uint firstNode, uint leftEdge, uint rightEdge, Ray r, bool vertical, bool horizontal):
+	Arc(ArcType t, ul firstNode, ul leftEdge, ul rightEdge, unsigned id, Ray r, bool vertical, bool horizontal):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(MAX),
-		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
-		edge(Edge()),ray(r),vertical(vertical),horizontal(horizontal) {}
-	Arc(ArcType t, uint firstNode, uint secondNode, uint leftEdge, uint rightEdge, Edge e, bool vertical, bool horizontal):
+		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id),
+		edge(Segment()),ray(r),vertical(vertical),horizontal(horizontal) {}
+	Arc(ArcType t, ul firstNode, ul secondNode, ul leftEdge, ul rightEdge, unsigned id, Segment e, bool vertical, bool horizontal):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(secondNode),
-		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge),
+		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id),
 		edge(e),ray(Ray()),vertical(vertical),horizontal(horizontal) {}
 
 	void disable() {type = ArcType::DISABLED;}
@@ -313,7 +282,7 @@ public:
 		return false;
 	}
 
-	uint getCommonNodeIdx(const Arc& arc) {
+	ul getCommonNodeIdx(const Arc& arc) {
 		if(firstNodeIdx == arc.firstNodeIdx || firstNodeIdx == arc.secondNodeIdx) {
 			return firstNodeIdx;
 		}
@@ -337,9 +306,9 @@ public:
 	bool is_vertical() const { return vertical;}
 	bool is_horizontal() const { return horizontal;}
 
-	uint getSecondNodeIdx(const uint idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
+	ul getSecondNodeIdx(const ul idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
 
-	std::vector<uint> getNodeIndices() {
+	std::vector<ul> getNodeIndices() {
 		if(isEdge()) {
 			return {firstNodeIdx,secondNodeIdx};
 		} else {
@@ -360,10 +329,11 @@ public:
 	}
 
 	ArcType type;
-	uint firstNodeIdx, secondNodeIdx;
-	uint leftEdgeIdx,  rightEdgeIdx;
+	ul firstNodeIdx, secondNodeIdx;
+	ul leftEdgeIdx,  rightEdgeIdx;
+	unsigned id;
 
-	Edge edge;
+	Segment edge;
 	Ray  ray;
 
 	bool vertical, horizontal;
@@ -376,7 +346,7 @@ using ArcList		= std::vector<Arc>;
 struct ArcCmp {
 	ArcCmp(const ArcList& list):arcList(list) {}
 	const ArcList& arcList;
-	bool operator()(const uint &left, const uint &right) const {
+	bool operator()(const ul &left, const ul &right) const {
 		auto leftArc  = &(arcList)[left];
 		auto rightArc = &(arcList)[right];
 		return (   (leftArc->firstNodeIdx  == rightArc->firstNodeIdx  || leftArc->secondNodeIdx  == rightArc->secondNodeIdx) && leftArc->rightEdgeIdx == rightArc->leftEdgeIdx)
@@ -387,15 +357,16 @@ struct ArcCmp {
 
 
 struct Node {
-	Node(const NodeType t, const Point p, Exact time): type(t), point(p), time(time) {}
+	Node(const NodeType t, const Point p, NT time, unsigned id): type(t), point(p), time(time), id(id) {}
 
 	NodeType 		type;
 	Point			point;
-	Exact			time;
+	NT				time;
+	unsigned		id;
 	bool			ghost = false;
 
 	/* all incident arcs, i.e., the indices to them */
-	std::vector<uint> 	arcs;
+	std::vector<ul> 	arcs;
 
 	void disable() {type = NodeType::DISABLED;}
 	bool isDisabled() const { return type == NodeType::DISABLED;}
@@ -404,18 +375,18 @@ struct Node {
 	bool isGhostNode() const { return ghost; }
 	void setGhost(bool g) {ghost = g;}
 
-	uint degree() const {return arcs.size();}
+	ul degree() const {return arcs.size();}
 
 	void sort(const ArcList& arcList) {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));
 	}
 
-	bool hasArc(const uint arcIdx) {
+	bool hasArc(const ul arcIdx) {
 		auto idx = std::find(arcs.begin(),arcs.end(),arcIdx);
 		return idx != arcs.end();
 	}
 
-	bool removeArc(const uint arcIdx) {
+	bool removeArc(const ul arcIdx) {
 		auto idx = std::find(arcs.begin(),arcs.end(),arcIdx);
 		if(idx != arcs.end()) {
 			arcs.erase(idx);
@@ -427,12 +398,17 @@ struct Node {
 	friend std::ostream& operator<< (std::ostream& os, const Node& node);
 };
 
+class EndNodes {
+public:
+	sl a = NIL, b = NIL;
+};
+
 /* the inputPoints index equals the terminal node index,
  * as from every vertex emits an arc */
 using Nodes 		= std::vector<Node>;
-using PathFinder    = std::vector<IndexEdge>;
+using PathFinder    = std::vector<EndNodes>;
 
-Exact normalDistance(const Line& l, const Point& p);
+NT normalDistance(const Line& l, const Point& p);
 
 template<class T, class U>
 Point intersectElements(const T& a, const U& b);
@@ -451,7 +427,7 @@ Point intersectElements(const T& a, const U& b) {
 		if (result) {
 			if (const Point* p = boost::get<Point>(&*result)) {
 				return Point(*p);
-			} else if (const Edge* e = boost::get<Edge>(&*result)) {
+			} else if (const Segment* e = boost::get<Segment>(&*result)) {
 				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
 				return Point(e->point(0));
 			} else {
@@ -463,11 +439,11 @@ Point intersectElements(const T& a, const U& b) {
 	return intersectionPoint;
 }
 
-uint getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
+ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
 Point intersectArcArc(const Arc& arcA, const Arc& arcB);
 Point intersectRayArc(const Ray& ray, const Arc& arc);
-Point intersectBisectorEdge(const Bisector& bis, const Edge& edge);
+Point intersectBisectorEdge(const Bisector& bis, const Segment& edge);
 
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
@@ -475,6 +451,6 @@ bool isLinesParallel(const T& a, const U& b) {
 }
 
 bool do_intersect(const Bisector& ray, const Arc& arc);
-bool do_intersect(const Bisector& ray, const Edge& edge);
+bool do_intersect(const Bisector& ray, const Segment& edge);
 
 #endif /* CGALTYPES_H_ */

@@ -5,7 +5,7 @@
 
 #include <QPen>
 
-#include "gml/BasicInput.h"
+#include "BasicInput.h"
 #include "Wavefront.h"
 #include "cgTypes.h"
 
@@ -18,7 +18,7 @@ class ArcGraphicsItem :
   private:
     const Nodes * const nodes;
     const ArcList * const arcs;
-    const std::vector<Edge> * const lines;
+    const std::vector<Segment> * const lines;
     CGAL::Qt::PainterOstream<K> painterostream;
     QPen vertices_pen;
     QPen segments_pen;
@@ -36,7 +36,7 @@ class ArcGraphicsItem :
     void updateBoundingBox();
 
   public:
-    ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs, const std::vector<Edge> * lines);
+    ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs, const std::vector<Segment> * lines);
 
     QRectF boundingRect() const { return bounding_rect; };
     void setBoundingRect(const QRectF& br) {bounding_rect = br;}
