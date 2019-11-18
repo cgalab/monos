@@ -19,11 +19,23 @@ BasicInput::add_graph(const BGLGraph& graph) {
 		assert(index_map[v] == vertices_.size()-1);
 		if (degree == 1) num_of_deg1_vertices++;
 	}
+	std::vector<sl> map(vertices_.size(), NIL);
 	for (auto ep = boost::edges(graph); ep.first != ep.second; ++ep.first) {
 		const EdgeType e = *ep.first;
-		const NT weight((graph[e].weight == "") ? NT(1) : graph[e].weight);
-		add_edge(source(e, graph), target(e, graph), weight);
+		if(map[source(e, graph)] == NIL) {
+			map[source(e, graph)] = target(e, graph);
+		} else if(map[target(e, graph)] == NIL) {
+			map[target(e, graph)] = source(e, graph);
+		} else {
+			LOG(WARNING) << "An additional edge? " << source(e, graph) << " -> " << target(e, graph);
+		}
 	}
+
+	unsigned idx = 0;
+	do {
+		add_edge(idx,map[idx]);
+		idx = map[idx];
+	} while(idx != 0);
 
 	assert_valid();
 }
@@ -42,6 +54,9 @@ BasicInput::assert_valid() const {
 		d[e.u]++;
 		d[e.v]++;
 		auto findres = edge_map.find(VertexIdxPair(e.u,e.v));
+		if(findres == edge_map.end()) {
+			findres = edge_map.find(VertexIdxPair(e.v,e.u));
+		}
 		assert(findres != edge_map.end());
 		assert(findres->second == i);
 	}

@@ -31,10 +31,10 @@ public:
 		FILE *f = err ? stderr : stdout;
 
 		fprintf(f,"Usage: %s [options] <GRAPHML file>\n", progname);
-		fprintf(f,"  Options: --out \t| -o <filename> \t write output\n");
-		fprintf(f,"           --verbose \t| -v \t\t\t print processing information\n");
-		fprintf(f,"           --timings \t| -t \t\t\t print timings [ms]\n");
-		fprintf(f,"           --normalize \t| -n \t\t\t write output normalized to the origin\n");
+		fprintf(f,"  Options: --out \t| --o <filename> \t write output\n");
+		fprintf(f,"           --verbose \t| --v \t\t\t print processing information\n");
+		fprintf(f,"           --timings \t| --t \t\t\t print timings [ms]\n");
+		fprintf(f,"           --normalize \t| --n \t\t\t write output normalized to the origin\n");
 		fprintf(f,"\n");
 		fprintf(f,"Input format is .gml/.graphml (GraphML).\n");
 		fprintf(f,"Parsing input from cin assumes graphml format.");

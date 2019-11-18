@@ -81,7 +81,7 @@ public:
 //	void finishMerge();
 //
 //	void printSkeleton() const;
-//	void writeOBJ(const Config& cfg) const;
+	void writeOBJ(const Config& cfg) const;
 
 	bool computationFinished = false;
 

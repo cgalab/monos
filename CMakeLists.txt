@@ -2,6 +2,14 @@ cmake_minimum_required (VERSION 3.10)
 project ( monos )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+OPTION(WITH_GUI "Enable GUI requires QT" ON) # Disabled by default
+
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    # Support Unix Makefiles and Ninja
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
+
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_STANDARD 17)
 
@@ -78,6 +86,10 @@ configure_file (
 )
 include_directories("${PROJECT_BINARY_DIR}")
 
-subdirs (monos gui cc)
+IF( WITH_GUI )
+	subdirs (monos gui cc)
+ELSE()
+	subdirs (monos cc)
+ENDIF(WITH_GUI)
 
 enable_testing()
