@@ -103,7 +103,7 @@ void write_straight_skeleton( CGAL::Straight_skeleton_2<K> const& ss, std::strin
 
   for ( Halfedge_const_iterator i = ss.halfedges_begin(); i != ss.halfedges_end(); ++i )
   {
-//	  points.push_back(i->opposite()->vertex()->point());
+	  points.push_back(i->opposite()->vertex()->point());
 	  points.push_back(i->vertex()->point());
 //    print_point(i->opposite()->vertex()->point()) ;
 //    std::cout << "->" ;
