@@ -124,13 +124,12 @@ bool Monos::init() {
 	wf->InitializeNodes();
 
 	s  = new Skeleton(*data,*wf);
-	LOG(INFO) << "OK (2)!"; fflush(stdout);
 
 	/* debug */
 	if(config.verbose) {LOG(INFO) << "monotonicity line: " << data->monotonicityLine.to_vector();}
 
 	/** input must be monotone */
-//	wf->ChainDecomposition();
+	wf->ChainDecomposition();
 	if(config.verbose) {LOG(INFO) << "chain decomposition done";}
 
 	return true;

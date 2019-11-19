@@ -50,10 +50,7 @@ class Data {
 public:
 	Data(const BasicInput& input_, const bool gui_ = false):
 		gui(gui_),
-		input(input_) {
-
-		assignBoundingBox();
-	}
+		input(input_) {}
 
 	~Data() {delete bbox;}
 
@@ -67,8 +64,8 @@ public:
 	Segment get_segment(const ul& idx) const {return input.get_segment(e(idx));}
 	Segment get_segment(const EdgeIterator& it) const {return input.get_segment(e(it->id));}
 
-	const Point& eA(const ul& edgeIdx) const {return get_segment(edgeIdx).source();}
-	const Point& eB(const ul& edgeIdx) const {return get_segment(edgeIdx).target();}
+	const Point& eA(const ul& edgeIdx) const {return p(e(edgeIdx).u);}
+	const Point& eB(const ul& edgeIdx) const {return p(e(edgeIdx).v);}
 
 	NT normalDistance(const ul& edgeIdx, const Point& p) const {
 		Line l(get_segment(edgeIdx));
@@ -103,7 +100,7 @@ public:
 	Direction		perpMonotonDir;
 	bool			isMonotone = false;
 
-	BBox			*bbox;
+	BBox			*bbox = nullptr;
 
 
 	std::vector<Segment> lines;

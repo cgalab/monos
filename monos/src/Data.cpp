@@ -95,7 +95,6 @@ bool Data::ensureMonotonicity() {
 		vA = vB;
 		vB = input.get_segment(*edgeIt).to_vector();
 		corner = v(edgeA->v).p;
-		LOG(INFO) << ": " << vB;
 		/* ensure the vertex is reflex */
 		if(CGAL::right_turn(corner-vA,corner,corner+vB)) {
 			MonotoneVector a(vA,MonotoneType::START, idCnt);
@@ -213,6 +212,8 @@ bool Data::ensureMonotonicity() {
 		return false;
 	}
 
+	assignBoundingBox();
+
 	return true;
 }
 
@@ -222,7 +223,6 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 	Point pStart  = eA(startIdx);
 	for(ul i = startIdx+1; i < input.edges().size(); ++i) {
 		auto p = eA(i);
-		LOG(INFO) << "testing " << i << ", " << startIdx << " p "<< p << " pstart:" << pStart; fflush(stdout);
 		if(monotoneSmaller(line,p,pStart)) {
 			startIdx = i; pStart = p;
 		}
@@ -231,16 +231,15 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 	/* startIdx is 'leftmost' edge, start walking 'rightwards' until we violate the monotonicity */
 	bool monotone  = true, rightward = true;
 	auto dir = line.direction().perpendicular(CGAL::POSITIVE);
-	LOG(INFO) << "test dir: " << dir;
 	auto idxIt = startIdx;
 	do {
-		LOG(INFO) << "pa " << eA(idxIt) << ", pb " << eB(idxIt);
+//		LOG(INFO) << "pa " << eA(idxIt) << ", pb " << eB(idxIt);
 		auto testLine = Line(eA(idxIt),-dir);
 		if(rightward && testLine.has_on_negative_side(eB(idxIt))) {
-			LOG(INFO) << "end rightward";
+//			LOG(INFO) << "end rightward";
 			rightward = false;
 		} else if(!rightward && testLine.has_on_positive_side(eB(idxIt))) {
-			LOG(INFO) << "end monotone";
+//			LOG(INFO) << "end monotone";
 			monotone = false;
 		}
 
@@ -316,6 +315,8 @@ void Data::assignBoundingBox() {
 			{monMin->p, monMin->id},
 			{monMax->p, monMax->id}
 	};
+
+	LOG(INFO)<<"monmin: " << *monMin << ", monMax: "  << *monMax;
 }
 
 

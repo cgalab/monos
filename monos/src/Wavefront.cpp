@@ -646,23 +646,23 @@ void Wavefront::InitializeNodes() {
 
 void Wavefront::ChainDecomposition() {
 	Chain lc, uc;
-	LOG(INFO) << "OK (3)!"; fflush(stdout);
+
 	/* assuming CCW orientatino of polygon */
 	auto edgeItL = data.findEdgeWithVertex(data.bbox->monMin);
 	auto edgeItU = data.cPrev(edgeItL);
-	LOG(INFO) << "OK (4)!"; fflush(stdout);
+
 	lc.push_back(edgeItL->id);
 	do {
 		edgeItL = data.cNext(edgeItL);
 		lc.push_back(edgeItL->id);
 	} while(!edgeItL->has(data.bbox->monMax.id));
-	LOG(INFO) << "OK (5)!"; fflush(stdout);
+
 	uc.push_back(edgeItU->id);
 	do {
 		edgeItU = data.cPrev(edgeItU);
 		uc.push_back(edgeItU->id);
 	} while(!edgeItU->has(data.bbox->monMax.id));
-	LOG(INFO) << "OK (5)!"; fflush(stdout);
+
 	lowerChain = lc;
 	upperChain = uc;
 
