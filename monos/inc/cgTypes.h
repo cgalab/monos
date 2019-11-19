@@ -74,13 +74,11 @@ class Edge {
 public:
 	const unsigned u, v;
 	const unsigned id;
-	const NT weight;
 
-	Edge(unsigned u, unsigned v, unsigned id, const NT &weight=1.0)
+	Edge(unsigned u, unsigned v, unsigned id)
 	: u(u)
 	, v(v)
-	, id(id)
-	, weight(weight) {}
+	, id(id) {}
 
 	inline bool has(const unsigned idx) const {return u == idx || v == idx;}
 

@@ -78,8 +78,8 @@ bool Data::ensureMonotonicity() {
 	Point corner;
 
 	vB 		= input.get_segment(*edgeIt).to_vector();
-
 	++edgeIt;
+
 
 	intervalA = vA;
 	intervalB = vA;
@@ -222,6 +222,7 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 	Point pStart  = eA(startIdx);
 	for(ul i = startIdx+1; i < input.edges().size(); ++i) {
 		auto p = eA(i);
+		LOG(INFO) << "testing " << i << ", " << startIdx << " p "<< p << " pstart:" << pStart; fflush(stdout);
 		if(monotoneSmaller(line,p,pStart)) {
 			startIdx = i; pStart = p;
 		}

@@ -81,6 +81,10 @@ void Monos::run() {
 	/****************** TIMING END ********************************/
 	if(config.timings) {end = clock();}
 
+	for(auto v : input.vertices()) {
+		LOG(INFO)<<v;
+	}
+
 	write();
 
 	if(config.timings) {
@@ -97,7 +101,7 @@ void Monos::run() {
 
 void Monos::write() {
 	if(s->computationFinished) {
-		//s->writeOBJ(config);
+		s->writeOBJ(config);
 		data->addPolyToOBJ(config);
 		if(config.verbose) {LOG(INFO) << "output written";}
 	}
@@ -114,17 +118,19 @@ bool Monos::init() {
 	}
 
 	wf = new Wavefront(*data);
-	s  = new Skeleton(*data,*wf);
-	LOG(INFO) << "OK!"; fflush(stdout);
+
 	/* initialize wavefront and skeleton */
 	wf->InitializeEventsAndPathsPerEdge();
 	wf->InitializeNodes();
+
+	s  = new Skeleton(*data,*wf);
 	LOG(INFO) << "OK (2)!"; fflush(stdout);
+
 	/* debug */
 	if(config.verbose) {LOG(INFO) << "monotonicity line: " << data->monotonicityLine.to_vector();}
 
 	/** input must be monotone */
-	wf->ChainDecomposition();
+//	wf->ChainDecomposition();
 	if(config.verbose) {LOG(INFO) << "chain decomposition done";}
 
 	return true;

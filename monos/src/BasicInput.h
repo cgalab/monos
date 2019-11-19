@@ -17,21 +17,18 @@ private:
 	VertexList vertices_;
 	EdgeList edges_;
 	std::map<VertexIdxPair, unsigned> edge_map;
-	/* keep a list of instances of our number type for the different weights. */
-	std::set<NT> weight_set;
 
 	/** Add an input vertex to the vertexlist */
 	inline void add_vertex(Vertex&& p) {
 		vertices_.emplace_back(std::forward<Vertex>(p));
 	}
 	/** Add an input edge between vertices to the edgelist */
-	inline void add_edge(unsigned u, unsigned v, const NT& weight=1.0) {
+	inline void add_edge(unsigned u, unsigned v) {
 		assert(u < vertices_.size());
 		assert(v < vertices_.size());
 		assert(u!=v);
 
-		auto wsinsert_res = weight_set.insert(weight);
-		edges_.emplace_back(Edge(u,v,edges_.size(), *wsinsert_res.first));
+		edges_.emplace_back(Edge(u,v,edges_.size()));
 
 		sort_tuple(u,v);
 		auto res = edge_map.emplace(std::pair<VertexIdxPair,unsigned>(VertexIdxPair(u,v), edges().size()-1));
