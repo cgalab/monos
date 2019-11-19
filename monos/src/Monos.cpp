@@ -64,12 +64,12 @@ void Monos::run() {
 
 	if(!init()) {return;}
 
-//	if(!wf->ComputeSkeleton(true)) {return;}
-//	if(config.verbose) {LOG(INFO) << "lower skeleton done";}
+	if(!wf->ComputeSkeleton(ChainType::LOWER)) {return;}
+	if(config.verbose) {LOG(INFO) << "lower skeleton done";}
 //
-//	if(!wf->ComputeSkeleton(false)) {return;}
-//	if(config.verbose) {LOG(INFO) << "upper skeleton done";}
-//
+	if(!wf->ComputeSkeleton(ChainType::UPPER)) {return;}
+	if(config.verbose) {LOG(INFO) << "upper skeleton done";}
+
 //	/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
 //	 * their incidences. */
 //	wf->SortArcsOnNodes();
@@ -82,7 +82,7 @@ void Monos::run() {
 	if(config.timings) {end = clock();}
 
 	for(auto v : input.vertices()) {
-		LOG(INFO)<<v;
+		LOG(INFO) << v;
 	}
 
 	write();
@@ -100,7 +100,7 @@ void Monos::run() {
 }
 
 void Monos::write() {
-	if(s->computationFinished) {
+	if( s->computationFinished) {
 		s->writeOBJ(config);
 		data->addPolyToOBJ(config);
 		if(config.verbose) {LOG(INFO) << "output written";}
@@ -118,11 +118,6 @@ bool Monos::init() {
 	}
 
 	wf = new Wavefront(*data);
-
-	/* initialize wavefront and skeleton */
-	wf->InitializeEventsAndPathsPerEdge();
-	wf->InitializeNodes();
-
 	s  = new Skeleton(*data,*wf);
 
 	/* debug */
@@ -131,6 +126,10 @@ bool Monos::init() {
 	/** input must be monotone */
 	wf->ChainDecomposition();
 	if(config.verbose) {LOG(INFO) << "chain decomposition done";}
+
+	/* initialize wavefront and skeleton */
+	wf->InitializeNodes();
+	wf->InitializeEventsAndPathsPerEdge();
 
 	return true;
 }

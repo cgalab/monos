@@ -398,7 +398,10 @@ struct Node {
 
 class EndNodes {
 public:
-	sl a = NIL, b = NIL;
+	EndNodes(sl a_ = NIL, sl b_ = NIL):
+		a(a_),
+		b(b_) {}
+	sl a, b;
 };
 
 /* the inputPoints index equals the terminal node index,
@@ -429,7 +432,7 @@ Point intersectElements(const T& a, const U& b) {
 				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
 				return Point(e->point(0));
 			} else {
-				LOG(WARNING) << "# Intersection forms a segment/ray/line";
+				LOG(WARNING) << "# Intersection forms a something else?!? - returning INFPOINT";
 				return intersectionPoint;
 			}
 		}

@@ -51,18 +51,6 @@ public:
 	/**
 	 * enable stepping trough the computation
 	 * */
-	bool initSkeletonQueue(bool lower) {
-		return false;
-//		return wf->InitSkeletonQueue(lower);
-	}
-	bool computeSingleSkeletonEvent(bool lower) {
-		return false;
-//		return wf->ComputeSingleSkeletonEvent(lower);
-	}
-	bool finishSkeleton(bool lower) {
-		return false;
-		//return wf->FinishSkeleton(lower);
-	}
 
 	const Config&   config;
 

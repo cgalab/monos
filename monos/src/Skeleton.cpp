@@ -1192,52 +1192,52 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 		outfile << "v " << x << " " << y << " " << z << std::endl;
 	}
 
-//	/* write faces induced by the skeleton into file */
-//	for(ul edgeIdx = 0; edgeIdx < data.getPolygon().size(); ++edgeIdx) {
-//		auto e = data.e(edgeIdx);
-//		std::vector<Node*> tN = {{&wf.nodes[e.u],&wf.nodes[e.v]}};
-//
-//		/* we walk from the right (index 1) terminal node along the boudnary of the
-//		 * induced face to the first (index 0) terminal node */
-//		auto arcIdx = tN[1]->arcs.front();
-//		auto srcNodeIdx = e.u;
-//		auto arcIt = wf.getArc(arcIdx);
-//
-//		outfile << "f " << e.u+1 << " " << e.v+1;
-//
-//		do {
-//			auto nextNodeIdx = arcIt->getSecondNodeIdx(srcNodeIdx);
-//
-//			if(nextNodeIdx == INFINITY) {LOG(WARNING) << "infinite node in list!"; break;}
-//
-//			/* +1 is the standard OBJ offset for references */
-//			outfile << " " << nextNodeIdx+1;
-//
-//			auto n = &wf.nodes[nextNodeIdx];
-//			bool found = false;
-//			for(auto newArcIdx : n->arcs) {
-//				if(arcIdx != newArcIdx) {
-//					arcIt = wf.getArc(newArcIdx);
-//					if(arcIt->isDisable()) {continue;}
-//					if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
-//						found  = true;
-//						arcIdx = newArcIdx;
-//						break;
-//					}
-//				}
-//			}
-//
-//			if(!n->isTerminal() && !found) {
-//				LOG(WARNING) << "did not find a next arc! current node: " << nextNodeIdx << " " << *n;
-//				--errorCnt;
-//			}
-//
-//			srcNodeIdx = nextNodeIdx;
-//
-//		} while(arcIt->secondNodeIdx != e.u && arcIt->firstNodeIdx != e.u && errorCnt > 0);
-//
-//		outfile << std::endl;
-//	}
+	/* write faces induced by the skeleton into file */
+	for(ul edgeIdx = 0; edgeIdx < data.getPolygon().size(); ++edgeIdx) {
+		auto e = data.e(edgeIdx);
+		std::vector<Node*> tN = {{&wf.nodes[e.u],&wf.nodes[e.v]}};
+
+		/* we walk from the right (index 1) terminal node along the boudnary of the
+		 * induced face to the first (index 0) terminal node */
+		auto arcIdx = tN[1]->arcs.front();
+		auto srcNodeIdx = e.u;
+		auto arcIt = wf.getArc(arcIdx);
+
+		outfile << "f " << e.u+1 << " " << e.v+1;
+
+		do {
+			auto nextNodeIdx = arcIt->getSecondNodeIdx(srcNodeIdx);
+
+			if(nextNodeIdx == INFINITY) {LOG(WARNING) << "infinite node in list!"; break;}
+
+			/* +1 is the standard OBJ offset for references */
+			outfile << " " << nextNodeIdx+1;
+
+			auto n = &wf.nodes[nextNodeIdx];
+			bool found = false;
+			for(auto newArcIdx : n->arcs) {
+				if(arcIdx != newArcIdx) {
+					arcIt = wf.getArc(newArcIdx);
+					if(arcIt->isDisable()) {continue;}
+					if(arcIt->leftEdgeIdx == edgeIdx || arcIt->rightEdgeIdx == edgeIdx) {
+						found  = true;
+						arcIdx = newArcIdx;
+						break;
+					}
+				}
+			}
+
+			if(!n->isTerminal() && !found) {
+				LOG(WARNING) << "did not find a next arc! current node: " << nextNodeIdx << " " << *n;
+				--errorCnt;
+			}
+
+			srcNodeIdx = nextNodeIdx;
+
+		} while(arcIt->secondNodeIdx != e.u && arcIt->firstNodeIdx != e.u && errorCnt > 0);
+
+		outfile << std::endl;
+	}
 
 	outfile.close();
 }

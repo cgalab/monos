@@ -2,6 +2,7 @@
 #define WAVEFRONT_H_
 
 #include "cgTypes.h"
+#include "Definitions.h"
 #include "Data.h"
 
 
@@ -54,32 +55,35 @@ public:
 //		startUpperEdgeIdx(0),endUpperEdgeIdx(0),
 		data(dat) {}
 
-//	bool InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton);
-//	bool SingleDequeue(Chain& chain, PartialSkeleton& skeleton);
-//	bool FinishSkeleton(Chain& chain, PartialSkeleton& skeleton);
+	bool InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton);
+	bool SingleDequeue(Chain& chain, PartialSkeleton& skeleton);
+	bool FinishSkeleton(Chain& chain, PartialSkeleton& skeleton);
 //
 //	bool ComputeSingleSkeletonEvent(bool lower);
-//	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event);
-//	void HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList);
-//	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList);
+	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event);
+	void HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList);
+	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList);
 //
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
 
 	void ChainDecomposition();
-//	bool ComputeSkeleton(bool lower);
-//
-//	Event getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const;
-//	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
-//	void updateInsertEvent(const Event& event);
+	bool ComputeSkeleton(ChainType type);
+
+	Chain& getChain(ChainType type) {return (type == ChainType::UPPER) ? upperChain : lowerChain;}
+	PartialSkeleton& getSkeleton(ChainType type) {return (type == ChainType::UPPER) ? upperSkeleton : lowerSkeleton;}
+
+	Event getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const;
+	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
+	void updateInsertEvent(const Event& event);
 //
 //	Chain& getUpperChain() { return upperChain; }
 //	Chain& getLowerChain() { return lowerChain; }
 //
-//	Bisector constructBisector(const ul& aIdx, const ul& bIdx) const;
+	Bisector constructBisector(const ul& aIdx, const ul& bIdx) const;
 //	Bisector getBisectorWRTMonotonicityLine(const Bisector& bisector) const;
 //	Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
-//	void disableEdge(ul edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
+	void disableEdge(ul edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
 //
 //	/* call simplification from monos class */
 //	bool InitSkeletonQueue(bool lower) {
@@ -99,12 +103,12 @@ public:
 //	}
 //
 //	/* construct skeletal structure using nodes and arcs */
-//	ul addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray, const bool vertical, const bool horizontal);
-//	ul addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft, const ul& edgeRight, const bool vertical, const bool horizontal);
-//	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
+	ul addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray, const bool vertical, const bool horizontal);
+	ul addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft, const ul& edgeRight, const bool vertical, const bool horizontal);
+	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
 //
 	inline ul addNode(const Point& intersection, const NT& time, NodeType type = NodeType::NORMAL) {
-		nodes.push_back(Node(type,intersection,time, nodes.size()));
+		nodes.emplace_back(Node(type,intersection,time, nodes.size()));
 		return nodes.size() - 1;
 	}
 //
@@ -124,8 +128,8 @@ public:
 //	void SortArcsOnNodes();
 //	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 //
-//	Node* getNode(const ul& idx) {return &nodes[idx];}
-//	Arc* getArc(const ul& idx) {assert(idx < arcList.size()); return &arcList[idx];}
+	Node* getNode(const ul& idx) {return &nodes[idx];}
+	Arc* getArc(const ul& idx) {assert(idx < arcList.size()); return &arcList[idx];}
 //	Arc* getArc(const MonotonePathTraversal& path) {
 //		if(path.currentArcIdx == MAX) {
 //			return nullptr;
@@ -152,7 +156,7 @@ public:
 //	void updateArcNewNode(const ul idx, const ul nodeIdx);
 //
 //
-//	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
+	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 //	bool isEdgeOnLowerChain(const ul edgeIdx) const;
 //
 //	bool hasParallelBisector(const Event& event) const;
@@ -165,7 +169,7 @@ public:
 	PathFinder 			pathFinder;
 	PartialSkeleton		upperSkeleton, 	lowerSkeleton;
 
-	Chain  		upperChain, lowerChain;
+	Chain  				upperChain, lowerChain;
 
 	/* for the merge to keep track of the current state */
 	MonotonePathTraversal upperPath, lowerPath;
@@ -174,7 +178,6 @@ public:
 	void printChain(const Chain& chain) const;
 	void printEvents() const;
 
-private:
 	/* EVENT QUEUE --------------------------------------------------------------------
 	 * Events stored in events, times sorted in eventTimes, with associated edge idx
 	 * thus, we can modify the event queue with logarithmic update remove insert times.
@@ -185,6 +188,7 @@ private:
 	/* for a polygon edge at position idx in data.polygon we have a respective event
 	 * for that edge at position idx as well */
 
+private:
 	Data&    		data;
 };
 

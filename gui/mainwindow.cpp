@@ -31,6 +31,9 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 			xycoord, SLOT(setText(QString)));
 	this->view = ui->gV;
 
+	/* read input file */
+	monos.readInput();
+
 	/* general init. of monos */
 	monos.init();
 
@@ -121,13 +124,13 @@ void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 	if(!monos.config.isValid()) {return;}
 	if(!monos.data->isMonotone) {return;}
 
-	while(!lowerChainDone || !upperChainDone) {
+	while(!bothChainsDone) {
 		on_actionEventStep_triggered();
 		time_changed();
 	}
 
-	time_changed();
 	on_actionResize_triggered();
+	time_changed();
 }
 
 void MainWindow::on_actionFinishComputation_triggered() {
@@ -150,14 +153,24 @@ void MainWindow::on_actionEventStep_triggered() {
 	if(!monos.data->isMonotone) {return;}
 
 	if(firstStart) {
-		if (!monos.initSkeletonQueue(onLowerChain)) {
+		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+		auto& chain     = monos.wf->getChain(type);
+		auto& skeleton  = monos.wf->getSkeleton(type);
+
+		if (!monos.wf->InitSkeletonQueue(chain,skeleton)) {
 			LOG(WARNING) << "Error Init SkeletonQueue!";
 		}
 		firstStart = false;
 	}
 
 	if(!upperChainDone || !lowerChainDone) {
-		if(!monos.computeSingleSkeletonEvent(onLowerChain)) {
+		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+		auto& chain     = monos.wf->getChain(type);
+		auto& skeleton  = monos.wf->getSkeleton(type);
+
+		while(!monos.wf->eventTimes.empty() && !monos.wf->SingleDequeue(chain,skeleton));
+
+		if(monos.wf->eventTimes.empty()) {
 			if(onLowerChain) {
 				lowerChainDone = true;
 				LOG(INFO) << "Lower Chain Finished!";
@@ -167,13 +180,19 @@ void MainWindow::on_actionEventStep_triggered() {
 			}
 
 			if(lowerChainDone && !upperChainDone) {
-				monos.finishSkeleton(onLowerChain);
+				monos.wf->FinishSkeleton(chain,skeleton);
 				onLowerChain = false;
-				monos.initSkeletonQueue(onLowerChain);
+				type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+				chain     = monos.wf->getChain(type);
+				skeleton  = monos.wf->getSkeleton(type);
+				monos.wf->InitSkeletonQueue(chain,skeleton);
 			}
 		}
 	} else if(lowerChainDone && upperChainDone && !bothChainsDone) {
-		monos.finishSkeleton(onLowerChain);
+		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+		auto& chain     = monos.wf->getChain(type);
+		auto& skeleton  = monos.wf->getSkeleton(type);
+		monos.wf->FinishSkeleton(chain,skeleton);
 		bothChainsDone = true;
 //		monos.s->initMerge();
 	}
