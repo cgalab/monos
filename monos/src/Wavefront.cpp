@@ -31,7 +31,6 @@ void Wavefront::InitializeNodes() {
 
 bool Wavefront::ComputeSkeleton(ChainType type) {
 	auto& chain     = getChain(type);
-	auto& skeleton  = getSkeleton(type);
 	/** compute all finite edge events
 	 *  iterate along lower chain and find event time for each edge
 	 **/
@@ -40,7 +39,7 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	/************************************/
 	/* 	filling the priority queue 		*/
 	/************************************/
-	if(!InitSkeletonQueue(chain,skeleton)) {return false;}
+	if(!InitSkeletonQueue(chain)) {return false;}
 
 	/* DEBUG PRINT QUEUE */
 //	LOG(INFO) << "------------------------- EVENT QUEUE -----------------------";
@@ -54,18 +53,18 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	/*********************************************/
 	currentTime = 0;
 	while(!eventTimes.empty()) {
-		SingleDequeue(chain,skeleton);
+		SingleDequeue(chain);
 	}
 
 	/***********************************************************************/
 	/* construct rays from remaining edges in chain, i.e,. unbounded faces */
 	/***********************************************************************/
-	if(!FinishSkeleton(chain,skeleton)) {return false;}
+	if(!FinishSkeleton(chain)) {return false;}
 
 	return true;
 }
 
-bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
+bool Wavefront::InitSkeletonQueue(Chain& chain) {
 	/** compute all finite edge events
 	 *  iterate along lower chain and find event time for each edge
 	 **/
@@ -88,9 +87,9 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 		/* create Event and add it to the queue */
 		auto event = getEdgeEvent(aEdgeIdx,bEdgeIdx,cEdgeIdx,it);
 		if(event.isEvent()) {
-			events[event.mainEdge] = event;
 			auto te = TimeEdge(event.eventTime,event.mainEdge);
 			eventTimes.insert(te);
+			events[event.mainEdge] = event;
 		}
 
 		/* iterate over the chainIterator */
@@ -106,7 +105,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 	return true;
 }
 
-bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
+bool Wavefront::SingleDequeue(Chain& chain) {
 	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
 	auto etIt  = eventTimes.begin();
 	const Event* event = &events[etIt->edgeIdx];
@@ -119,7 +118,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 
 		std::vector<const Event*> multiEventStack;
 		multiEventStack.emplace_back(event);
-		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
+		while(!eventTimes.empty() && *etIt == *eventTimes.begin()) {
 			/* check for multi-events */
 			auto etCheck = eventTimes.begin();
 			event = &events[etCheck->edgeIdx];
@@ -152,7 +151,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 
 			for(auto eventList : eventsPerPoint) {
 				LOG(INFO) << "ME " << *event;
-				HandleMultiEvent(chain,skeleton,eventList);
+				HandleMultiEvent(chain,eventList);
 			}
 
 		} else {
@@ -160,7 +159,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
 			/********************************************************************************/
 //			LOG(INFO) << "SE " << *event;
-			HandleSingleEdgeEvent(chain,skeleton,event);
+			HandleSingleEdgeEvent(chain,event);
 		}
 
 		return true;
@@ -191,10 +190,10 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
  *       exactly two points:
  * --> after adding both points (connected with a vertical segment) we apply
  *     (i) for the 'upper' (or higher) point. */
-void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<const Event*> eventList) {
+void Wavefront::HandleMultiEvent(Chain& chain, std::vector<const Event*> eventList) {
 	if(eventList.size() == 1) {
 		LOG(INFO) << "size 1 ";
-		HandleSingleEdgeEvent(chain,skeleton,eventList[0]);
+		HandleSingleEdgeEvent(chain,eventList[0]);
 	} else {
 		std::set<Point> points;
 		std::set<int,std::less<int> > eventEdges;
@@ -242,16 +241,16 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 
 			/* handling the 'lower' eventpoint changes the other event, thus
 			 * we only handle this lower event */
-			HandleSingleEdgeEvent(chain,skeleton,partEventListA[0]);
+			HandleSingleEdgeEvent(chain,partEventListA[0]);
 		} else {
 			/* scenario (i) */
 			LOG(INFO) << "scenario (i)";
-			HandleMultiEdgeEvent(chain,skeleton,eventList);
+			HandleMultiEdgeEvent(chain,eventList);
 		}
 	}
 }
 
-void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<const Event*> eventList) {
+void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eventList) {
 	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
 
 	auto anEvent = eventList[0];
@@ -259,7 +258,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	auto& node = *getNode(nodeIdx);
 
 	/* add the single node, all arcs connect to this node */
-	skeleton.emplace_back(nodeIdx);
+//	skeleton.emplace_back(nodeIdx);
 	LOG(INFO) << "adding node: " << node;
 
 	std::set<ul> mainEdges;
@@ -285,7 +284,6 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 		if(doneNeighbour.find(p.second) != doneNeighbour.end()) {continue;}
 
 		auto paths = pathFinder[p.first];
-		Node *n;
 		ul pIdx = MAX;
 		if(leftEdges.find(p.second) != leftEdges.end()) {
 			pIdx = paths.a;
@@ -294,9 +292,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 			pIdx = paths.b;
 		}
 		assert(pIdx != MAX);
-		n = getNode(pIdx);
-		Segment e(n->point,node.point);
-		addArc(pIdx,nodeIdx,p.first,p.second,e.is_vertical(),e.is_horizontal());
+		addArc(pIdx,nodeIdx,p.first,p.second);
 
 		doneNeighbour.insert(p.first);
 	}
@@ -359,9 +355,9 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	}
 }
 
-void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, const Event* event) {
+void Wavefront::HandleSingleEdgeEvent(Chain& chain,  const Event* event) {
 	/* build skeleton from event */
-	addNewNodefromEvent(*event,skeleton);
+	addNewNodefromEvent(*event);
 
 	/* check neighbours for new events, and back into the queue */
 	/* edges B,C are the two edges left, right of the event edge,
@@ -373,14 +369,14 @@ void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, c
 	disableEdge(event->mainEdge);
 }
 
-bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
+bool Wavefront::FinishSkeleton(Chain& chain) {
 	/** compute all finite edge events
 	 *  iterate along lower chain and find event time for each edge
 	 **/
 	if(chain.size() < 2) {return true;}
 
 	while(!eventTimes.empty()) {
-		SingleDequeue(chain,skeleton);
+		SingleDequeue(chain);
 	}
 
 	ul aEdgeIdx, bEdgeIdx;
@@ -397,7 +393,7 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 			/* last node on path of both edges must be the same, get that node */
 			auto endNodeIdx = pathFinder[aEdgeIdx].b;
 			auto node = &nodes[endNodeIdx];
-			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
+//			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 
 			auto bisSimple = data.simpleBisector(aEdgeIdx,bEdgeIdx);
 			auto check = normalDistance(data.get_segment(aEdgeIdx).supporting_line(),node->point + bisSimple.to_vector());
@@ -405,9 +401,7 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 				bisSimple = bisSimple.opposite();
 			}
 
-			Ray r(node->point,bisSimple.direction());
-
-			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,r,bisSimple.is_vertical(),bisSimple.is_horizontal());
+			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,Ray(node->point,bisSimple.direction()));
 
 //			Ray bis;
 //
@@ -444,7 +438,7 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 //
 //			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical(),bis.is_horizontal());
 
-			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
+//			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 
 			/* iterate over remaining chain */
 			aEdgeIdx = bEdgeIdx;
@@ -466,7 +460,7 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 		--it;		edgeA = *it;
 
 		it = ChainRef(event.chainEdge); --it;
-		auto neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
+		const auto& neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
 		updateInsertEvent(neighborEvent);
 	}
 
@@ -477,30 +471,31 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 		++it;		edgeD = *it;
 
 		it = ChainRef(event.chainEdge); ++it;
-		auto neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
+		const auto& neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
 		updateInsertEvent(neighborEvent);
 	}
 }
 
 void Wavefront::updateInsertEvent(const Event& event) {
 	/* check if edge has already an event in the queue */
-	const auto& currentEvent =  events[event.mainEdge];
-
-	if(currentEvent.eventTime > 0) {
-		/* find remove timeslot from event times */
-		auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge);
-		auto item  = eventTimes.lower_bound(teOld);
-		if(item != eventTimes.end() && item->edgeIdx == event.mainEdge) {
-			eventTimes.erase(item);
-		}
-	}
-
-	assert(event.mainEdge == *event.chainEdge);
-
-	events[event.mainEdge] = Event(event);
 	if(event.isEvent()) {
+		auto it = eventTimes.begin();
+		const auto& currentEvent =  events[event.mainEdge];
+		if(currentEvent.eventTime > 0) {
+			/* find remove timeslot from event times */
+			auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge);
+			auto item  = eventTimes.lower_bound(teOld);
+
+			if(item != eventTimes.end() && item->edgeIdx == event.mainEdge) {
+				it = eventTimes.erase(item);
+			}
+		}
+
+		assert(event.mainEdge == *event.chainEdge);
+
 		auto te = TimeEdge(event.eventTime,event.mainEdge);
-		eventTimes.insert(te);
+		eventTimes.insert(it,te);
+		events[event.mainEdge] = event;
 	}
 }
 
@@ -670,39 +665,23 @@ Bisector Wavefront::constructBisector(const ul& aIdx, const ul& bIdx) const {
 //}
 
 void Wavefront::ChainDecomposition() {
-	Chain lc, uc;
-
 	/* assuming CCW orientation of polygon */
 	auto edgeIt = data.findEdgeWithVertex(data.bbox->monMin);
 
-	lc.emplace_back(edgeIt->id);
+	lowerChain.emplace_back(edgeIt->id);
 	do {
 		edgeIt = data.cNext(edgeIt);
-		lc.emplace_back(edgeIt->id);
+		lowerChain.emplace_back(edgeIt->id);
 	} while(!edgeIt->has(data.bbox->monMax.id));
 
 	do {
 		edgeIt = data.cNext(edgeIt);
-		uc.emplace_back(edgeIt->id);
+		upperChain.emplace_back(edgeIt->id);
 	} while(!edgeIt->has(data.bbox->monMin.id));
 
-	lowerChain = lc;
-	upperChain = uc;
-
-	/*  some DEBUG output  */
-//	std::stringstream ss;
-//	ss << std::endl << "lower chain: ";
-//	for(auto e : lowerChain) {
-//		ss << e << " ";
-//	}
-//	ss << "upper chain: ";
-//	for(auto e : upperChain) {
-//		ss << e << " ";
-//	}
-//	LOG(INFO) << ss.str();
 }
 
-ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray, const bool vertical, const bool horizontal) {
+ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray) {
 	auto& nodeA = nodes[nodeAIdx];
 	auto arcIdx = arcList.size();
 	arcList.emplace_back(Arc(ArcType::RAY,
@@ -710,16 +689,14 @@ ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRi
 			edgeLeft,
 			edgeRight,
 			arcList.size(),
-			ray,
-			vertical,
-			horizontal
+			ray
 	));
 	nodeA.arcs.emplace_back(arcIdx);
 	LOG(INFO) << "+/ adding ray: " << arcIdx;
 	return arcIdx;
 }
 
-ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft, const ul& edgeRight, const bool vertical, const bool horizontal) {
+ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft, const ul& edgeRight) {
 	auto& nodeA = nodes[nodeAIdx];
 	auto& nodeB = nodes[nodeBIdx];
 	auto arcIdx = arcList.size();
@@ -730,9 +707,7 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 			edgeLeft,
 			edgeRight,
 			arcList.size(),
-			Segment(nodeA.point, nodeB.point),
-			vertical,
-			horizontal
+			Segment(nodeA.point, nodeB.point)
 	));
 	nodeA.arcs.emplace_back(arcIdx);
 	nodeB.arcs.emplace_back(arcIdx);
@@ -753,12 +728,11 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 ////	}
 //}
 
-void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleton) {
+void Wavefront::addNewNodefromEvent(const Event& event) {
 	ul nodeIdx  = nodes.size();
 	auto& paths = pathFinder[event.mainEdge];
 
 	Point& Pa = getNode(paths.a)->point; Point& Pb = getNode(paths.b)->point;
-	Segment e(Pa,Pb);
 
 	/* if this is already done, i.e., left and/or right path ends at a node of the event */
 	if((nodes[paths.a].time != event.eventTime && nodes[paths.b].time != event.eventTime) ||
@@ -767,12 +741,9 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		/* a classical event to be handled */
 		LOG(INFO) << "event point before adding node " << event.eventPoint;
 		nodeIdx = addNode(event.eventPoint,event.eventTime);
-		skeleton.emplace_back(nodeIdx);
 
-		Segment e1(Pa,event.eventPoint);
-		Segment e2(Pb,event.eventPoint);
-		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e1.is_vertical(),e1.is_horizontal());
-		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e2.is_vertical(),e2.is_horizontal());
+		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge);
+		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge);
 
 	} else {
 		/* at least one point is equal */
@@ -785,11 +756,11 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		} else if(aEqual) {
 			/* so we use the left referenced node and only create a new arc for the right side */
 			nodeIdx = paths.a;
-			addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical(),e.is_horizontal());
+			addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge);
 		} else if(bEqual) {
 			/* so we use the left referenced node and only create a new arc for the left side */
 			nodeIdx = paths.b;
-			addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical(),e.is_horizontal());
+			addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge);
 		}
 	}
 

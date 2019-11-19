@@ -106,8 +106,8 @@ bool do_intersect(const Bisector& bis, const Segment& edge) {
 
 bool do_intersect(const Bisector& bis, const Arc& arc) {
 	switch(arc.type) {
-	case ArcType::NORMAL: 	if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.edge);}
-							else {return CGAL::do_intersect(bis.line,arc.edge);}
+	case ArcType::NORMAL: 	if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.segment);}
+							else {return CGAL::do_intersect(bis.line,arc.segment);}
 	case ArcType::RAY: 		if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.ray);}
 							else {return CGAL::do_intersect(bis.line,arc.ray);}
 
@@ -117,33 +117,33 @@ bool do_intersect(const Bisector& bis, const Arc& arc) {
 }
 
 
-Point intersectBisectorEdge(const Bisector& bis, const Segment& edge) {
-	if(bis.isRay()) {
-		return intersectElements(bis.ray,edge);
-	} else {
-		return intersectElements(bis.line,edge);
-	}
-}
-
-Point intersectArcArc(const Arc& arcA, const Arc& arcB) {
-	if(arcA.isEdge()) {
-		if(arcB.isEdge()) {
-			return intersectElements(arcB.edge,arcA.edge);
-		} else {
-			return intersectElements(arcB.ray,arcA.edge);
-		}
-	} else {
-		if(arcB.isEdge()) {
-			return intersectElements(arcB.edge,arcA.ray);
-		} else {
-			return intersectElements(arcB.ray,arcA.ray);
-		}
-	}
-}
-
-Point intersectRayArc(const Ray& ray, const Arc& arc) {
-	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.edge) : intersectElements(ray,arc.ray);
-}
+//Point intersectBisectorEdge(const Bisector& bis, const Segment& edge) {
+//	if(bis.isRay()) {
+//		return intersectElements(bis.ray,edge);
+//	} else {
+//		return intersectElements(bis.line,edge);
+//	}
+//}
+//
+//Point intersectArcArc(const Arc& arcA, const Arc& arcB) {
+//	if(arcA.isEdge()) {
+//		if(arcB.isEdge()) {
+//			return intersectElements(arcB.segment,arcA.segment);
+//		} else {
+//			return intersectElements(arcB.ray,arcA.segment);
+//		}
+//	} else {
+//		if(arcB.isEdge()) {
+//			return intersectElements(arcB.segment,arcA.ray);
+//		} else {
+//			return intersectElements(arcB.ray,arcA.ray);
+//		}
+//	}
+//}
+//
+//Point intersectRayArc(const Ray& ray, const Arc& arc) {
+//	return (arc.type == ArcType::NORMAL) ? intersectElements(ray,arc.segment) : intersectElements(ray,arc.ray);
+//}
 
 ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB) {
 	for(auto i : {arcA.firstNodeIdx,arcA.secondNodeIdx}) {

@@ -48,8 +48,7 @@ class Data {
 	using VertexIterator = VertexList::const_iterator;
 
 public:
-	Data(const BasicInput& input_, const bool gui_ = false):
-		gui(gui_),
+	Data(const BasicInput& input_):
 		input(input_) {}
 
 	~Data() {delete bbox;}
@@ -137,7 +136,7 @@ private:
 	Line getMonotonicityLineFromVector(const Vector a, const Vector b) const;
 	bool testMonotonicityLineOnPolygon(const Line line) const;
 
-	const bool 			gui;
+//	const bool 			gui;
 	const BasicInput& 	input;
 };
 

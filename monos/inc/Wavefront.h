@@ -47,23 +47,21 @@ public:
 
 class Wavefront {
 public:
-	using Events		     = std::vector<Event>;
-	using EventTimes 	     = std::set<TimeEdge,TimeEdgeCmp>;
 
 	Wavefront(Data& dat):
 //		startLowerEdgeIdx(0),endLowerEdgeIdx(0),
 //		startUpperEdgeIdx(0),endUpperEdgeIdx(0),
 		data(dat) {}
 
-	bool InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton);
-	bool SingleDequeue(Chain& chain, PartialSkeleton& skeleton);
-	bool FinishSkeleton(Chain& chain, PartialSkeleton& skeleton);
-//
+	bool InitSkeletonQueue(Chain& chain);
+	bool SingleDequeue(Chain& chain);
+	bool FinishSkeleton(Chain& chain);
+
 //	bool ComputeSingleSkeletonEvent(bool lower);
-	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, const Event* event);
-	void HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<const Event*> eventList);
-	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<const Event*> eventList);
-//
+	void HandleSingleEdgeEvent(Chain& chain, const Event* event);
+	void HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eventList);
+	void HandleMultiEvent(Chain& chain, std::vector<const Event*> eventList);
+
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
 
@@ -101,17 +99,17 @@ public:
 //		PartialSkeleton* skeleton  = (lower) ? &lowerSkeleton 	: &upperSkeleton;
 //		return FinishSkeleton(*chain,*skeleton);
 //	}
-//
-//	/* construct skeletal structure using nodes and arcs */
-	ul addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray, const bool vertical, const bool horizontal);
-	ul addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft, const ul& edgeRight, const bool vertical, const bool horizontal);
-	void addNewNodefromEvent(const Event&, PartialSkeleton& skeleton);
-//
+
+	/* construct skeletal structure using nodes and arcs */
+	ul addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray);
+	ul addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft, const ul& edgeRight);
+	void addNewNodefromEvent(const Event&);
+
 	inline ul addNode(const Point& intersection, const NT& time, NodeType type = NodeType::NORMAL) {
 		nodes.emplace_back(Node(type,intersection,time, nodes.size()));
 		return nodes.size() - 1;
 	}
-//
+
 //	bool hasArcParallelEdges(const Arc& arc) const {
 //		return CGAL::parallel(data.get_segment(arc.leftEdgeIdx).supporting_line(),data.get_segment(arc.rightEdgeIdx).supporting_line());
 //	}

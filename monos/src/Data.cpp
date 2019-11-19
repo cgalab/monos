@@ -119,11 +119,11 @@ bool Data::ensureMonotonicity() {
 		return true;
 	}
 
-	std::stringstream ss;
-	for(auto i : intervals) {
-		ss << i << std::endl;
-	}
-	LOG(INFO) << ss.str();
+//	std::stringstream ss;
+//	for(auto i : intervals) {
+//		ss << i << std::endl;
+//	}
+//	LOG(INFO) << ss.str();
 
 	/* iterate to first START vector */
 	auto itStart  = intervals.begin();
@@ -195,6 +195,7 @@ bool Data::ensureMonotonicity() {
 					monotonicityLine = line;
 					perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
 					isMonotone = true;
+					break;
 				} else {
 					success = false;
 				}

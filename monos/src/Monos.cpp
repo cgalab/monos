@@ -81,9 +81,9 @@ void Monos::run() {
 	/****************** TIMING END ********************************/
 	if(config.timings) {end = clock();}
 
-	for(auto v : input.vertices()) {
-		LOG(INFO) << v;
-	}
+//	for(auto v : input.vertices()) {
+//		LOG(INFO) << v;
+//	}
 
 	write();
 
@@ -109,7 +109,7 @@ void Monos::write() {
 
 
 bool Monos::init() {
-	data = new Data(input,config.gui);
+	data = new Data(input);
 
 	/* verify monotonicity and compute monotonicity line */
 	if(!data->ensureMonotonicity()) {

@@ -186,17 +186,39 @@ private:
 };
 
 
-class Event {
-//	using EventEdges = std::array<ul, 3>;
-
+class TimeEdge {
 public:
-//	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
-//		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {
-//			leftEdge  = edges[0];
-//			mainEdge  = edges[1];
-//			rightEdge = edges[2];
-//			sortEdgeIndices();
-//		}
+	TimeEdge(NT t, ul e):
+		timeApprox(t.doubleValue()),
+		time(t),
+		edgeIdx(e) {}
+	double timeApprox;
+	NT  time;
+	ul  edgeIdx;
+
+	inline bool operator==(const TimeEdge& rhs) const {
+		return this->timeApprox - rhs.timeApprox <= smallEPS &&
+			   rhs.timeApprox - this->timeApprox <= smallEPS &&
+			   this->time == rhs.time;
+	}
+};
+
+struct TimeEdgeCmp {
+	bool operator()(const TimeEdge &left, const TimeEdge &right) const {
+		return ( (left.timeApprox - right.timeApprox) < 0.0 ) ||
+			   ( (left.timeApprox - right.timeApprox) >= 0.0 && left.time < right.time) ||
+			   ( (left.timeApprox - right.timeApprox) >= 0.0 && left.time == right.time && left.edgeIdx < right.edgeIdx);
+	}
+//		return (left.timeApprox < right.timeApprox) ||
+//			   (left.timeApprox == right.timeApprox && left.time < right.time) ||
+//			   (left.timeApprox == right.timeApprox && left.time == right.time && left.edgeIdx < right.edgeIdx);
+//	}
+};
+
+using EventTimes 	     = std::set<TimeEdge,TimeEdgeCmp>;
+
+class Event {
+public:
 	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
 		eventTime(time),
 		eventPoint(point),
@@ -209,18 +231,11 @@ public:
 
 	NT	         	eventTime;
 	Point  			eventPoint;
-
-//	EventEdges		edges;
 	ul 				leftEdge, mainEdge, rightEdge;
 
 	ChainRef 		chainEdge;
 
-//	void sortEdgeIndices() {std::sort(std::begin(edges), std::end(edges));}
-
 	inline bool operator==(const Event& rhs) const {
-//		return this->edges[0] == rhs.edges[0]
-//			&& this->edges[1] == rhs.edges[1]
-//			&& this->edges[2] == rhs.edges[2];
 		return this->leftEdge == rhs.leftEdge
 			&& this->mainEdge == rhs.mainEdge
 			&& this->rightEdge == rhs.rightEdge;
@@ -231,67 +246,55 @@ public:
 	friend std::ostream& operator<< (std::ostream& os, const Event& event);
 };
 
-typedef struct _TimeEdge {
-	_TimeEdge(NT t, ul e):time(t),edgeIdx(e) {}
-	NT  time;
-	ul  edgeIdx;
-} TimeEdge;
-
-struct TimeEdgeCmp {
-	bool operator()(const TimeEdge &left, const TimeEdge &right) const {
-		return (left.time) < (right.time) || (left.time == right.time && left.edgeIdx < right.edgeIdx);
-	}
-};
+using Events		     = std::vector<Event>;
 
 class Arc {
 public:
-	Arc(ArcType t, ul firstNode, ul leftEdge, ul rightEdge, unsigned id, Ray r, bool vertical, bool horizontal):
+	Arc(ArcType t, ul firstNode, ul leftEdge, ul rightEdge, unsigned id, Ray r):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(MAX),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id),
-		edge(Segment()),ray(r),vertical(vertical),horizontal(horizontal) {}
-	Arc(ArcType t, ul firstNode, ul secondNode, ul leftEdge, ul rightEdge, unsigned id, Segment e, bool vertical, bool horizontal):
+		segment(Segment()),ray(r) {}
+	Arc(ArcType t, ul firstNode, ul secondNode, ul leftEdge, ul rightEdge, unsigned id, Segment e):
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(secondNode),
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id),
-		edge(e),ray(Ray()),vertical(vertical),horizontal(horizontal) {}
+		segment(e),ray(Ray()) {}
 
-	void disable() {type = ArcType::DISABLED;}
-	bool isDisable() const {return type == ArcType::DISABLED;}
-	bool isAA() const {
+	inline bool isAA() const {
 		return is_vertical() || is_horizontal();
 	}
 
-	bool has_on(const Point p) const {
-		if(is_vertical() && p.x() != point(0).x()) {
-			auto yMin = point(0).y();
-			auto yMax = point(1).y();
-			if(yMin > yMax) {std::swap(yMin,yMax);}
-
-			if( p.y() < yMin || p.y() > yMax || p.x() != point(0).x()) {
-				return false;
-			}
-		}
-		if(is_horizontal()) {
-			auto xMin = point(0).x();
-			auto xMax = point(1).x();
-			if(xMin > xMax) {std::swap(xMin,xMax);}
-
-			if( p.x() < xMin || p.x() > xMax || p.y() != point(0).y()) {
-				return false;
-			}
-		}
+	inline bool has_on(const Point& p) const {
 		if(isEdge()) {
-			return edge.has_on(p);
+			return segment.has_on(p);
 		} else {
 			return ray.has_on(p);
 		}
+//		if(is_vertical() && p.x() != point(0).x()) {
+//			auto yMin = point(0).y();
+//			auto yMax = point(1).y();
+//			if(yMin > yMax) {std::swap(yMin,yMax);}
+//
+//			if( p.y() < yMin || p.y() > yMax || p.x() != point(0).x()) {
+//				return false;
+//			}
+//		}
+//		if(is_horizontal()) {
+//			auto xMin = point(0).x();
+//			auto xMax = point(1).x();
+//			if(xMin > xMax) {std::swap(xMin,xMax);}
+//
+//			if( p.x() < xMin || p.x() > xMax || p.y() != point(0).y()) {
+//				return false;
+//			}
+//		}
+//		if(isEdge()) {
+//			return edge.has_on(p);
+//		} else {
+//			return ray.has_on(p);
+//		}
 	}
 
-	bool hasZeroLength() const {
-		if(firstNodeIdx == secondNodeIdx) {
-			return true;
-		}
-		return false;
-	}
+	inline bool hasZeroLength() const { return (firstNodeIdx == secondNodeIdx);}
 
 	ul getCommonNodeIdx(const Arc& arc) {
 		if(firstNodeIdx == arc.firstNodeIdx || firstNodeIdx == arc.secondNodeIdx) {
@@ -314,8 +317,8 @@ public:
 		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
 			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
 	}
-	bool is_vertical() const { return vertical;}
-	bool is_horizontal() const { return horizontal;}
+	bool is_vertical()   const { return (isEdge()) ? segment.is_vertical()   : ray.is_vertical();}
+	bool is_horizontal() const { return (isEdge()) ? segment.is_horizontal() : ray.is_horizontal();}
 
 	ul getSecondNodeIdx(const ul idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
 
@@ -327,14 +330,16 @@ public:
 		}
 	}
 
-	Line supporting_line() const {return (isEdge()) ? edge.supporting_line() : ray.supporting_line();}
+	Line supporting_line() const {return (isEdge()) ? segment.supporting_line() : ray.supporting_line();}
 	Vector to_vector() const {return supporting_line().to_vector();}
-	bool isRay()  const { return type == ArcType::RAY;    }
-	bool isEdge() const { return type == ArcType::NORMAL; }
+	inline bool isRay()  const { return type == ArcType::RAY;    }
+	inline bool isEdge() const { return type == ArcType::NORMAL; }
+	inline bool isDisable() const {return type == ArcType::DISABLED;}
+	inline void disable() {type = ArcType::DISABLED;}
 
-	Point point(int i) const {return (isEdge()) ? edge.vertex(i) : ray.point(i);}
+	Point point(int i) const {return (isEdge()) ? segment.vertex(i) : ray.point(i);}
 
-	bool hasEndPoint(Point P) const {
+	bool hasEndPoint(const Point& P) const {
 		LOG(INFO) << "hasEndPoint";
 		return P == point(0) || (isEdge() && P == point(1));
 	}
@@ -344,10 +349,8 @@ public:
 	ul leftEdgeIdx,  rightEdgeIdx;
 	unsigned id;
 
-	Segment edge;
+	Segment segment;
 	Ray  ray;
-
-	bool vertical, horizontal;
 
 	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };
@@ -392,12 +395,12 @@ struct Node {
 		std::sort(arcs.begin(), arcs.end(), ArcCmp(arcList));
 	}
 
-	bool hasArc(const ul arcIdx) {
+	bool hasArc(const ul& arcIdx) const {
 		auto idx = std::find(arcs.begin(),arcs.end(),arcIdx);
 		return idx != arcs.end();
 	}
 
-	bool removeArc(const ul arcIdx) {
+	bool removeArc(const ul& arcIdx) {
 		auto idx = std::find(arcs.begin(),arcs.end(),arcIdx);
 		if(idx != arcs.end()) {
 			arcs.erase(idx);

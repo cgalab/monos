@@ -155,9 +155,8 @@ void MainWindow::on_actionEventStep_triggered() {
 	if(firstStart) {
 		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
 		auto& chain     = monos.wf->getChain(type);
-		auto& skeleton  = monos.wf->getSkeleton(type);
 
-		if (!monos.wf->InitSkeletonQueue(chain,skeleton)) {
+		if (!monos.wf->InitSkeletonQueue(chain)) {
 			LOG(WARNING) << "Error Init SkeletonQueue!";
 		}
 		firstStart = false;
@@ -166,9 +165,8 @@ void MainWindow::on_actionEventStep_triggered() {
 	if(!upperChainDone || !lowerChainDone) {
 		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
 		auto& chain     = monos.wf->getChain(type);
-		auto& skeleton  = monos.wf->getSkeleton(type);
 
-		while(!monos.wf->eventTimes.empty() && !monos.wf->SingleDequeue(chain,skeleton));
+		while(!monos.wf->eventTimes.empty() && !monos.wf->SingleDequeue(chain));
 
 		if(monos.wf->eventTimes.empty()) {
 			if(onLowerChain) {
@@ -180,19 +178,16 @@ void MainWindow::on_actionEventStep_triggered() {
 			}
 
 			if(lowerChainDone && !upperChainDone) {
-				monos.wf->FinishSkeleton(chain,skeleton);
 				onLowerChain = false;
 				type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
 				chain     = monos.wf->getChain(type);
-				skeleton  = monos.wf->getSkeleton(type);
-				monos.wf->InitSkeletonQueue(chain,skeleton);
+				monos.wf->InitSkeletonQueue(chain);
 			}
 		}
 	} else if(lowerChainDone && upperChainDone && !bothChainsDone) {
 		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
 		auto& chain     = monos.wf->getChain(type);
-		auto& skeleton  = monos.wf->getSkeleton(type);
-		monos.wf->FinishSkeleton(chain,skeleton);
+		monos.wf->FinishSkeleton(chain);
 		bothChainsDone = true;
 //		monos.s->initMerge();
 	}

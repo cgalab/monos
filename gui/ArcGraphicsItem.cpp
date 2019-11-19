@@ -54,7 +54,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 			if(e.type == ArcType::RAY) {
 				painterostream << Segment(e.ray.start(), e.ray.point(1)+(50.0 * e.ray.to_vector()));
 			} else {
-				painterostream << e.edge;
+				painterostream << e.segment;
 			}
 		}
 	}
@@ -87,7 +87,7 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 		painter->setFont(font);
 		for (auto e = arcs->begin(); e != arcs->end(); ++e) {
 			if(e->type != ArcType::DISABLED) {
-				QPointF p(transform.map(convert( CGAL::midpoint(e->edge.source(), e->edge.target()) )));
+				QPointF p(transform.map(convert( CGAL::midpoint(e->segment.source(), e->segment.target()) )));
 				if(e->type == ArcType::RAY) {
 					p = QPointF(transform.map(convert( CGAL::midpoint(e->ray.source(), e->ray.point(1)) )));
 				}
