@@ -19,15 +19,23 @@ BasicInput::add_graph(const BGLGraph& graph) {
 		assert(index_map[v] == vertices_.size()-1);
 		if (degree == 1) num_of_deg1_vertices++;
 	}
-	std::vector<sl> map(vertices_.size(), NIL);
+	std::vector<std::tuple<sl,sl>> edgePairs;
 	for (auto ep = boost::edges(graph); ep.first != ep.second; ++ep.first) {
 		const EdgeType e = *ep.first;
-		if(map[source(e, graph)] == NIL) {
-			map[source(e, graph)] = target(e, graph);
-		} else if(map[target(e, graph)] == NIL) {
-			map[target(e, graph)] = source(e, graph);
+		edgePairs.emplace_back(std::make_tuple( (sl)source(e, graph), (sl)target(e, graph) ));
+	}
+
+	std::sort(edgePairs.begin(),edgePairs.end());
+
+	std::vector<sl> map(vertices_.size(), NIL);
+	for(const auto& e : edgePairs) {
+		LOG(INFO) << std::get<0>(e) << " " <<  std::get<1>(e);
+		if(map[std::get<0>(e)] == NIL) {
+			map[std::get<0>(e)] = std::get<1>(e);
+		} else if(map[std::get<1>(e)] == NIL) {
+			map[std::get<1>(e)] = std::get<0>(e);
 		} else {
-			LOG(WARNING) << "An additional edge? " << source(e, graph) << " -> " << target(e, graph);
+			LOG(WARNING) << "additional edge " << std::get<0>(e) << ", "<< std::get<1>(e);
 		}
 	}
 

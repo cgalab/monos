@@ -43,11 +43,11 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	if(!InitSkeletonQueue(chain,skeleton)) {return false;}
 
 	/* DEBUG PRINT QUEUE */
-	LOG(INFO) << "------------------------- EVENT QUEUE -----------------------";
-	for(auto e : eventTimes) {
-		auto event = &events[e.edgeIdx];
-		LOG(INFO) << *event;
-	}
+//	LOG(INFO) << "------------------------- EVENT QUEUE -----------------------";
+//	for(auto e : eventTimes) {
+//		auto event = &events[e.edgeIdx];
+//		LOG(INFO) << *event;
+//	}
 
 	/*********************************************/
 	/* compute skeleton by working through queue */
@@ -109,7 +109,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain, PartialSkeleton& skeleton) {
 bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
 	auto etIt  = eventTimes.begin();
-	auto event = &events[etIt->edgeIdx];
+	const Event* event = &events[etIt->edgeIdx];
 	auto eventTime = etIt->time;
 	eventTimes.erase(etIt);
 
@@ -117,13 +117,13 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 
 		currentTime = eventTime;
 
-		std::vector<Event*> multiEventStack;
-		multiEventStack.push_back(event);
+		std::vector<const Event*> multiEventStack;
+		multiEventStack.emplace_back(event);
 		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
 			/* check for multi-events */
 			auto etCheck = eventTimes.begin();
 			event = &events[etCheck->edgeIdx];
-			multiEventStack.push_back(event);
+			multiEventStack.emplace_back(event);
 			eventTimes.erase(etCheck);
 		}
 
@@ -135,18 +135,18 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
 			std::map<Point,ul> pointToIndex;
 			/* we store a list of events per point (projected on the monotonicity line)  */
-			std::vector<std::vector<Event*>> eventsPerPoint;
+			std::vector<std::vector<const Event*>> eventsPerPoint;
 			for(auto e : multiEventStack) {
 				Point p = data.pointOnMonotonicityLine(e->eventPoint);
 
 				/* build map point -> list of events */
 				auto it = pointToIndex.find(p);
 				if(it != pointToIndex.end()) {
-					eventsPerPoint[it->second].push_back(e);
+					eventsPerPoint[it->second].emplace_back(e);
 				} else {
 					pointToIndex.insert(std::pair<Point,ul>(p,eventsPerPoint.size()));
-					std::vector<Event*> list = {e};
-					eventsPerPoint.push_back( list );
+					std::vector<const Event*> list = {e};
+					eventsPerPoint.emplace_back( list );
 				}
 			}
 
@@ -159,7 +159,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
 			/********************************************************************************/
 			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
 			/********************************************************************************/
-			LOG(INFO) << "SE " << *event;
+//			LOG(INFO) << "SE " << *event;
 			HandleSingleEdgeEvent(chain,skeleton,event);
 		}
 
@@ -191,7 +191,7 @@ bool Wavefront::SingleDequeue(Chain& chain, PartialSkeleton& skeleton) {
  *       exactly two points:
  * --> after adding both points (connected with a vertical segment) we apply
  *     (i) for the 'upper' (or higher) point. */
-void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList) {
+void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<const Event*> eventList) {
 	if(eventList.size() == 1) {
 		LOG(INFO) << "size 1 ";
 		HandleSingleEdgeEvent(chain,skeleton,eventList[0]);
@@ -205,9 +205,9 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 			}
 
 			points.insert(e->eventPoint);
-			eventEdges.insert(e->edges[0]);
-			eventEdges.insert(e->edges[1]);
-			eventEdges.insert(e->edges[2]);
+			eventEdges.insert(e->leftEdge);
+			eventEdges.insert(e->mainEdge);
+			eventEdges.insert(e->rightEdge);
 		}
 
 		if(points.size() > 1) {
@@ -229,12 +229,12 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 					std::swap(A,B);
 				}
 			}
-			std::vector<Event*> partEventListA, partEventListB;
+			std::vector<const Event*> partEventListA, partEventListB;
 			for(auto e : eventList) {
 				if(e->eventPoint == A) {
-					partEventListA.push_back(e);
+					partEventListA.emplace_back(e);
 				} else {
-					partEventListB.push_back(e);
+					partEventListB.emplace_back(e);
 				}
 			}
 
@@ -251,7 +251,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::ve
 	}
 }
 
-void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList) {
+void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<const Event*> eventList) {
 	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
 
 	auto anEvent = eventList[0];
@@ -259,7 +259,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	auto& node = *getNode(nodeIdx);
 
 	/* add the single node, all arcs connect to this node */
-	skeleton.push_back(nodeIdx);
+	skeleton.emplace_back(nodeIdx);
 	LOG(INFO) << "adding node: " << node;
 
 	std::set<ul> mainEdges;
@@ -359,7 +359,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, st
 	}
 }
 
-void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event) {
+void Wavefront::HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, const Event* event) {
 	/* build skeleton from event */
 	addNewNodefromEvent(*event,skeleton);
 
@@ -398,40 +398,51 @@ bool Wavefront::FinishSkeleton(Chain& chain, PartialSkeleton& skeleton) {
 			auto endNodeIdx = pathFinder[aEdgeIdx].b;
 			auto node = &nodes[endNodeIdx];
 			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
-			Ray bis;
 
-			/* compute bisector between the two edges */
-			auto bisRet = constructBisector(aEdgeIdx,bEdgeIdx);
-
-			if(bisRet.isGhost()) {
-				auto n = nodes[pathFinder[bisRet.eIdxA].b];
-				bisRet.newSource(n.point);
-			}
-
-			if(bisRet.type == BisType::RAY) {
-				bis = Ray(node->point,bisRet.ray.direction());
-			} else {
-				Line l(bisRet.line);
-				Point pRef(data.monotonicityLine.point()+l.to_vector());
-				if( isLowerChain(chain) && data.monotonicityLine.has_on_negative_side(pRef)) {
-					/* vector points below monotonicity line */
-					l = l.opposite();
-				}
-				if(!isLowerChain(chain) && data.monotonicityLine.has_on_positive_side(pRef)) {
-					/* vector points above monotonicity line */
-					l = l.opposite();
-				}
-
-				bis = Ray(node->point,bisRet.line.direction());
-			}
-
-			/* need to know if upper or lower chain! To distinguish bisector rays that lead up or down! */
-			auto check = normalDistance(data.get_segment(aEdgeIdx).supporting_line(),node->point + bis.to_vector());
+			auto bisSimple = data.simpleBisector(aEdgeIdx,bEdgeIdx);
+			auto check = normalDistance(data.get_segment(aEdgeIdx).supporting_line(),node->point + bisSimple.to_vector());
 			if(check < node->time) {
-				bis = bis.opposite();
+				bisSimple = bisSimple.opposite();
 			}
 
-			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical(),bis.is_horizontal());
+			Ray r(node->point,bisSimple.direction());
+
+			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,r,bisSimple.is_vertical(),bisSimple.is_horizontal());
+
+//			Ray bis;
+//
+//			/* compute bisector between the two edges */
+//			auto bisRet = constructBisector(aEdgeIdx,bEdgeIdx);
+//
+//			if(bisRet.isGhost()) {
+//				auto& n = nodes[pathFinder[bisRet.eIdxA].b];
+//				bisRet.newSource(n.point);
+//			}
+//
+//			if(bisRet.type == BisType::RAY) {
+//				bis = Ray(node->point,bisRet.ray.direction());
+//			} else {
+//				Line l(bisRet.line);
+//				Point pRef(data.monotonicityLine.point()+l.to_vector());
+//				if( isLowerChain(chain) && data.monotonicityLine.has_on_negative_side(pRef)) {
+//					/* vector points below monotonicity line */
+//					l = l.opposite();
+//				}
+//				if(!isLowerChain(chain) && data.monotonicityLine.has_on_positive_side(pRef)) {
+//					/* vector points above monotonicity line */
+//					l = l.opposite();
+//				}
+//
+//				bis = Ray(node->point,bisRet.line.direction());
+//			}
+//
+//			/* need to know if upper or lower chain! To distinguish bisector rays that lead up or down! */
+//			auto check = normalDistance(data.get_segment(aEdgeIdx).supporting_line(),node->point + bis.to_vector());
+//			if(check < node->time) {
+//				bis = bis.opposite();
+//			}
+//
+//			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical(),bis.is_horizontal());
 
 			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 
@@ -473,7 +484,7 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 
 void Wavefront::updateInsertEvent(const Event& event) {
 	/* check if edge has already an event in the queue */
-	auto currentEvent =  events[event.mainEdge];
+	const auto& currentEvent =  events[event.mainEdge];
 
 	if(currentEvent.eventTime > 0) {
 		/* find remove timeslot from event times */
@@ -487,7 +498,7 @@ void Wavefront::updateInsertEvent(const Event& event) {
 	assert(event.mainEdge == *event.chainEdge);
 
 	events[event.mainEdge] = Event(event);
-	if(event.eventPoint != INFPOINT) {
+	if(event.isEvent()) {
 		auto te = TimeEdge(event.eventTime,event.mainEdge);
 		eventTimes.insert(te);
 	}
@@ -501,53 +512,76 @@ void Wavefront::updateInsertEvent(const Event& event) {
 //}
 //
 Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const {
-	Event e;
+//	Event e;
 
+	Line b = data.get_segment(bIdx).supporting_line();
 	/* compute bisector from edges */
-	auto abBis = constructBisector(aIdx, bIdx);
-	auto bcBis = constructBisector(bIdx, cIdx);
+	auto abBisL = data.simpleBisector(aIdx,bIdx);
+	auto bcBisL = data.simpleBisector(bIdx,cIdx);
 
-	LOG(INFO) << "bisectors before correction " << aIdx << "/" << bIdx;
-	LOG(INFO) << abBis;
-	LOG(INFO) << "bisectors before correction " << bIdx << "/" << cIdx;
-	LOG(INFO) << bcBis;
-
-	/* in case of 'ghost' bisectors we have to determine where the start */
-	for(auto b : {&abBis,&bcBis}) {
-		if(b->isGhost()) {
-			auto n = nodes[pathFinder[b->eIdxA].b];
-			b->newSource(n.point);
-			LOG(INFO) << "ghost bis, set new sourcepoint: " << n.point;
+	if(CGAL::do_intersect(abBisL, bcBisL)) {
+		auto intersectionSimple = intersectElements(abBisL, bcBisL);
+		if(intersectionSimple != INFPOINT && ( b.has_on_positive_side(intersectionSimple)) ) {
+			auto distance = normalDistance(b, intersectionSimple);
+			assert(distance > 0);
+			/* does collapse so we create an event
+			 * and add it to the queue
+			 **/
+			return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it);
 		}
 	}
-	LOG(INFO) << "bisectors after correction";
-	LOG(INFO) << abBis;
-	LOG(INFO) << bcBis;
 
+	return Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
 
-	/* compute bisector intersection, this is the collapse
-	 * time of the middle edge (b) 'edge-event' for b  */
-	auto intersection = intersectElements(abBis.supporting_line(), bcBis.supporting_line());
-
-	Line b(data.get_segment(bIdx).supporting_line());
-	if(intersection != INFPOINT && b.has_on_positive_side(intersection)) {
-		auto distance = normalDistance(b, intersection);
-		assert(distance > 0);
-		/* does collapse so we create an event
-		 * and add it to the queue
-		 **/
-		e = Event(distance,intersection,aIdx,bIdx,cIdx,it);
-	} else {
-		if(CGAL::collinear(abBis.point(0),abBis.point(1),bcBis.point(1))) {
-			LOG(INFO) << "bisectors are collinear!";
-			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
-		} else {
-			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
-		}
-	}
-	LOG(INFO) << e << " ret event. ";
-
-	return e;
+//	auto abBis = constructBisector(aIdx, bIdx);
+//	auto bcBis = constructBisector(bIdx, cIdx);
+//
+//	LOG(INFO) << "bisectors before correction " << aIdx << "/" << bIdx;
+//	LOG(INFO) << abBis;
+//	LOG(INFO) << "bisectors before correction " << bIdx << "/" << cIdx;
+//	LOG(INFO) << bcBis;
+//
+//	/* in case of 'ghost' bisectors we have to determine where the start */
+//	for(auto b : {&abBis,&bcBis}) {
+//		if(b->isGhost()) {
+//			auto n = nodes[pathFinder[b->eIdxA].b];
+//			b->newSource(n.point);
+//			LOG(INFO) << "ghost bis, set new sourcepoint: " << n.point;
+//		}
+//	}
+//	LOG(INFO) << "bisectors after correction";
+//	LOG(INFO) << abBis;
+//	LOG(INFO) << bcBis;
+//
+//
+//	/* compute bisector intersection, this is the collapse
+//	 * time of the middle edge (b) 'edge-event' for b  */
+//	Point intersection = INFPOINT;
+//	if(abBis.isRay() && bcBis.isRay()) {
+//		intersection = intersectElements(abBis.ray, bcBis.ray);
+//	} else {
+//		intersection = intersectElements(abBis.supporting_line(), bcBis.supporting_line());
+//	}
+//
+//	Line b(data.get_segment(bIdx).supporting_line());
+//	if(intersection != INFPOINT && ( (abBis.isRay() && bcBis.isRay()) || b.has_on_positive_side(intersection)) ) {
+//		auto distance = normalDistance(b, intersection);
+//		assert(distance > 0);
+//		/* does collapse so we create an event
+//		 * and add it to the queue
+//		 **/
+//		e = Event(distance,intersection,aIdx,bIdx,cIdx,it);
+//	} else {
+//		if(CGAL::collinear(abBis.point(0),abBis.point(1),bcBis.point(1))) {
+//			LOG(INFO) << "bisectors are collinear!";
+//			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
+//		} else {
+//			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
+//		}
+//	}
+//	LOG(INFO) << e << " ret event. ";
+//
+//	return e;
 }
 
 Bisector Wavefront::constructBisector(const ul& aIdx, const ul& bIdx) const {
@@ -641,31 +675,31 @@ void Wavefront::ChainDecomposition() {
 	/* assuming CCW orientation of polygon */
 	auto edgeIt = data.findEdgeWithVertex(data.bbox->monMin);
 
-	lc.push_back(edgeIt->id);
+	lc.emplace_back(edgeIt->id);
 	do {
 		edgeIt = data.cNext(edgeIt);
-		lc.push_back(edgeIt->id);
+		lc.emplace_back(edgeIt->id);
 	} while(!edgeIt->has(data.bbox->monMax.id));
 
 	do {
 		edgeIt = data.cNext(edgeIt);
-		uc.push_back(edgeIt->id);
+		uc.emplace_back(edgeIt->id);
 	} while(!edgeIt->has(data.bbox->monMin.id));
 
 	lowerChain = lc;
 	upperChain = uc;
 
 	/*  some DEBUG output  */
-	std::stringstream ss;
-	ss << std::endl << "lower chain: ";
-	for(auto e : lowerChain) {
-		ss << e << " ";
-	}
-	ss << "upper chain: ";
-	for(auto e : upperChain) {
-		ss << e << " ";
-	}
-	LOG(INFO) << ss.str();
+//	std::stringstream ss;
+//	ss << std::endl << "lower chain: ";
+//	for(auto e : lowerChain) {
+//		ss << e << " ";
+//	}
+//	ss << "upper chain: ";
+//	for(auto e : upperChain) {
+//		ss << e << " ";
+//	}
+//	LOG(INFO) << ss.str();
 }
 
 ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray, const bool vertical, const bool horizontal) {
@@ -720,24 +754,16 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 //}
 
 void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleton) {
-	ul nodeIdx = nodes.size();
-	auto paths 	 = pathFinder[event.mainEdge];
+	ul nodeIdx  = nodes.size();
+	auto& paths = pathFinder[event.mainEdge];
 
-	Point Pa = getNode(paths.a)->point, Pb = getNode(paths.b)->point;
+	Point& Pa = getNode(paths.a)->point; Point& Pb = getNode(paths.b)->point;
 	Segment e(Pa,Pb);
 
 	/* if this is already done, i.e., left and/or right path ends at a node of the event */
-	if(nodes[paths.a].point == event.eventPoint && nodes[paths.b].point == event.eventPoint) {
-		nodeIdx = paths.a;
-	} else if(nodes[paths.a].point == event.eventPoint) {
-		/* so we use the left referenced node and only create a new arc for the right side */
-		nodeIdx = paths.a;
-		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical(),e.is_horizontal());
-	} else if(nodes[paths.b].point == event.eventPoint) {
-		/* so we use the left referenced node and only create a new arc for the left side */
-		nodeIdx = paths.b;
-		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical(),e.is_horizontal());
-	} else {
+	if((nodes[paths.a].time != event.eventTime && nodes[paths.b].time != event.eventTime) ||
+	   (Pa != event.eventPoint && Pb != event.eventPoint)
+	) {
 		/* a classical event to be handled */
 		LOG(INFO) << "event point before adding node " << event.eventPoint;
 		nodeIdx = addNode(event.eventPoint,event.eventTime);
@@ -747,7 +773,48 @@ void Wavefront::addNewNodefromEvent(const Event& event, PartialSkeleton& skeleto
 		Segment e2(Pb,event.eventPoint);
 		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e1.is_vertical(),e1.is_horizontal());
 		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e2.is_vertical(),e2.is_horizontal());
+
+	} else {
+		/* at least one point is equal */
+
+		bool aEqual = (Pa == event.eventPoint);
+		bool bEqual = (Pb == event.eventPoint);
+
+		if(aEqual && bEqual) {
+			nodeIdx = paths.a;
+		} else if(aEqual) {
+			/* so we use the left referenced node and only create a new arc for the right side */
+			nodeIdx = paths.a;
+			addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical(),e.is_horizontal());
+		} else if(bEqual) {
+			/* so we use the left referenced node and only create a new arc for the left side */
+			nodeIdx = paths.b;
+			addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical(),e.is_horizontal());
+		}
 	}
+
+
+//	if(nodes[paths.a].point == event.eventPoint && nodes[paths.b].point == event.eventPoint) {
+//		nodeIdx = paths.a;
+//	} else if(nodes[paths.a].point == event.eventPoint) {
+//		/* so we use the left referenced node and only create a new arc for the right side */
+//		nodeIdx = paths.a;
+//		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical(),e.is_horizontal());
+//	} else if(nodes[paths.b].point == event.eventPoint) {
+//		/* so we use the left referenced node and only create a new arc for the left side */
+//		nodeIdx = paths.b;
+//		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical(),e.is_horizontal());
+//	} else {
+//		/* a classical event to be handled */
+//		LOG(INFO) << "event point before adding node " << event.eventPoint;
+//		nodeIdx = addNode(event.eventPoint,event.eventTime);
+//		skeleton.emplace_back(nodeIdx);
+//
+//		Segment e1(Pa,event.eventPoint);
+//		Segment e2(Pb,event.eventPoint);
+//		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e1.is_vertical(),e1.is_horizontal());
+//		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e2.is_vertical(),e2.is_horizontal());
+//	}
 
 	/* update path finder for left and right edge */
 	pathFinder[event.leftEdge].b  = nodeIdx;

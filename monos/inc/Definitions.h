@@ -44,7 +44,6 @@
 
 #define BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT
 
-#define INFPOINT Point(std::numeric_limits<double>::max(),std::numeric_limits<double>::max())
 
 using ul = unsigned long;
 using sl = signed long;

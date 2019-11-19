@@ -27,8 +27,8 @@ private:
 		assert(u < vertices_.size());
 		assert(v < vertices_.size());
 		assert(u!=v);
-
-		edges_.emplace_back(Edge(u,v,edges_.size()));
+//		LOG(INFO) << "add e " << u << "->" << v;
+		edges_.emplace_back(Edge(u,v,edges_.size(), Segment(vertices_[u].p, vertices_[v].p)));
 
 		sort_tuple(u,v);
 		auto res = edge_map.emplace(std::pair<VertexIdxPair,unsigned>(VertexIdxPair(u,v), edges().size()-1));
@@ -67,7 +67,10 @@ public:
 		return edges_[findres->second];
 	}
 
-	Segment get_segment(const Edge& e) const {
-		return Segment(vertices_[e.u].p, vertices_[e.v].p);
+//	Segment get_segment(const Edge& e) const {
+//		return Segment(vertices_[e.u].p, vertices_[e.v].p);
+//	}
+	const Segment& get_segment(const Edge& e) const {
+		return e.segment;
 	}
 };

@@ -316,7 +316,7 @@ void Data::assignBoundingBox() {
 			{monMax->p, monMax->id}
 	};
 
-	LOG(INFO)<<"monmin: " << *monMin << ", monMax: "  << *monMax;
+	LOG(INFO)<< "monmin: " << *monMin << ", monMax: "  << *monMax;
 }
 
 

@@ -52,11 +52,12 @@ using NT 	         	= K::FT;
 
 using Chain 			= std::list<ul>;
 using ChainRef			= Chain::iterator;
-using PartialSkeleton 	= std::list<ul>;
+//using PartialSkeleton 	= std::list<ul>;
 
 using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 
 static Point ORIGIN = Point(0,0);
+static Point INFPOINT(std::numeric_limits<double>::max(),std::numeric_limits<double>::max());
 
 class Vertex {
 public:
@@ -74,11 +75,13 @@ class Edge {
 public:
 	const unsigned u, v;
 	const unsigned id;
+	const Segment segment;
 
-	Edge(unsigned u, unsigned v, unsigned id)
+	Edge(unsigned u, unsigned v, unsigned id, Segment s)
 	: u(u)
 	, v(v)
-	, id(id) {}
+	, id(id)
+	, segment(s) {}
 
 	inline bool has(const unsigned idx) const {return u == idx || v == idx;}
 
@@ -184,35 +187,45 @@ private:
 
 
 class Event {
-	using EventEdges = std::array<ul, 3>;
+//	using EventEdges = std::array<ul, 3>;
 
 public:
+//	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
+//		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {
+//			leftEdge  = edges[0];
+//			mainEdge  = edges[1];
+//			rightEdge = edges[2];
+//			sortEdgeIndices();
+//		}
 	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
-		eventTime(time),eventPoint(point),edges{{edgeA,edgeB,edgeC}}, chainEdge(ref) {
-			leftEdge  = edges[0];
-			mainEdge  = edges[1];
-			rightEdge = edges[2];
-			sortEdgeIndices();
-		}
+		eventTime(time),
+		eventPoint(point),
+		leftEdge(edgeA),
+		mainEdge(edgeB),
+		rightEdge(edgeC),
+		chainEdge(ref) {}
 
-	bool isEvent()   const { return eventPoint != INFPOINT;}
+	inline bool isEvent() const { return eventPoint != INFPOINT;}
 
 	NT	         	eventTime;
 	Point  			eventPoint;
 
-	EventEdges		edges;
-	ul 				mainEdge, leftEdge, rightEdge;
+//	EventEdges		edges;
+	ul 				leftEdge, mainEdge, rightEdge;
 
 	ChainRef 		chainEdge;
 
-	void sortEdgeIndices() {std::sort(std::begin(edges), std::end(edges));}
+//	void sortEdgeIndices() {std::sort(std::begin(edges), std::end(edges));}
 
-	bool operator==(const Event& rhs) const {
-		return this->edges[0] == rhs.edges[0]
-			&& this->edges[1] == rhs.edges[1]
-			&& this->edges[2] == rhs.edges[2];
+	inline bool operator==(const Event& rhs) const {
+//		return this->edges[0] == rhs.edges[0]
+//			&& this->edges[1] == rhs.edges[1]
+//			&& this->edges[2] == rhs.edges[2];
+		return this->leftEdge == rhs.leftEdge
+			&& this->mainEdge == rhs.mainEdge
+			&& this->rightEdge == rhs.rightEdge;
 	}
-	bool operator!=(const Event& rhs) const {
+	inline bool operator!=(const Event& rhs) const {
 		return !(*this == rhs);
 	}
 	friend std::ostream& operator<< (std::ostream& os, const Event& event);
@@ -419,25 +432,25 @@ bool isLinesParallel(const T& a, const U& b);
 
 template<class T, class U>
 Point intersectElements(const T& a, const U& b) {
-	Point intersectionPoint = INFPOINT;
+//	Point intersectionPoint = INFPOINT;
 
-	LOG(INFO) << "(" << a << " -- " << b << ") ";
+//	LOG(INFO) << "(" << a << " -- " << b << ") ";
 
-	if(CGAL::do_intersect(a,b)) {
+//	if(CGAL::do_intersect(a,b)) {
 		auto result = CGAL::intersection(a, b);
 		if (result) {
 			if (const Point* p = boost::get<Point>(&*result)) {
 				return Point(*p);
 			} else if (const Segment* e = boost::get<Segment>(&*result)) {
-				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
+//				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
 				return Point(e->point(0));
-			} else {
-				LOG(WARNING) << "# Intersection forms a something else?!? - returning INFPOINT";
-				return intersectionPoint;
+//			} else {
+//				LOG(WARNING) << "# Intersection forms a something else?!? - returning INFPOINT";
+//				return INFPOINT;
 			}
 		}
-	}
-	return intersectionPoint;
+//	}
+	return INFPOINT;
 }
 
 ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);

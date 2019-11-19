@@ -62,9 +62,9 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 
 std::ostream& operator<< (std::ostream& os, const Event& event) {
     os << "(" << event.eventTime.doubleValue() << " : " << event.eventPoint.x().doubleValue() << "," << event.eventPoint.y().doubleValue() << ")["
-    		<< event.edges[0] << ","
-			<< event.edges[1] << ","
-			<< event.edges[2] << "]";
+    		<< event.leftEdge << ","
+			<< event.mainEdge << ","
+			<< event.rightEdge << "]";
     auto it1 = ChainRef(event.chainEdge);
     os << " it(" << *(--it1) << "," << *(++it1) << "," << *(++it1) << ")";
     return os;

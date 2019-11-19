@@ -60,9 +60,9 @@ public:
 	bool FinishSkeleton(Chain& chain, PartialSkeleton& skeleton);
 //
 //	bool ComputeSingleSkeletonEvent(bool lower);
-	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, Event* event);
-	void HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<Event*> eventList);
-	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<Event*> eventList);
+	void HandleSingleEdgeEvent(Chain& chain, PartialSkeleton& skeleton, const Event* event);
+	void HandleMultiEdgeEvent(Chain& chain, PartialSkeleton& skeleton, std::vector<const Event*> eventList);
+	void HandleMultiEvent(Chain& chain, PartialSkeleton& skeleton,std::vector<const Event*> eventList);
 //
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
@@ -71,7 +71,7 @@ public:
 	bool ComputeSkeleton(ChainType type);
 
 	Chain& getChain(ChainType type) {return (type == ChainType::UPPER) ? upperChain : lowerChain;}
-	PartialSkeleton& getSkeleton(ChainType type) {return (type == ChainType::UPPER) ? upperSkeleton : lowerSkeleton;}
+//	PartialSkeleton& getSkeleton(ChainType type) {return (type == ChainType::UPPER) ? upperSkeleton : lowerSkeleton;}
 
 	Event getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const;
 	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
@@ -167,7 +167,7 @@ public:
 	/* helping to find the paths, holds for every edge of polygon
 	 * the index to the last node on the left/right path */
 	PathFinder 			pathFinder;
-	PartialSkeleton		upperSkeleton, 	lowerSkeleton;
+//	PartialSkeleton		upperSkeleton, 	lowerSkeleton;
 
 	Chain  				upperChain, lowerChain;
 

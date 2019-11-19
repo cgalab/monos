@@ -61,8 +61,8 @@ public:
 	const Edge e(const ul& idx) const { return input.get_edge(idx); }
 	const Vertex& v(const ul& idx) const { return getVertices()[idx]; }
 	const Point& p(const ul& idx) const { return v(idx).p; }
-	Segment get_segment(const ul& idx) const {return input.get_segment(e(idx));}
-	Segment get_segment(const EdgeIterator& it) const {return input.get_segment(e(it->id));}
+	Segment get_segment(const ul& idx) const {return e(idx).segment;}
+	Segment get_segment(const EdgeIterator& it) const {return it->segment;}
 
 	const Point& eA(const ul& edgeIdx) const {return p(e(edgeIdx).u);}
 	const Point& eB(const ul& edgeIdx) const {return p(e(edgeIdx).v);}
@@ -82,6 +82,9 @@ public:
 		return isLinesParallel(get_segment(i).supporting_line(),get_segment(j).supporting_line());
 	}
 
+	inline Line simpleBisector(const ul& a, const ul& b) {
+		return CGAL::bisector(get_segment(a).supporting_line(),get_segment(b).supporting_line().opposite());
+	}
 
 	/* verify if the input polygon is monotone, if required we rotate
 	 * the vertices such that x-monotonicity holds for P */
