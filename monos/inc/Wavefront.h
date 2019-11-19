@@ -8,35 +8,32 @@
 
 class MonotonePathTraversal {
 public:
-	MonotonePathTraversal(ul edgeIdx=0, ul currentArcIdx=0, ul oppositeArcIdx=0, bool upperChain=true, bool iterateAway=true)
+	MonotonePathTraversal(ul edgeIdx=0, ul currentArcIdx=0, ul oppositeArcIdx=0, ChainType type = ChainType::UPPER)
 	: edgeIdx(edgeIdx)
 	, currentArcIdx(currentArcIdx)
-	, oppositeArcIdx(oppositeArcIdx)
-	, upperChain(upperChain)
-	, iterateAwayFromEdge(iterateAway)
+	, finalArcIdx(oppositeArcIdx)
+	, type(type)
 	{}
 
-	bool done() const {return currentArcIdx == oppositeArcIdx;}
-	bool isUpperChain() const { return upperChain; }
-	bool isAnIndex(const ul idx) const { return idx == currentArcIdx || idx == oppositeArcIdx; }
-	void swap() { std::swap(currentArcIdx, oppositeArcIdx); }
+	bool done() const {return currentArcIdx == finalArcIdx;}
+	bool isUpperChain() const { return ChainType::UPPER == type; }
+//	bool isAnIndex(const ul idx) const { return idx == currentArcIdx || idx == finalArcIdx; }
+//	void swap() { std::swap(currentArcIdx, finalArcIdx); }
 
 	void set(const MonotonePathTraversal& reset) {
 		edgeIdx 		    = reset.edgeIdx;
 		currentArcIdx 	    = reset.currentArcIdx;
-		oppositeArcIdx 	    = reset.oppositeArcIdx;
-		upperChain 		    = reset.upperChain;
-		iterateAwayFromEdge = reset.iterateAwayFromEdge;
+		finalArcIdx 	    = reset.finalArcIdx;
+		type 		   	 	= reset.type;
 	}
 
 	ul edgeIdx;
-	ul currentArcIdx, oppositeArcIdx;
-	bool upperChain;
+	ul currentArcIdx, finalArcIdx;
+	ChainType type;
 
-	bool iterateAwayFromEdge;
 
 	bool operator==(const MonotonePathTraversal& rhs) const {
-		return this->currentArcIdx == rhs.currentArcIdx && this->edgeIdx == rhs.edgeIdx && this->oppositeArcIdx == rhs.oppositeArcIdx && this->upperChain == rhs.upperChain;
+		return this->currentArcIdx == rhs.currentArcIdx && this->edgeIdx == rhs.edgeIdx && this->finalArcIdx == rhs.finalArcIdx && this->type == rhs.type;
 	}
 	bool operator!=(const MonotonePathTraversal& rhs) const {
 		return !(*this == rhs);
@@ -78,7 +75,7 @@ public:
 //	Chain& getUpperChain() { return upperChain; }
 //	Chain& getLowerChain() { return lowerChain; }
 //
-	Bisector constructBisector(const ul& aIdx, const ul& bIdx) const;
+//	Bisector constructBisector(const ul& aIdx, const ul& bIdx) const;
 //	Bisector getBisectorWRTMonotonicityLine(const Bisector& bisector) const;
 //	Point intersectBisectorArc(const Bisector& bis, const Arc& arc);
 	void disableEdge(ul edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
@@ -116,13 +113,13 @@ public:
 //
 //	bool isArcPerpendicular(const Arc& arc) const;
 //	bool isArcInSkeleton(const ul& arcIdx) const;
-//	inline bool liesOnFace(const Arc& arc, const ul edgeIdx) const {
-//		return arc.leftEdgeIdx == edgeIdx || arc.rightEdgeIdx == edgeIdx;
-//	}
-//
+	inline bool liesOnFace(const Arc& arc, const ul& edgeIdx) const {
+		return arc.leftEdgeIdx == edgeIdx || arc.rightEdgeIdx == edgeIdx;
+	}
+
 	NT getTime() const {return currentTime;}
 //
-//	Node& getTerminalNodeForVertex(const ul& vertexIdx)  {return nodes[vertexIdx];}
+	Node& getTerminalNodeForVertex(const ul& vertexIdx)  {return nodes[vertexIdx];}
 //	void SortArcsOnNodes();
 //	Arc* getLastArc() {return &arcList[arcList.size()-1];}
 //
@@ -135,19 +132,21 @@ public:
 //			return &arcList[path.currentArcIdx];
 //		}
 //	}
-//	ul getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const;
+	ul getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const;
 //
 //	/* -- monotone path traversal -- */
 //	/* for the merge we have to traverse the faces of a chain-skeleton from 'left to right'
 //	 * with respect to the monotonicity line. Actually only the right path suffices! */
 //	bool nextMonotoneArcOfPath(MonotonePathTraversal& path);
-//	bool isArcLeftOfArc(const Line& ray, const Arc& arcA, const Arc& arcB) const;
+	bool isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const;
 //	bool isArcLeftOfArc(const Arc* arcA, const Arc* arcB) const;
 //	bool isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const;
 //	bool isArcLeftOfPoint(const Arc& arc, const Point& point) const;
-//	ul getLeftmostNodeIdxOfArc(const Arc& arc) const;
-//	ul getRightmostNodeIdxOfArc(const Arc& arc) const;
-//	void initPathForEdge(const bool upper, const ul edgeIdx);
+	ul getLeftmostNodeIdxOfArc(const Arc& arc) const;
+	ul getRightmostNodeIdxOfArc(const Arc& arc) const;
+
+	void initPathForEdge(ChainType type, const ul& edgeIdx);
+
 //	ul getPossibleRayIdx(const Node& node, ul edgeIdx) const;
 //	ul getCommonNodeIdx(const ul& arcIdxA, const ul& arcIdxB);
 //
@@ -167,7 +166,6 @@ public:
 	PathFinder 			pathFinder;
 //	PartialSkeleton		upperSkeleton, 	lowerSkeleton;
 
-	Chain  				upperChain, lowerChain;
 
 	/* for the merge to keep track of the current state */
 	MonotonePathTraversal upperPath, lowerPath;
@@ -187,6 +185,7 @@ public:
 	 * for that edge at position idx as well */
 
 private:
+	Chain  			upperChain, lowerChain;
 	Data&    		data;
 };
 

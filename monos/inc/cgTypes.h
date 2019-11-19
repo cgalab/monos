@@ -52,7 +52,6 @@ using NT 	         	= K::FT;
 
 using Chain 			= std::list<ul>;
 using ChainRef			= Chain::iterator;
-//using PartialSkeleton 	= std::list<ul>;
 
 using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 
@@ -125,65 +124,65 @@ struct MonVectCmp {
 };
 
 
-class Bisector {
-public:
-	Bisector(Ray r,  ul idxA, ul idxB) :type(BisType::RAY), ray(r),  eIdxA(idxA), eIdxB(idxB)  {}
-	Bisector(Line l, ul idxA, ul idxB) :type(BisType::LINE),line(l), eIdxA(idxA), eIdxB(idxB) {}
-
-	BisType type;
-	Ray     ray;
-	Line    line;
-
-
-	ul eIdxA, eIdxB;
-
-	bool isRay()  const { return type == BisType::RAY; }
-	bool isLine() const { return type == BisType::LINE;}
-
-	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
-	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
-	Point point(ul i = 0) const { return supporting_line().point(i); }
-	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
-
-	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
-
-	bool isAA() const {if(isRay()) {return ray.is_vertical() || ray.is_horizontal();} else {return line.is_vertical() || line.is_horizontal();}}
-	bool is_vertical() const {if(isRay()) {return ray.is_vertical();} else {return line.is_vertical();}}
-	bool is_horizontal() const {if(isRay()) {return ray.is_horizontal();} else {return line.is_horizontal();}}
-	void setParallel(bool p) {parallel = p;}
-	bool isParallel() const {return parallel;}
-	void setGhost(bool g) {ghost = g;}
-	bool isGhost() const {return ghost;}
-
-	void changeDirection() {
-		if(isRay()) {
-			ray = ray.opposite();
-		} else {
-			line = line.opposite();
-		}
-	}
-
-	void changeToLine() {
-		line = supporting_line();
-		type = BisType::LINE;
-		ray  = Ray();
-	}
-
-	void newSource(const Point s) {
-		if(isRay()) {
-			ray = Ray(s,direction());
-		} else {
-			line = Line(s,direction());
-		}
-	}
-
-private:
-	/* true if perpendicular to monotonicity line */
-	bool parallel = false;
-	bool ghost    = false;
-
-	friend std::ostream& operator<< (std::ostream& os, const Bisector& bis);
-};
+//class Bisector {
+//public:
+//	Bisector(Ray r,  ul idxA, ul idxB) :type(BisType::RAY), ray(r),  eIdxA(idxA), eIdxB(idxB)  {}
+//	Bisector(Line l, ul idxA, ul idxB) :type(BisType::LINE),line(l), eIdxA(idxA), eIdxB(idxB) {}
+//
+//	BisType type;
+//	Ray     ray;
+//	Line    line;
+//
+//
+//	ul eIdxA, eIdxB;
+//
+//	bool isRay()  const { return type == BisType::RAY; }
+//	bool isLine() const { return type == BisType::LINE;}
+//
+//	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
+//	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
+//	Point point(ul i = 0) const { return supporting_line().point(i); }
+//	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
+//
+//	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
+//
+//	bool isAA() const {if(isRay()) {return ray.is_vertical() || ray.is_horizontal();} else {return line.is_vertical() || line.is_horizontal();}}
+//	bool is_vertical() const {if(isRay()) {return ray.is_vertical();} else {return line.is_vertical();}}
+//	bool is_horizontal() const {if(isRay()) {return ray.is_horizontal();} else {return line.is_horizontal();}}
+//	void setParallel(bool p) {parallel = p;}
+//	bool isParallel() const {return parallel;}
+//	void setGhost(bool g) {ghost = g;}
+//	bool isGhost() const {return ghost;}
+//
+//	void changeDirection() {
+//		if(isRay()) {
+//			ray = ray.opposite();
+//		} else {
+//			line = line.opposite();
+//		}
+//	}
+//
+//	void changeToLine() {
+//		line = supporting_line();
+//		type = BisType::LINE;
+//		ray  = Ray();
+//	}
+//
+//	void newSource(const Point s) {
+//		if(isRay()) {
+//			ray = Ray(s,direction());
+//		} else {
+//			line = Line(s,direction());
+//		}
+//	}
+//
+//private:
+//	/* true if perpendicular to monotonicity line */
+//	bool parallel = false;
+//	bool ghost    = false;
+//
+//	friend std::ostream& operator<< (std::ostream& os, const Bisector& bis);
+//};
 
 
 class TimeEdge {
@@ -458,16 +457,16 @@ Point intersectElements(const T& a, const U& b) {
 
 ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
-Point intersectArcArc(const Arc& arcA, const Arc& arcB);
-Point intersectRayArc(const Ray& ray, const Arc& arc);
-Point intersectBisectorEdge(const Bisector& bis, const Segment& edge);
+//Point intersectArcArc(const Arc& arcA, const Arc& arcB);
+//Point intersectRayArc(const Ray& ray, const Arc& arc);
+//Point intersectBisectorEdge(const Bisector& bis, const Segment& edge);
 
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
 	return CGAL::parallel(Line(a),Line(b));
 }
 
-bool do_intersect(const Bisector& ray, const Arc& arc);
-bool do_intersect(const Bisector& ray, const Segment& edge);
+//bool do_intersect(const Bisector& ray, const Arc& arc);
+//bool do_intersect(const Bisector& ray, const Segment& edge);
 
 #endif /* CGALTYPES_H_ */

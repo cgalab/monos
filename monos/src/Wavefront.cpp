@@ -5,8 +5,7 @@ std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
 	if(path.currentArcIdx == MAX) {
 		os << "MAX" << " opposite: ";} else {	os << path.currentArcIdx << " opposite: ";
 	}
-	if(path.oppositeArcIdx == MAX) {os << "MAX";} else {os << path.oppositeArcIdx;}
-	if(path.iterateAwayFromEdge) {os << " away ";} else {os << " towards ";	}
+	if(path.finalArcIdx == MAX) {os << "MAX";} else {os << path.finalArcIdx;}
 	return os;
 }
 
@@ -579,74 +578,74 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 //	return e;
 }
 
-Bisector Wavefront::constructBisector(const ul& aIdx, const ul& bIdx) const {
-	assert(aIdx != bIdx);
-	Line a(data.get_segment(aIdx).supporting_line());
-	Line b(data.get_segment(bIdx).supporting_line());
-
-	Point intersectionA = intersectElements(a, b);
-
-	LOG(INFO) << " bis " << aIdx << "/" << bIdx << "  ";
-
-	if(intersectionA != INFPOINT) {
-		Point aP, bP, cP;
-		aP = data.eA(aIdx);
-		bP = intersectionA;
-		cP = data.eB(bIdx);
-
-		Line bisLine = CGAL::bisector(a,b.opposite());
-		Point pBis = intersectionA + bisLine.to_vector();
-		Ray bis(intersectionA,pBis);
-
-		if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
-			bis = bis.opposite();
-		}
-
-		if(bis.is_degenerate() || bis.is_horizontal() || bis.is_vertical()) {
-			/* interesting BUG? If one of these conditions is true a Ray leads to
-			 * some side effects but a line still works... */
-			return Bisector(bis.supporting_line(),aIdx,bIdx);
-		}
-
-		return Bisector(bis,aIdx,bIdx);
-	} else {
-		if(CGAL::collinear(a.point(0),a.point(1),b.point(0)+b.to_vector())) {
-			LOG(INFO) << "constructBisector: ghost arc";
-
-			auto bis = Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
-
-			if(pathFinder[aIdx].b != MAX) {
-				auto n = nodes[pathFinder[aIdx].b];
-				bis.newSource(n.point);
-			}
-
-			bis.setGhost(true);
-
-			auto dir = a.perpendicular(a.point(0)).direction();
-			if(dir == data.monotonicityLine.direction()) {
-				LOG(INFO) << "-- unset ghost vertex";
-				bis.setGhost(false);
-			}
-
-			return bis;
-		} else {
-			LOG(INFO) << "constructBisector: bisector of parallel input edges";
-			Line bisLine = CGAL::bisector(a,b.opposite());
-			auto bis = Bisector(bisLine,aIdx,bIdx);
-
-			if(a.direction() == data.perpMonotonDir || a.opposite().direction() == data.perpMonotonDir) {
-				LOG(INFO) << "bisector perpendicular to monotonicity line";
-				bis.setParallel(true);
-			}
-
-			LOG(INFO) << bisLine;
-			return bis;
-		}
-	}
-
-	assert(false);
-	return Bisector(Ray(),aIdx,bIdx);
-}
+//Bisector Wavefront::constructBisector(const ul& aIdx, const ul& bIdx) const {
+//	assert(aIdx != bIdx);
+//	Line a(data.get_segment(aIdx).supporting_line());
+//	Line b(data.get_segment(bIdx).supporting_line());
+//
+//	Point intersectionA = intersectElements(a, b);
+//
+//	LOG(INFO) << " bis " << aIdx << "/" << bIdx << "  ";
+//
+//	if(intersectionA != INFPOINT) {
+//		Point aP, bP, cP;
+//		aP = data.eA(aIdx);
+//		bP = intersectionA;
+//		cP = data.eB(bIdx);
+//
+//		Line bisLine = CGAL::bisector(a,b.opposite());
+//		Point pBis = intersectionA + bisLine.to_vector();
+//		Ray bis(intersectionA,pBis);
+//
+//		if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
+//			bis = bis.opposite();
+//		}
+//
+//		if(bis.is_degenerate() || bis.is_horizontal() || bis.is_vertical()) {
+//			/* interesting BUG? If one of these conditions is true a Ray leads to
+//			 * some side effects but a line still works... */
+//			return Bisector(bis.supporting_line(),aIdx,bIdx);
+//		}
+//
+//		return Bisector(bis,aIdx,bIdx);
+//	} else {
+//		if(CGAL::collinear(a.point(0),a.point(1),b.point(0)+b.to_vector())) {
+//			LOG(INFO) << "constructBisector: ghost arc";
+//
+//			auto bis = Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
+//
+//			if(pathFinder[aIdx].b != MAX) {
+//				auto n = nodes[pathFinder[aIdx].b];
+//				bis.newSource(n.point);
+//			}
+//
+//			bis.setGhost(true);
+//
+//			auto dir = a.perpendicular(a.point(0)).direction();
+//			if(dir == data.monotonicityLine.direction()) {
+//				LOG(INFO) << "-- unset ghost vertex";
+//				bis.setGhost(false);
+//			}
+//
+//			return bis;
+//		} else {
+//			LOG(INFO) << "constructBisector: bisector of parallel input edges";
+//			Line bisLine = CGAL::bisector(a,b.opposite());
+//			auto bis = Bisector(bisLine,aIdx,bIdx);
+//
+//			if(a.direction() == data.perpMonotonDir || a.opposite().direction() == data.perpMonotonDir) {
+//				LOG(INFO) << "bisector perpendicular to monotonicity line";
+//				bis.setParallel(true);
+//			}
+//
+//			LOG(INFO) << bisLine;
+//			return bis;
+//		}
+//	}
+//
+//	assert(false);
+//	return Bisector(Ray(),aIdx,bIdx);
+//}
 
 //Bisector Wavefront::getBisectorWRTMonotonicityLine(const Bisector& bisector) const {
 //	Bisector bis(bisector);
@@ -802,7 +801,7 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 //	if(path.done()) {return false;}
 //
 //	auto currentArc  = &arcList[path.currentArcIdx];
-//	auto oppositeArc = &arcList[path.oppositeArcIdx];
+//	auto oppositeArc = &arcList[path.finalArcIdx];
 //
 //	/* check if rightmost end-point of both arcs is the same */
 //	if(currentArc->adjacent(*oppositeArc)) { // && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
@@ -835,7 +834,7 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 //		}
 //	}
 //}
-//
+
 //ul Wavefront::getCommonNodeIdx(const ul& arcIdxA, const ul& arcIdxB) {
 //	if(arcIdxA != MAX && arcIdxB != MAX) {
 //		Arc* arcA = getArc(arcIdxA);
@@ -862,36 +861,24 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 //	}
 //}
 //
-//ul Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const {
-//	ul rightNodeIdx; // = getRightmostNodeIdxOfArc(arc);
-//	ul repeat       = 0;
-//
-//	if(!arc.isRay()) {
-//		if(path.iterateAwayFromEdge) {
-//			rightNodeIdx = arc.secondNodeIdx;
-//		} else {
-//			rightNodeIdx = arc.firstNodeIdx;
-//		}
-//	} else {
-//		rightNodeIdx = arc.firstNodeIdx;
-//	}
-//	auto rightNode = nodes[rightNodeIdx];
-//
-//	/* run twice */
-//	do{
-//		for(auto a : rightNode.arcs) {
-//			if( !path.isAnIndex(a) ) {
-//				auto arcIt = arcList[a];
-//				if( liesOnFace(arcIt,path.edgeIdx) ) {
-//					return a;
-//				}
-//			}
-//		}
-//		rightNode = nodes[arc.getSecondNodeIdx(rightNodeIdx)];
-//	} while(repeat-- > 0);
-//
-//	return MAX;
-//}
+ul Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const {
+	/* a ray is the 'outermost' arc */
+	if(arc.isRay()) {return MAX;}
+
+	const auto& node = nodes[arc.secondNodeIdx];
+
+	for(auto a : node.arcs) {
+		if( a != path.currentArcIdx ) {
+			const auto& arcIt = arcList[a];
+
+			if( liesOnFace(arcIt,path.edgeIdx) ) {
+				return a;
+			}
+		}
+	}
+
+	return MAX;
+}
 //
 //bool Wavefront::isArcLeftOfPoint(const Arc& arc, const Point& point) const {
 //	auto Idx = getRightmostNodeIdxOfArc(arc);
@@ -914,116 +901,131 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 //		return isArcLeftOfArc(data.monotonicityLine,*arcA,*arcB);
 //	}
 //}
-//
+
 //bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
 //	return isArcLeftOfArc(data.monotonicityLine,arcA,arcB);
 //}
-//
-//bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
-//	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);
-//	auto NbIdx = getLeftmostNodeIdxOfArc(arcB);
-//	auto Na = &nodes[NaIdx];
-//	auto Nb = &nodes[NbIdx];
-//
-//	/* left endpoints are adjacent, check right endpoints */
-//	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
-//		NbIdx = getRightmostNodeIdxOfArc(arcB);
-//		Nb = &nodes[NbIdx];
-//	}
-//	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
-//		NbIdx = getLeftmostNodeIdxOfArc(arcB);
-//		Nb = &nodes[NbIdx];
-//		NaIdx = getRightmostNodeIdxOfArc(arcA);
-//		Na = &nodes[NaIdx];
-//	}
-//	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
-//		NbIdx = getRightmostNodeIdxOfArc(arcB);
-//		Nb = &nodes[NbIdx];
-//		NaIdx = getRightmostNodeIdxOfArc(arcA);
-//		Na = &nodes[NaIdx];
-//	}
-//
-//	bool pointAmonotoneSmaller = (Na->point != Nb->point) && data.monotoneSmaller(line,Na->point,Nb->point);
-//
-//	if(arcA.isEdge() && arcB.isEdge()) {
-//		/* 1st: both arcs are edges */
-//		return pointAmonotoneSmaller;
-//	} else if( (arcA.isEdge() && arcB.isRay()) || (arcA.isRay() && arcB.isEdge()) ) {
-//		/* 2nd: one edge one ray */
-//		auto& ray  = (arcA.isRay())  ? arcA : arcB;
-//		bool rayPointsLeft = data.rayPointsLeft(ray.ray);
-//
-//		if(    ( rayPointsLeft && arcA.isRay())
-//			|| (!rayPointsLeft && pointAmonotoneSmaller)
-//		) {
-//			return true;
-//		} else {
-//			return false;
-//		}
-//	} else {
-//		/* 3rd: both arcs are rays */
-//		assert(arcA.isRay());
-//		assert(arcB.isRay());
-//
-//		bool rayAPointsLeft = data.rayPointsLeft(arcA.ray);
-//		bool rayBPointsLeft = data.rayPointsLeft(arcB.ray);
-//
-//		if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
-//			return pointAmonotoneSmaller;
-//		} else if(rayAPointsLeft) {
-//			return true;
-//		} else if(rayBPointsLeft) {
-//			return false;
-//		}
-//	}
-//
-//	assert(false);
-//	return false;
-//}
-//
-//ul Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
-//	const auto& Na = nodes[arc.firstNodeIdx];
-//	if(arc.isEdge()) {
-//		const auto& Nb = nodes[arc.secondNodeIdx];
-//		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
-//	} else if (arc.isRay()) {
-//		return arc.firstNodeIdx;
-//	} else {
-//		LOG(ERROR) << "(R) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
-//		if(arc.secondNodeIdx == MAX) {
-//			return arc.firstNodeIdx;
-//		} else {
-//			const auto& Nb = nodes[arc.secondNodeIdx];
-//			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
-//		}
-//	}
-//}
-//
-//ul Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
-//	const auto& Na = nodes[arc.firstNodeIdx];
-//	if(arc.isEdge()) {
-//		const auto& Nb = nodes[arc.secondNodeIdx];
-//		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
-//	} else if (arc.isRay()) {
-//		return arc.firstNodeIdx;
-//	} else {
-//		LOG(ERROR) << "(L) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
-//		if(arc.secondNodeIdx == MAX) {
-//			return arc.firstNodeIdx;
-//		} else {
-//			const auto& Nb = nodes[arc.secondNodeIdx];
-//			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
-//		}
-//	}
-//}
-//
-//void Wavefront::initPathForEdge(const bool upper, const ul edgeIdx) {
-//	/* set the upperPath/lowerPath in 'wf' */
-//	LOG(INFO) << "initPathForEdge " << edgeIdx;
-//	Node& terminalNode   = (upper) ? getTerminalNodeForVertex(data.e(edgeIdx).u) : getTerminalNodeForVertex(data.e(edgeIdx).v);
-//
-//	MonotonePathTraversal path;
-//
+
+bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
+	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);
+	auto NbIdx = getLeftmostNodeIdxOfArc(arcB);
+	auto Na = &nodes[NaIdx];
+	auto Nb = &nodes[NbIdx];
+
+	/* left endpoints are adjacent, check right endpoints */
+	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
+		NbIdx = getRightmostNodeIdxOfArc(arcB);
+		Nb = &nodes[NbIdx];
+	}
+	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
+		NbIdx = getLeftmostNodeIdxOfArc(arcB);
+		Nb = &nodes[NbIdx];
+		NaIdx = getRightmostNodeIdxOfArc(arcA);
+		Na = &nodes[NaIdx];
+	}
+	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
+		NbIdx = getRightmostNodeIdxOfArc(arcB);
+		Nb = &nodes[NbIdx];
+		NaIdx = getRightmostNodeIdxOfArc(arcA);
+		Na = &nodes[NaIdx];
+	}
+
+	bool pointAmonotoneSmaller = (Na->point != Nb->point) && data.monotoneSmaller(line,Na->point,Nb->point);
+
+	if(arcA.isEdge() && arcB.isEdge()) {
+		/* 1st: both arcs are edges */
+		return pointAmonotoneSmaller;
+	} else if( (arcA.isEdge() && arcB.isRay()) || (arcA.isRay() && arcB.isEdge()) ) {
+		/* 2nd: one edge one ray */
+		auto& ray  = (arcA.isRay())  ? arcA : arcB;
+		bool rayPointsLeft = data.rayPointsLeft(ray.ray);
+
+		if(    ( rayPointsLeft && arcA.isRay())
+			|| (!rayPointsLeft && pointAmonotoneSmaller)
+		) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		/* 3rd: both arcs are rays */
+		assert(arcA.isRay());
+		assert(arcB.isRay());
+
+		bool rayAPointsLeft = data.rayPointsLeft(arcA.ray);
+		bool rayBPointsLeft = data.rayPointsLeft(arcB.ray);
+
+		if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
+			return pointAmonotoneSmaller;
+		} else if(rayAPointsLeft) {
+			return true;
+		} else if(rayBPointsLeft) {
+			return false;
+		}
+	}
+
+	assert(false);
+	return false;
+}
+
+ul Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
+	const auto& Na = nodes[arc.firstNodeIdx];
+	if(arc.isEdge()) {
+		const auto& Nb = nodes[arc.secondNodeIdx];
+		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
+	} else if (arc.isRay()) {
+		return arc.firstNodeIdx;
+	} else {
+		LOG(ERROR) << "(R) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
+		if(arc.secondNodeIdx == MAX) {
+			return arc.firstNodeIdx;
+		} else {
+			const auto& Nb = nodes[arc.secondNodeIdx];
+			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
+		}
+	}
+}
+
+ul Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
+	const auto& Na = nodes[arc.firstNodeIdx];
+	if(arc.isEdge()) {
+		const auto& Nb = nodes[arc.secondNodeIdx];
+		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
+	} else if (arc.isRay()) {
+		return arc.firstNodeIdx;
+	} else {
+		LOG(ERROR) << "(L) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
+		if(arc.secondNodeIdx == MAX) {
+			return arc.firstNodeIdx;
+		} else {
+			const auto& Nb = nodes[arc.secondNodeIdx];
+			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
+		}
+	}
+}
+
+void Wavefront::initPathForEdge(ChainType type, const ul& edgeIdx) {
+	/* set the upperPath/lowerPath in 'wf' */
+	LOG(INFO) << "initPathForEdge " << edgeIdx;
+
+	const Node& terminalNode   = (ChainType::UPPER == type) ? getTerminalNodeForVertex(data.e(edgeIdx).u) : getTerminalNodeForVertex(data.e(edgeIdx).v);
+	const auto& path = (ChainType::UPPER == type) ? upperPath : lowerPath;
+
+	path.edgeIdx = edgeIdx;
+	path.currentArcIdx = terminalNode.arcs.front();
+
+	const Node* finalNode = (ChainType::UPPER == type) ? getNode(pathFinder[edgeIdx].a) : getNode(pathFinder[edgeIdx].a);
+	path.finalArcIdx = MAX;
+	for(auto a : finalNode->arcs) {
+		const auto* arc = getArc(a);
+		if(ChainType::UPPER == type && arc->rightEdgeIdx == edgeIdx) {
+			path.finalArcIdx = a;
+			if(arc->isRay()) {
+				break;
+			}
+		}
+	}
+
 //	if(!terminalNode.arcs.empty()) {
 //		ul  initialArcIdx  = terminalNode.arcs.front();
 //		Arc&  initialArc     = arcList[initialArcIdx];
@@ -1058,8 +1060,8 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 //	}
 //
 //	LOG(INFO) << path;
-//}
-//
+}
+
 //ul Wavefront::getPossibleRayIdx(const Node& node, ul edgeIdx) const {
 //	ul arcIdx = MAX;
 //	for(auto a : node.arcs) {

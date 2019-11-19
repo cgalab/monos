@@ -74,7 +74,7 @@ void Monos::run() {
 //	 * their incidences. */
 //	wf->SortArcsOnNodes();
 //
-//	s->MergeUpperLowerSkeleton();
+	s->MergeUpperLowerSkeleton();
 //	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
 
 
@@ -126,6 +126,8 @@ bool Monos::init() {
 	/** input must be monotone */
 	wf->ChainDecomposition();
 	if(config.verbose) {LOG(INFO) << "chain decomposition done";}
+
+	s->storeChains(wf->getChain(ChainType::UPPER), wf->getChain(ChainType::LOWER));
 
 	/* initialize wavefront and skeleton */
 	wf->InitializeNodes();

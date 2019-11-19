@@ -1,13 +1,13 @@
 
 #include "Skeleton.h"
 
-std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
-//	os << "intersection point: " << intersection.getIntersection() << ", arcs " << intersection.arcs.size() << ": ";
-//	for(auto a : intersection.getArcs()) {
-//		os << a << " ";
-//	}
-	return os;
-}
+//std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
+////	os << "intersection point: " << intersection.getIntersection() << ", arcs " << intersection.arcs.size() << ": ";
+////	for(auto a : intersection.getArcs()) {
+////		os << a << " ";
+////	}
+//	return os;
+//}
 
 //ul Skeleton::nextUpperChainIndex(const ul& idx) const {
 //	return (idx > 0) ? idx - 1 : data.getPolygon().size() - 1;
@@ -17,18 +17,21 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	return (idx+1 < data.getPolygon().size()) ? idx + 1 : 0;
 //}
 //
-//void Skeleton::initMerge() {
-//	upperChainIndex    	= wf.upperChain.front();
-//	lowerChainIndex    	= wf.lowerChain.front();
-//	startIdxMergeNodes 	= wf.nodes.size();
-//	sourceNodeIdx 	   	= wf.pathFinder[lowerChainIndex].a;
-//	sourceNode    		= &wf.nodes[sourceNodeIdx];
-//	newNodeIdx    		= sourceNodeIdx;
-//
-//	/* set the upperPath/lowerPath in 'wf' */
+void Skeleton::initMerge() {
+	upperChainIndex    	= upperChain.front();
+	lowerChainIndex    	= lowerChain.front();
+	startIdxMergeNodes 	= wf.nodes.size();
+	sourceNodeIdx 	   	= wf.pathFinder[lowerChainIndex].a;
+	sourceNode    		= &wf.nodes[sourceNodeIdx];
+	newNodeIdx    		= sourceNodeIdx;
+
+	LOG(INFO) << "upper: " << upperChain.size();
+	LOG(INFO) << "lower: " << lowerChain.size();
+
+	/* set the upperPath/lowerPath in 'wf' */
 //	wf.initPathForEdge(true,upperChainIndex);
 //	wf.initPathForEdge(false,lowerChainIndex);
-//}
+}
 //
 ///* add last are, connect to end node! */
 //void Skeleton::finishMerge() {
@@ -38,47 +41,58 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	LOG(INFO) << "Merge Finished!";
 //}
 //
-//void Skeleton::MergeUpperLowerSkeleton() {
-//	initMerge();
-//
-//	/* iterate over upper and lower chain with while loop */
-//	while(SingleMergeStep());
-//
+void Skeleton::MergeUpperLowerSkeleton() {
+	initMerge();
+
+	/* iterate over upper and lower chain with while loop */
+	while(SingleMergeStep());
+
 //	finishMerge();
-//}
-//
-//
-///**
-// * Executes a single merge step along the merge line, return false if merge is finished
-// * */
-//bool Skeleton::SingleMergeStep() {
-//	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
-//
-//	/* we start the bisector from the source node from the "left" since the merge line is monotone */
+}
+
+
+/**
+ * Executes a single merge step along the merge line, return false if merge is finished
+ * */
+bool Skeleton::SingleMergeStep() {
+	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
+
+	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
+	auto Pa = bisLine.point(0);
+	auto Pb = Pa + bisLine.to_vector();
+	if(!data.monotoneSmaller(Pa,Pb)) {
+		bisLine = bisLine.opposite();
+	}
+	auto bis = Ray(sourceNode->point,bisLine.direction());
+
+	/* we start the bisector from the source node from the "left" since the merge line is monotone */
 //	Bisector bisGeneral = wf.constructBisector(upperChainIndex,lowerChainIndex);
 //	Bisector bis = wf.getBisectorWRTMonotonicityLine(bisGeneral);
 //	bis.newSource(sourceNode->point);
-//
-//	LOG(INFO) << "Bisector-dir: " << bis.direction();
-//
-//	/* visualize next bisector via dashed line-segment */
-////	data.visualizeBisector(Segment(sourceNode->point,sourceNode->point+(5*bis.to_vector())));
-//
-//	/* setup intersection call */
-//	/* obtain the arcIdx and newPoint for the next bis arc intersection */
-//	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
-//	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl
-//			  << "intersection lower: " << intersectionPair.second;
-//
-//	/**
-//	 * IF we need to handle a source ghost node from the previous round!
-//	 * This means that the next arc is a ghost arc that will end at that ghost node,
-//	 * therefore its position is not yet fixed and we have to move it 'now'. */
+
+	LOG(INFO) << "Bisector-dir: " << bis.direction();
+
+	/* visualize next bisector via dashed line-segment */
+//	data.visualizeBisector(Segment(sourceNode->point,sourceNode->point+(5*bis.to_vector())));
+
+	/* setup intersection call */
+	/* obtain the arcIdx and newPoint for the next bis arc intersection */
+	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
+	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl
+			  << "intersection lower: " << intersectionPair.second;
+
+
+	newNodeIdx = handleMerge(intersectionPair, bis);
+
+	/**
+	 * IF we need to handle a source ghost node from the previous round!
+	 * This means that the next arc is a ghost arc that will end at that ghost node,
+	 * therefore its position is not yet fixed and we have to move it 'now'. */
 //	checkAndHandlePossibleSourceGhostNode(intersectionPair,bis);
-//
-//	/**
-//	 * we distinguish between 'simple' intersections, meaning an intersection point is left of the other
-//	 * or there is only one, and the rest where node intersections and things like that may occur */
+
+	/**
+	 * we distinguish between 'simple' intersections, meaning an intersection point is left of the other
+	 * or there is only one, and the rest where node intersections and things like that may occur */
 //	if(isIntersectionSimple(intersectionPair,bis)) {
 //		bool onUpperChain;
 //		auto intersection = getIntersectionIfSimple(bis,intersectionPair,onUpperChain);
@@ -87,10 +101,10 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //		auto modifiedArc = wf.getArc(*intersection.getArcs().rbegin());
 //		if(onUpperChain) {
 //			upperChainIndex = (modifiedArc->leftEdgeIdx != upperChainIndex) ? modifiedArc->leftEdgeIdx : modifiedArc->rightEdgeIdx;
-//			wf.initPathForEdge(true,upperChainIndex);
+////			wf.initPathForEdge(ChainType::UPPER,upperChainIndex);
 //		} else {
 //			lowerChainIndex = (modifiedArc->leftEdgeIdx != lowerChainIndex) ? modifiedArc->leftEdgeIdx : modifiedArc->rightEdgeIdx;
-//			wf.initPathForEdge(false,lowerChainIndex);
+////			wf.initPathForEdge(ChainType::LOWER,lowerChainIndex);
 //		}
 //	} else {
 //		/* more than two arcs means at least one existing node lies on the intersection */
@@ -102,38 +116,38 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //
 //		if(nextUpperChainIndex != MAX) {
 //			upperChainIndex = nextUpperChainIndex;
-//			wf.initPathForEdge(true,upperChainIndex);
+////			wf.initPathForEdge(ChainType::UPPER,upperChainIndex);
 //		}
 //
 //		if(nextLowerChainIndex != MAX) {
 //			lowerChainIndex = nextLowerChainIndex;
-//			wf.initPathForEdge(false,lowerChainIndex);
+////			wf.initPathForEdge(ChainType::LOWER,lowerChainIndex);
 //		}
 //	}
 //
 //	/* we iterate the sourcenode to the newly added node and go on merging */
-//	LOG(INFO) << "changing idx from old: " << sourceNodeIdx << " to " << newNodeIdx;
-//	sourceNodeIdx = newNodeIdx;
-//	sourceNode = &wf.nodes[sourceNodeIdx];
-//
+	LOG(INFO) << "changing idx from old: " << sourceNodeIdx << " to " << newNodeIdx;
+	sourceNodeIdx = newNodeIdx;
+	sourceNode = &wf.nodes[sourceNodeIdx];
+
 //	nodeZeroEdgeRemoval(*sourceNode);
-//
-//
-//	/* addGhostNode is set to true on certain conditions to handle a ghost node in the next
-//	 * merge round */
+
+
+	/* addGhostNode is set to true on certain conditions to handle a ghost node in the next
+	 * merge round */
 //	if(addGhostNode) {
 //		sourceNode->setGhost(true);
 //		addGhostNode = false;
 //		LOG(INFO) << "(G) SingleMergeStep: setting sourceNode to be a ghost node!";
 //	}
-//
-//	LOG(INFO) << "";
-//	LOG(INFO) << "############################################## END STEP ###########################";
-//	LOG(INFO) << "";
-//
-//	return !EndOfBothChains();
-//}
-//
+
+	LOG(INFO) << "";
+	LOG(INFO) << "############################################## END STEP ###########################";
+	LOG(INFO) << "";
+
+	return !EndOfBothChains();
+}
+
 //ul Skeleton::getNextEdgeIdxFromIntersection(const Intersection& intersection, bool onUpperChain) {
 //	Point P = data.eA(wf.lowerChain.front());
 //	ul arcIdx = MAX;
@@ -159,16 +173,51 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	}
 //}
 //
-///* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
-// * in respect to the 'monotonicityLine' */
-//IntersectionPair Skeleton::findNextIntersectingArc(Bisector& bis) {
-//	assert(sourceNode != nullptr);
-//
-//	/* holds the arcs we find in this search */
+/* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
+ * in respect to the 'monotonicityLine' */
+IntersectionPair Skeleton::findNextIntersectingArc(Ray& bis) {
+	assert(sourceNode != nullptr);
+
+	/* holds the arcs we find in this search */
+
+	wf.initPathForEdge(ChainType::UPPER,upperChainIndex);
+	wf.initPathForEdge(ChainType::LOWER,lowerChainIndex);
+
+	auto& upperArc = wf.arcList[wf.upperPath.currentArcIdx];
+	auto& lowerArc = wf.arcList[wf.lowerPath.currentArcIdx];
+
+	Point Pu = INFPOINT;
+	while(!isIntersecting(bis,upperArc)) {
+		wf.upperPath.currentArcIdx = wf.getNextArcIdx(wf.upperPath,upperArc);
+		upperArc = *wf.getArc(wf.upperPath.currentArcIdx);
+	}
+	if(wf.upperPath.currentArcIdx != MAX) {
+		if(upperArc.isEdge()) {
+			Pu = intersectElements(bis,upperArc.segment);
+		} else {
+			Pu = intersectElements(bis,upperArc.ray);
+		}
+	}
+
+	Point Pl = INFPOINT;
+	while(!isIntersecting(bis,lowerArc)) {
+		wf.lowerPath.currentArcIdx = wf.getNextArcIdx(wf.lowerPath,lowerArc);
+		lowerArc = *wf.getArc(wf.lowerPath.currentArcIdx);
+	}
+	if(wf.lowerPath.currentArcIdx != MAX) {
+		if(lowerArc.isEdge()) {
+			Pl = intersectElements(bis,lowerArc.segment);
+		} else {
+			Pl = intersectElements(bis,lowerArc.ray);
+		}
+	}
+
+	return std::make_pair(Pu,Pl);
+
+
+
+
 //	Intersection upperIntersection, lowerIntersection;
-//
-//	wf.initPathForEdge(true,upperChainIndex);
-//	wf.initPathForEdge(false,lowerChainIndex);
 //
 //	/* new intersection point must be to the right of 'currentPoint' in respect to the monotonicity line */
 //	bool localOnUpperChain;
@@ -176,17 +225,16 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	MonotonePathTraversal pathBackupLower, pathBackupUpper;
 //
 //	MonotonePathTraversal *path;
-//	Arc *arc, *arc_u, *arc_l;
 //	Intersection *intersection;
 //
-//	if(bis.isParallel() && bis.isRay()) {bis.changeToLine(); LOG(INFO) << "change bis-ray to line.";}
+////	if(bis.isParallel() && bis.isRay()) {bis.changeToLine(); LOG(INFO) << "change bis-ray to line.";}
 //
 //	/* while iterate we may iterate one arc to far, this is an easy way to step back */
 //	pathBackupLower = wf.lowerPath; pathBackupUpper = wf.upperPath;
 //
 //	LOG(INFO) << "findNextIntersectingArc start | upper: "  << upperIntersection.isDone() << ", lower: " << lowerIntersection.isDone();
-//	arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath);
-//	arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath);
+//	arc_u = (EndOfUpperChain()) ? nullptr : wf.getArc(wf.upperPath.currentArcIdx);
+//	arc_l = (EndOfLowerChain()) ? nullptr : wf.getArc(wf.lowerPath.currentArcIdx);
 //
 //	if(arc_u == nullptr) {upperIntersection.setDone();}
 //	if(arc_l == nullptr) {lowerIntersection.setDone();}
@@ -194,7 +242,7 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	while( !EndOfBothChains() && ( !upperIntersection.isDone() || !lowerIntersection.isDone() ) ) {
 //		/* check which arc lies further to the left */
 //
-//		localOnUpperChain = wf.isArcLeftOfArc(arc_u,arc_l); // && !upperIntersection.isDone();
+//		localOnUpperChain = wf.isArcLeftOfArc(data.monotonicityLine,*arc_u,*arc_l); // && !upperIntersection.isDone();
 //
 //		if( localOnUpperChain && upperIntersection.isDone()) {localOnUpperChain = false;}
 //		if(!localOnUpperChain && lowerIntersection.isDone()) {localOnUpperChain = true; }
@@ -210,6 +258,19 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //		if(isValidArc(path->currentArcIdx)) {
 //			/* classical intersection detection on current paths arc */
 //			Point P = INFPOINT;
+//
+//			while(!isIntersecting(bis,*arc)) {
+//				path->currentArcIdx = wf.getNextArcIdx(*path,*arc);
+//				arc = wf.getArc(path->currentArcIdx);
+//			}
+//			if(path->currentArcIdx != MAX) {
+//				if(arc->isEdge()) {
+//					P = intersectElements(bis,arc->segment);
+//				} else {
+//					P = intersectElements(bis,arc->ray);
+//				}
+//			}
+//
 //
 //			/* handle special intersection cases first (or they freeze the intersection function?) */
 //			if(isNodeIntersectionAndVerticalBisector(bis,arc->firstNodeIdx)) {
@@ -284,8 +345,8 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	LOG(INFO) << "findNextIntersectingArc END";
 //
 //	return std::make_pair(upperIntersection,lowerIntersection);
-//}
-//
+}
+
 //bool Skeleton::secondIntersectionDoneAndWeCatchedUp(Bisector& bis, Intersection& upper, Intersection& lower, const Arc& arc_u, const Arc& arc_l, const bool localOnUpperChain) const {
 //	bool secondChainDone = (localOnUpperChain) ? !lower.empty() > 0 : !upper.empty();
 //
@@ -708,23 +769,45 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //		}
 //	}
 //}
-//
-//ul Skeleton::handleMerge(const Intersection& intersection, const ul& edgeIdxA, const ul& edgeIdxB, const Bisector& bis) {
+
+ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Ray& bis) {
+	const Point& Pu = std::get<0>(intersectionPair);
+	const Point& Pl = std::get<1>(intersectionPair);
+
+	Point& P = INFPOINT;
+	ChainType winner;
+
+	if(Pu != INFPOINT && Pl != INFPOINT) {
+		winner = data.monotoneSmaller(bis.supporting_line(),Pu,Pl) ? ChainType::UPPER : ChainType::LOWER;
+		P = (winner == ChainType::UPPER) ? Pu : Pl;
+	} else if(Pu != INFPOINT) {
+		winner = ChainType::UPPER;
+		P = Pu;
+	} else {
+		winner = ChainType::LOWER;
+		P = Pl;
+	}
+
+	const auto& edgeIdx = (winner == ChainType::UPPER) ? upperChainIndex : lowerChainIndex;
+	const auto& path    = (winner == ChainType::UPPER) ? wf.upperPath    : wf.lowerPath;
+
+	assert(P != INFPOINT);
+
 //	bool fromAtoB = true;
-//	NT distB;
-//
+	NT dist = data.normalDistance(edgeIdx,P);
+
 //	if(!bis.is_vertical()) {
-//		distB = data.normalDistance(edgeIdxA,intersection.getIntersection());
 //		fromAtoB = data.normalDistance(edgeIdxA,sourceNode->point) <= distB;
 //	} else {
 //		distB = CGAL::abs( intersection.getIntersection().y() - data.get_segment(edgeIdxA).point(0).y() );
 //		distB=distB*distB;
 //	}
-//
-//
-//	auto newNodeIdx = wf.addNode(intersection.getIntersection(),distB);
-//	auto newNode    = &wf.nodes[newNodeIdx];
-//
+
+
+	const auto newNodeIdx 	= wf.addNode(P,dist);
+	auto& newNode    		= wf.nodes[newNodeIdx];
+	const ul newArcIdx 		= wf.addArc(sourceNodeIdx,newNodeIdx,upperChainIndex,lowerChainIndex);
+
 //	LOG(INFO) << " NEW IDX: " << newNodeIdx << "/" << wf.nodes.size();
 //
 //	/* distinguish in which direction the ray points and add the arc accordingly */
@@ -734,15 +817,21 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	} else {
 //		newArcIdx  = wf.addArc(newNodeIdx,sourceNodeIdx,edgeIdxB,edgeIdxA,bis.is_vertical(),bis.is_horizontal());
 //	}
-//
-//	/* update the targets of the relevant arcs */
-//	for(auto arcIdx : intersection.getArcs()) {
-//		LOG(INFO) << "update the targets of " << arcIdx; fflush(stdout);
-//		if(arcIdx < MAX) {
-//			auto arc = wf.getArc(arcIdx);
-//			/* TODO: parallel-bisectors, direction unclear */
-//			LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
-//			updateArcTarget(arcIdx,edgeIdxA,newNodeIdx,intersection.getIntersection());
+
+	const auto& intersArc = wf.arcList[path.currentArcIdx];
+
+	/* update the targets of the relevant arcs */
+
+	updateArcTarget(path.currentArcIdx,edgeIdx,newNodeIdx,P);
+//	if(!intersArc.isRay()) {
+//		for(const auto& arcIdx : wf.nodes[intersArc.secondNodeIdx].arcs) {
+//			LOG(INFO) << "update the targets of " << arcIdx; fflush(stdout);
+//			if(arcIdx < MAX) {
+//				auto arc = wf.getArc(arcIdx);
+//				/* TODO: parallel-bisectors, direction unclear */
+//				LOG(INFO) << "update arc target " << arcIdx << " to end at " << newNodeIdx;
+//				updateArcTarget(arcIdx,edgeIdx,newNodeIdx,P);
+//			}
 //		}
 //	}
 //
@@ -750,9 +839,17 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	if(bis.is_vertical() && arc->is_vertical()) {
 //		addGhostNode = true;
 //	}
-//
-//	return newNodeIdx;
-//}
+
+	if(winner == ChainType::UPPER) {
+		upperChainIndex = intersArc.leftEdgeIdx;
+	} else {
+		lowerChainIndex = intersArc.rightEdgeIdx;
+	}
+
+	return newNodeIdx;
+}
+
+
 //ul Skeleton::getAVerticalArc(const Intersection& intersection) const {
 //	for(auto arcIdx : intersection.getArcs()) {
 //		if(wf.getArc(arcIdx)->isAA()) {
@@ -1032,36 +1129,36 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //
 //	return false;
 //}
-//
-//void Skeleton::updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint) {
-//	auto arc = &wf.arcList[arcIdx];
-//
-//	if(arc->isDisable()) {return;}
-//
-//	/* remove or disable rest of path that we broke? */
-//	/* we act in case the degree of the second node is <3, otherwise for >2 the path is still accessible from another route */
-//	if(arc->type == ArcType::NORMAL) {
-//		removePath(arcIdx, edgeIdx);
-//	}
-//
-//
-//	auto newNode = &wf.nodes[secondNodeIdx];
-//
-//	if(arc->point(0) == newNode->point) {
-//		arc->disable();
-//		return;
-//	} else if(arc->isRay()) {
-//		arc->type = ArcType::NORMAL;
-//		arc->edge = Segment(arc->ray.source(),edgeEndPoint);
-//		arc->ray = Ray();
-//	} else if(arc->isEdge()){
-//		arc->edge = Segment(arc->edge.source(),edgeEndPoint);
-//	}
-//
-//	arc->secondNodeIdx = secondNodeIdx;
-//
-//	newNode->arcs.push_back(arcIdx);
-//}
+
+void Skeleton::updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint) {
+	auto arc = &wf.arcList[arcIdx];
+
+	if(arc->isDisable()) {return;}
+
+	/* remove or disable rest of path that we broke? */
+	/* we act in case the degree of the second node is <3, otherwise for >2 the path is still accessible from another route */
+	if(arc->type == ArcType::NORMAL) {
+		removePath(arcIdx, edgeIdx);
+	}
+
+
+	auto newNode = &wf.nodes[secondNodeIdx];
+
+	if(arc->point(0) == newNode->point) {
+		arc->disable();
+		return;
+	} else if(arc->isRay()) {
+		arc->type = ArcType::NORMAL;
+		arc->segment = Segment(arc->ray.source(),edgeEndPoint);
+		arc->ray = Ray();
+	} else if(arc->isEdge()){
+		arc->segment = Segment(arc->segment.source(),edgeEndPoint);
+	}
+
+	arc->secondNodeIdx = secondNodeIdx;
+
+	newNode->arcs.push_back(arcIdx);
+}
 //
 //bool Skeleton::hasCollinearEdges(const Arc& arcA, const Arc& arcB, bool avoidChainEdges) const {
 //	for(auto aIdx : {arcA.leftEdgeIdx,arcA.rightEdgeIdx}) {
@@ -1078,67 +1175,67 @@ std::ostream& operator<< (std::ostream& os, const Intersection& intersection) {
 //	}
 //	return false;
 //}
-//
-//bool Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
-//	auto arcIdxIt = arcIdx;
-//
-//	while(true) {
-//		auto arc  = &wf.arcList[arcIdxIt];
-//
-//		if(arcIdx != arcIdxIt) {
-//			arc->disable();
+
+bool Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
+	auto arcIdxIt = arcIdx;
+
+	while(true) {
+		auto arc  = &wf.arcList[arcIdxIt];
+
+		if(arcIdx != arcIdxIt) {
+			arc->disable();
+		}
+
+		LOG(INFO) << " arc-start: " << arc->firstNodeIdx <<  " arc-endpoint: " << arc->secondNodeIdx << " ";
+
+		if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {
+			return false;
+		}
+
+		auto secondNode = &wf.nodes[arc->secondNodeIdx];
+		auto arcs = &secondNode->arcs;
+
+		/* minor hack */
+//		if(arc->isAA() && arc->isEdge() && arc->firstNodeIdx > arc->secondNodeIdx) {
+//			secondNode = &wf.nodes[arc->firstNodeIdx];
+//			arcs = &secondNode->arcs;
 //		}
-//
-//		LOG(INFO) << " arc-start: " << arc->firstNodeIdx <<  " arc-endpoint: " << arc->secondNodeIdx << " ";
-//
-//		if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {
-//			return false;
-//		}
-//
-//		auto secondNode = &wf.nodes[arc->secondNodeIdx];
-//		auto arcs = &secondNode->arcs;
-//
-//		/* minor hack */
-////		if(arc->isAA() && arc->isEdge() && arc->firstNodeIdx > arc->secondNodeIdx) {
-////			secondNode = &wf.nodes[arc->firstNodeIdx];
-////			arcs = &secondNode->arcs;
-////		}
-//
-//
-//		/* remove reference to 'arcIdx' from node */
-//		if(!secondNode->removeArc(arcIdxIt)) {return false;}
-//		if(secondNode->isGhostNode())        {return false;}
-//
-//
-//		if(arcs->size() < 2 && !secondNode->isTerminal()) {
-//			LOG(INFO) << " arcs:" << arcs->size() << " " << *secondNode;
-//			/* degree one means that only one path is left */
-//			bool nextArcFound = false;
-//			for(auto a : *arcs) {
-//				if(a != arcIdxIt) {
-//					auto nextArc = &wf.arcList[a];
-//
-////					if(	arc->secondNodeIdx == nextArc->firstNodeIdx &&
-////					   (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
-////					) {
-//						/* iterate arcs */
-//						arcIdxIt = a;
-//						nextArcFound = true;
-//						LOG(INFO) << " - " << arcIdxIt << " is adjacent! ";
-////					}
-//				}
-//			}
-//			if(!nextArcFound) {
-//				return false;
-//			}
-//		}
-//	}
-//	LOG(WARNING) << " no more arc on path! ";
-//	return false;
-//
-//
-//}
-//
+
+
+		/* remove reference to 'arcIdx' from node */
+		if(!secondNode->removeArc(arcIdxIt)) {return false;}
+		if(secondNode->isGhostNode())        {return false;}
+
+
+		if(arcs->size() < 2 && !secondNode->isTerminal()) {
+			LOG(INFO) << " arcs:" << arcs->size() << " " << *secondNode;
+			/* degree one means that only one path is left */
+			bool nextArcFound = false;
+			for(auto a : *arcs) {
+				if(a != arcIdxIt) {
+					auto nextArc = &wf.arcList[a];
+
+//					if(	arc->secondNodeIdx == nextArc->firstNodeIdx &&
+//					   (nextArc->leftEdgeIdx == arc->leftEdgeIdx || nextArc->rightEdgeIdx == arc->rightEdgeIdx )
+//					) {
+						/* iterate arcs */
+						arcIdxIt = a;
+						nextArcFound = true;
+						LOG(INFO) << " - " << arcIdxIt << " is adjacent! ";
+//					}
+				}
+			}
+			if(!nextArcFound) {
+				return false;
+			}
+		}
+	}
+	LOG(WARNING) << " no more arc on path! ";
+	return false;
+
+
+}
+
 //void Skeleton::nodeZeroEdgeRemoval(Node& node) {
 //	auto arcs = node.arcs;
 //	for(auto aIdx : arcs) {

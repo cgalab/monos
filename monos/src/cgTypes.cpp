@@ -33,15 +33,15 @@ std::ostream& operator<< (std::ostream& os, const BBox& box) {
 	return os;
 }
 
-std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
-	if(bis.isRay()) {
-		os << "r ";
-	} else {
-		os << "l ";
-	}
-	os << bis.point(0).x().doubleValue() << "," <<  bis.point(0).y().doubleValue() << " dir: " << bis.direction();
-    return os;
-}
+//std::ostream& operator<< (std::ostream& os, const Bisector& bis) {
+//	if(bis.isRay()) {
+//		os << "r ";
+//	} else {
+//		os << "l ";
+//	}
+//	os << bis.point(0).x().doubleValue() << "," <<  bis.point(0).y().doubleValue() << " dir: " << bis.direction();
+//    return os;
+//}
 
 std::ostream& operator<< (std::ostream& os, const Node& node) {
 	if(node.isTerminal()) {
@@ -100,21 +100,21 @@ NT normalDistance(const Line& l, const Point& p) {
 	return CGAL::squared_distance(l,p);
 }
 
-bool do_intersect(const Bisector& bis, const Segment& edge) {
-	return (bis.isRay()) ? CGAL::do_intersect(bis.ray,edge) : CGAL::do_intersect(bis.line,edge);
-}
-
-bool do_intersect(const Bisector& bis, const Arc& arc) {
-	switch(arc.type) {
-	case ArcType::NORMAL: 	if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.segment);}
-							else {return CGAL::do_intersect(bis.line,arc.segment);}
-	case ArcType::RAY: 		if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.ray);}
-							else {return CGAL::do_intersect(bis.line,arc.ray);}
-
-	case ArcType::DISABLED:
-	default: LOG(WARNING) << "Not supposed to happen!"; return false;
-	}
-}
+//bool do_intersect(const Bisector& bis, const Segment& edge) {
+//	return (bis.isRay()) ? CGAL::do_intersect(bis.ray,edge) : CGAL::do_intersect(bis.line,edge);
+//}
+//
+//bool do_intersect(const Bisector& bis, const Arc& arc) {
+//	switch(arc.type) {
+//	case ArcType::NORMAL: 	if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.segment);}
+//							else {return CGAL::do_intersect(bis.line,arc.segment);}
+//	case ArcType::RAY: 		if(bis.isRay()) {return CGAL::do_intersect(bis.ray,arc.ray);}
+//							else {return CGAL::do_intersect(bis.line,arc.ray);}
+//
+//	case ArcType::DISABLED:
+//	default: LOG(WARNING) << "Not supposed to happen!"; return false;
+//	}
+//}
 
 
 //Point intersectBisectorEdge(const Bisector& bis, const Segment& edge) {
