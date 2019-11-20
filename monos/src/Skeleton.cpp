@@ -9,6 +9,8 @@ void Skeleton::initMerge() {
 	sourceNode    		= &wf.nodes[sourceNodeIdx];
 	newNodeIdx    		= sourceNodeIdx;
 
+	initPathForEdge(ChainType::UPPER);
+	initPathForEdge(ChainType::LOWER);
 }
 
 /* add last are, connect to end node! */
@@ -62,7 +64,7 @@ bool Skeleton::SingleMergeStep() {
 
 	LOG(INFO) << "";
 	LOG(INFO) << "############################################## END STEP ###########################";
-	LOG(INFO) << "";
+	LOG(INFO) << "  ( next is ui: " << upperChainIndex << ", a: " << upperPath << " -- li: " << lowerChainIndex <<", a: " << lowerPath << " )   ";
 
 	return !EndOfBothChains();
 }
@@ -74,79 +76,74 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 	Point Pu = INFPOINT;
 	Point Pl = INFPOINT;
 
+
 	/* holds the arcs we find in this search */
-	if(initPathForEdge(ChainType::UPPER,upperChainIndex)) {
+
+	if(!EndOfUpperChain()) {
+		bool iterateForward = decideDirection(ChainType::UPPER,bis);
 		Arc* upperArc = nullptr;
 		do {
-			upperArc = wf.getArc(wf.upperPath.currentArcIdx);
+			upperArc = wf.getArc(upperPath);
 			LOG(INFO) << "upper checking " << *upperArc;
-			wf.upperPath.currentArcIdx = wf.getNextArcIdx(wf.upperPath,*upperArc);
+			upperPath = wf.getNextArcIdx(upperPath,iterateForward,upperChainIndex);
 			if(isIntersecting(bis,*upperArc)) {
-				wf.upperPath.currentArcIdx = upperArc->id;
+				upperPath = upperArc->id;
 				break;
 			}
-		} while(wf.upperPath.currentArcIdx != MAX);
+		} while(upperPath != MAX);
 
-		if(wf.upperPath.currentArcIdx != MAX) {
+		if(upperPath != MAX) {
 			if(upperArc->isEdge()) {
 				Pu = intersectElements(bis,upperArc->segment);
 			} else {
 				Pu = intersectElements(bis,upperArc->ray);
 			}
-			LOG(INFO) << "upperPath found intersection with " << upperArc->id << ", " << wf.upperPath.currentArcIdx << " in pathvar";
+			LOG(INFO) << "upperPath found intersection with " << upperArc->id << ", " << upperPath << " in pathvar";
+		} else {
+			upperPath = upperArc->id;
 		}
 	}
 
-	if(initPathForEdge(ChainType::LOWER,lowerChainIndex)) {
+	if(!EndOfLowerChain()) {
+		bool iterateForward = decideDirection(ChainType::LOWER,bis);
 		Arc* lowerArc = nullptr;
 		do {
-			lowerArc = wf.getArc(wf.lowerPath.currentArcIdx);
+			lowerArc = wf.getArc(lowerPath);
 			LOG(INFO) << "lower checking " << *lowerArc;
-			wf.lowerPath.currentArcIdx = wf.getNextArcIdx(wf.lowerPath,*lowerArc);
+			lowerPath = wf.getNextArcIdx(lowerPath,iterateForward,lowerChainIndex);
 			if(isIntersecting(bis,*lowerArc)) {
-				wf.lowerPath.currentArcIdx = lowerArc->id;
+				lowerPath = lowerArc->id;
 				break;
 			}
-		} while(wf.lowerPath.currentArcIdx != MAX);
+		} while(lowerPath != MAX);
 
-		if(wf.lowerPath.currentArcIdx != MAX) {
+		if(lowerPath != MAX) {
 			if(lowerArc->isEdge()) {
 				Pl = intersectElements(bis,lowerArc->segment);
 			} else {
 				Pl = intersectElements(bis,lowerArc->ray);
 			}
-			LOG(INFO) << "lowerPath found intersection with " << lowerArc->id << ", " << wf.lowerPath.currentArcIdx << " in pathvar";
+			LOG(INFO) << "lowerPath found intersection with " << lowerArc->id << ", " << lowerPath << " in pathvar";
+		} else {
+			lowerPath = lowerArc->id;
 		}
 	}
-
 	return std::make_pair(Pu,Pl);
 }
 
-bool Skeleton::initPathForEdge(ChainType type, const ul& edgeIdx) {
+void Skeleton::initPathForEdge(ChainType type) {
 	/* set the upperPath/lowerPath in 'wf' */
-	LOG(INFO) << "initPathForEdge " << edgeIdx;
+	const ul& edgeIdx = (ChainType::UPPER == type) ? upperChainIndex : lowerChainIndex;
+	const Node& terminalNode = (ChainType::UPPER == type) ? wf.getTerminalNodeForVertex(data.e(edgeIdx).u) : wf.getTerminalNodeForVertex(data.e(edgeIdx).v);
+	auto& path        = (ChainType::UPPER == type) ? upperPath : lowerPath;
 
-	if(EndOfChain(type)) {return false;}
-
-	const Node& terminalNode   = (ChainType::UPPER == type) ? wf.getTerminalNodeForVertex(data.e(edgeIdx).u) : wf.getTerminalNodeForVertex(data.e(edgeIdx).v);
-	auto& path = (ChainType::UPPER == type) ? wf.upperPath : wf.lowerPath;
-
-	path.edgeIdx = edgeIdx;
-	path.currentArcIdx = terminalNode.arcs.front();
-
-	const Node* finalNode = (ChainType::UPPER == type) ? wf.getNode(wf.pathFinder[edgeIdx].a) : wf.getNode(wf.pathFinder[edgeIdx].a);
-	path.finalArcIdx = MAX;
-	for(auto a : finalNode->arcs) {
-		const auto& arc = getArc(a);
-		if(ChainType::UPPER == type && arc.rightEdgeIdx == edgeIdx) {
-			path.finalArcIdx = a;
-			if(arc.isRay()) {
-				break;
-			}
-		}
+	if(!EndOfChain(type)) {
+		path = terminalNode.arcs.front();
+	} else {
+		path = MAX;
 	}
-	LOG(INFO) << "path init done " << path.currentArcIdx; fflush(stdout);
-	return true;
+
+	LOG(INFO) << "initPathForEdge " << edgeIdx << " with arc idx: " << path;
 }
 
 
@@ -169,32 +166,33 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Ray& bi
 		P = Pl;
 	}
 
-	LOG(INFO) << "handleMerge Upper current arc idx " << wf.upperPath.currentArcIdx;
-	LOG(INFO) << "handleMerge Lower current arc idx " << wf.lowerPath.currentArcIdx;
+//	LOG(INFO) << "handleMerge Upper current arc idx " << upperPath;
+//	LOG(INFO) << "handleMerge Lower current arc idx " << lowerPath;
 
 	const auto& edgeIdx = (winner == ChainType::UPPER) ? upperChainIndex : lowerChainIndex;
-	const auto& path    = (winner == ChainType::UPPER) ? wf.upperPath    : wf.lowerPath;
+	const auto& path    = (winner == ChainType::UPPER) ? upperPath       : lowerPath;
 
 	assert(P != INFPOINT);
 
 	NT dist = data.normalDistance(edgeIdx,P);
 
-
 	const auto newNodeIdx 	= wf.addNode(P,dist);
 	const ul newArcIdx 		= wf.addArc(sourceNodeIdx,newNodeIdx,upperChainIndex,lowerChainIndex);
 
-	auto& intersArc = getArc(path.currentArcIdx);
+	const auto* intersArc = wf.getArc(path);
 
 	/* update the targets of the relevant arcs */
-	LOG(INFO) << "before update of " << path.currentArcIdx;
-	updateArcTarget(path.currentArcIdx,edgeIdx,newNodeIdx,P);
+	LOG(INFO) << "before update of " << path;
+	updateArcTarget(path,edgeIdx,newNodeIdx,P);
 
 	if(winner == ChainType::UPPER) {
-		upperChainIndex = intersArc.leftEdgeIdx;
-		LOG(INFO) << "handleMerge: set upper chain to " << upperChainIndex;
+		upperChainIndex = intersArc->leftEdgeIdx;
+		initPathForEdge(winner);
+		LOG(INFO) << "handleMerge: set upper chain to " << upperChainIndex << " arc: " << upperPath;
 	} else {
-		lowerChainIndex = intersArc.rightEdgeIdx;
-		LOG(INFO) << "handleMerge: set lower chain to " << lowerChainIndex;
+		lowerChainIndex = intersArc->rightEdgeIdx;
+		initPathForEdge(winner);
+		LOG(INFO) << "handleMerge: set lower chain to " << lowerChainIndex << " arc: " << lowerPath;
 	}
 
 	return newNodeIdx;
@@ -234,31 +232,60 @@ void Skeleton::updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& s
 	LOG(INFO) << "after update" << *arc;
 }
 
-bool Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
+bool Skeleton::decideDirection(ChainType type, const Ray& bis) const {
+	Arc* arc = nullptr;
+//	Point Pa, Pb;
+	if(type == ChainType::UPPER) {
+		arc = wf.getArc(upperPath);
+		if(arc->isRay()) {return false;}
+//		Pa = data.p(data.e(upperChainIndex).u);
+//		Pb = wf.getNode(wf.pathFinder[upperChainIndex].a)->point;
+	} else /* ChainType::LOWER */ {
+		arc = wf.getArc(lowerPath);
+		if(arc->isRay()) {return false;}
+//		Pa = data.p(data.e(lowerChainIndex).v);
+//		Pb = wf.getNode(wf.pathFinder[lowerChainIndex].b)->point;
+	}
+
+//	Segment s( Pa, Pb);
+
+//	Point PbisIntsectsS = intersectElements(bis,s.supporting_line());
+	const Point& arcA = wf.nodes[arc->firstNodeIdx].point;
+//	const Point& arcB = wf.nodes[arc->secondNodeIdx].point;
+//
+//	if(PbisIntsectsS == INFPOINT) {
+	if(type == ChainType::UPPER) {
+		return bis.supporting_line().has_on_positive_side(arcA);
+	} else {
+		return bis.supporting_line().has_on_negative_side(arcA);
+	}
+//	}
+//
+//	return data.monotoneSmaller(s.supporting_line(),arcA,PbisIntsectsS);
+}
+
+void Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
 	auto arcIdxIt = arcIdx;
-	LOG(INFO) << "in removePath";
+//	LOG(INFO) << "in removePath";
 
 	while(true) {
 		auto arc  = &wf.arcList[arcIdxIt];
 
 		if(arcIdx != arcIdxIt) {
 			arc->disable();
+//			return;
 		}
 
 		LOG(INFO) << *arc;
-		LOG(INFO) << " arc-start: " << arc->firstNodeIdx <<  " arc-endpoint: " << arc->secondNodeIdx << " ";
+//		LOG(INFO) << " arc-start: " << arc->firstNodeIdx <<  " arc-endpoint: " << arc->secondNodeIdx << " ";
 
-		if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {
-			return false;
-		}
+		if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {return;}
 
 		auto secondNode = &wf.nodes[arc->secondNodeIdx];
 		auto arcs = &secondNode->arcs;
 
 		/* remove reference to 'arcIdx' from node */
-		if(!secondNode->removeArc(arcIdxIt)) {return false;}
-		if(secondNode->isGhostNode())        {return false;}
-
+		if(!secondNode->removeArc(arcIdxIt)) {return;}
 
 		if(arcs->size() < 2 && !secondNode->isTerminal()) {
 			LOG(INFO) << " arcs:" << arcs->size() << " " << *secondNode;
@@ -273,14 +300,10 @@ bool Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
 				}
 			}
 			if(!nextArcFound) {
-				return false;
+				return;
 			}
 		}
 	}
-	LOG(WARNING) << " no more arc on path! ";
-	return false;
-
-
 }
 
 
@@ -323,7 +346,7 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 		auto srcNodeIdx = e.u;
 		auto arcIt = wf.getArc(arcIdx);
 
-		outfile << "f " << e.u+1; // << " " << e.v+1;
+		outfile << "f " << e.u+1;
 
 		do {
 			auto nextNodeIdx = arcIt->getSecondNodeIdx(srcNodeIdx);

@@ -49,30 +49,30 @@ private:
 	/* return std::pair upper/lower intersection Point */
 	IntersectionPair findNextIntersectingArc(const Ray& bis);
 
-	bool removePath(const ul& arcIdx, const ul& edgeIdx);
+	void removePath(const ul& arcIdx, const ul& edgeIdx);
 
 	ul handleMerge(const IntersectionPair& intersectionPair, const Ray& bis);
 	void updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
-	inline bool isValidArc(const ul& arcIdx) const {return arcIdx < wf.arcList.size();}
-
-	bool EndOfOneChains()  const {return EndOfUpperChain() || EndOfLowerChain();  }
 	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain();  }
 	bool EndOfUpperChain() const {return upperChainIndex == upperChain.front(); }
 	bool EndOfLowerChain() const {return lowerChainIndex == lowerChain.back(); }
 	bool EndOfChain(ChainType t) { return (t == ChainType::UPPER) ? EndOfUpperChain() : EndOfLowerChain();}
 
-	Arc& getArc(ul arcIdx) {assert(arcIdx < wf.arcList.size()); return wf.arcList[arcIdx];}
+	void initPathForEdge(ChainType type);
 
-	bool initPathForEdge(ChainType type, const ul& edgeIdx);
-
-	bool isIntersecting(const Ray& ray, const Arc& arc) {
+	inline bool isIntersecting(const Ray& ray, const Arc& arc) {
 		if(arc.isEdge()) {
 			return CGAL::do_intersect(ray,arc.segment);
 		}
 		return CGAL::do_intersect(ray,arc.ray);
 	}
 
+	/* true is formward, false is backwards */
+	bool decideDirection(ChainType type, const Ray& bis) const;
+
+	/* for the merge to keep track of the current state */
+	ul upperPath = MAX, lowerPath = MAX;
 
 
 	Data& 		data;

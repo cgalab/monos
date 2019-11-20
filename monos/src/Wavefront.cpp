@@ -1,13 +1,13 @@
 #include "Wavefront.h"
 
-std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
-	os << "path-edge (" << path.edgeIdx << ") - current:";
-	if(path.currentArcIdx == MAX) {
-		os << "MAX" << " opposite: ";} else {	os << path.currentArcIdx << " opposite: ";
-	}
-	if(path.finalArcIdx == MAX) {os << "MAX";} else {os << path.finalArcIdx;}
-	return os;
-}
+//std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
+//	os << "path-edge (" << path.edgeIdx << ") - current:";
+//	if(path.currentArcIdx == MAX) {
+//		os << "MAX" << " opposite: ";} else {	os << path.currentArcIdx << " opposite: ";
+//	}
+//	if(path.finalArcIdx == MAX) {os << "MAX";} else {os << path.finalArcIdx;}
+//	return os;
+//}
 
 
 void Wavefront::InitializeEventsAndPathsPerEdge() {
@@ -558,26 +558,24 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 	pathFinder[event.rightEdge].a = nodeIdx;
 }
 
-ul Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const {
-	/* a ray is the 'outermost' arc */
-	if(arc.isRay()) {return MAX;}
-
-	const auto& node = nodes[arc.secondNodeIdx];
-
+ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
+	auto* arc = getArc(path);
+	if(forward && arc->isRay()) {return MAX;}
+	auto& node = (forward) ? nodes[arc->secondNodeIdx] : nodes[arc->firstNodeIdx];
 	for(auto a : node.arcs) {
-		if( a != path.currentArcIdx ) {
-			const auto& arcIt = arcList[a];
-
-			if( arcIt.firstNodeIdx == arc.secondNodeIdx && liesOnFace(arcIt,path.edgeIdx) ) {
-				LOG(INFO) << " --- found idx " << a;
+		if( a != path ) {
+			if( forward && arcList[a].firstNodeIdx == arc->secondNodeIdx ) {
+				return a;
+			}
+			if( !forward && arcList[a].secondNodeIdx == arc->firstNodeIdx  &&
+				(arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
+			) {
 				return a;
 			}
 		}
 	}
-
 	return MAX;
 }
-
 
 bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
 	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);

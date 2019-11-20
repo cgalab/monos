@@ -288,7 +288,6 @@ struct Node {
 	Point			point;
 	NT				time;
 	unsigned		id;
-	bool			ghost = false;
 
 	/* all incident arcs, i.e., the indices to them */
 	std::vector<ul> 	arcs;
@@ -296,9 +295,6 @@ struct Node {
 	void disable() {type = NodeType::DISABLED;}
 	bool isDisabled() const { return type == NodeType::DISABLED;}
 	bool isTerminal() const { return type == NodeType::TERMINAL;}
-
-	bool isGhostNode() const { return ghost; }
-	void setGhost(bool g) {ghost = g;}
 
 	ul degree() const {return arcs.size();}
 
