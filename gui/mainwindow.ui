@@ -87,9 +87,6 @@
    <addaction name="actionEventStep"/>
    <addaction name="actionTimeForwardAfterChains"/>
    <addaction name="actionFinishComputation"/>
-   <addaction name="separator"/>
-   <addaction name="actionDefineWeight"/>
-   <addaction name="actionResetAll"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionQuit">
@@ -253,28 +250,6 @@
    </property>
    <property name="shortcut">
     <string>Return</string>
-   </property>
-  </action>
-  <action name="actionDefineWeight">
-   <property name="text">
-    <string>W</string>
-   </property>
-   <property name="toolTip">
-    <string>Define a Weight for an Edge (W)</string>
-   </property>
-   <property name="shortcut">
-    <string>W</string>
-   </property>
-  </action>
-  <action name="actionResetAll">
-   <property name="text">
-    <string>↺</string>
-   </property>
-   <property name="toolTip">
-    <string>Reset All (R)</string>
-   </property>
-   <property name="shortcut">
-    <string>R</string>
    </property>
   </action>
   <action name="actionEventStep">

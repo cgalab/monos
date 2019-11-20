@@ -124,67 +124,6 @@ struct MonVectCmp {
 };
 
 
-//class Bisector {
-//public:
-//	Bisector(Ray r,  ul idxA, ul idxB) :type(BisType::RAY), ray(r),  eIdxA(idxA), eIdxB(idxB)  {}
-//	Bisector(Line l, ul idxA, ul idxB) :type(BisType::LINE),line(l), eIdxA(idxA), eIdxB(idxB) {}
-//
-//	BisType type;
-//	Ray     ray;
-//	Line    line;
-//
-//
-//	ul eIdxA, eIdxB;
-//
-//	bool isRay()  const { return type == BisType::RAY; }
-//	bool isLine() const { return type == BisType::LINE;}
-//
-//	Direction direction() const  { return (isRay()) ? ray.direction() : line.direction(); }
-//	Line supporting_line() const { return (isRay()) ? ray.supporting_line() : line; }
-//	Point point(ul i = 0) const { return supporting_line().point(i); }
-//	Vector to_vector() const { return (isRay()) ? ray.to_vector() : line.to_vector(); }
-//
-//	void setRay(const Ray r) {ray = Ray(r); type = BisType::RAY;}
-//
-//	bool isAA() const {if(isRay()) {return ray.is_vertical() || ray.is_horizontal();} else {return line.is_vertical() || line.is_horizontal();}}
-//	bool is_vertical() const {if(isRay()) {return ray.is_vertical();} else {return line.is_vertical();}}
-//	bool is_horizontal() const {if(isRay()) {return ray.is_horizontal();} else {return line.is_horizontal();}}
-//	void setParallel(bool p) {parallel = p;}
-//	bool isParallel() const {return parallel;}
-//	void setGhost(bool g) {ghost = g;}
-//	bool isGhost() const {return ghost;}
-//
-//	void changeDirection() {
-//		if(isRay()) {
-//			ray = ray.opposite();
-//		} else {
-//			line = line.opposite();
-//		}
-//	}
-//
-//	void changeToLine() {
-//		line = supporting_line();
-//		type = BisType::LINE;
-//		ray  = Ray();
-//	}
-//
-//	void newSource(const Point s) {
-//		if(isRay()) {
-//			ray = Ray(s,direction());
-//		} else {
-//			line = Line(s,direction());
-//		}
-//	}
-//
-//private:
-//	/* true if perpendicular to monotonicity line */
-//	bool parallel = false;
-//	bool ghost    = false;
-//
-//	friend std::ostream& operator<< (std::ostream& os, const Bisector& bis);
-//};
-
-
 class TimeEdge {
 public:
 	TimeEdge(NT t, ul e):
@@ -208,10 +147,6 @@ struct TimeEdgeCmp {
 			   ( (left.timeApprox - right.timeApprox) >= 0.0 && left.time < right.time) ||
 			   ( (left.timeApprox - right.timeApprox) >= 0.0 && left.time == right.time && left.edgeIdx < right.edgeIdx);
 	}
-//		return (left.timeApprox < right.timeApprox) ||
-//			   (left.timeApprox == right.timeApprox && left.time < right.time) ||
-//			   (left.timeApprox == right.timeApprox && left.time == right.time && left.edgeIdx < right.edgeIdx);
-//	}
 };
 
 using EventTimes 	     = std::set<TimeEdge,TimeEdgeCmp>;
@@ -268,29 +203,6 @@ public:
 		} else {
 			return ray.has_on(p);
 		}
-//		if(is_vertical() && p.x() != point(0).x()) {
-//			auto yMin = point(0).y();
-//			auto yMax = point(1).y();
-//			if(yMin > yMax) {std::swap(yMin,yMax);}
-//
-//			if( p.y() < yMin || p.y() > yMax || p.x() != point(0).x()) {
-//				return false;
-//			}
-//		}
-//		if(is_horizontal()) {
-//			auto xMin = point(0).x();
-//			auto xMax = point(1).x();
-//			if(xMin > xMax) {std::swap(xMin,xMax);}
-//
-//			if( p.x() < xMin || p.x() > xMax || p.y() != point(0).y()) {
-//				return false;
-//			}
-//		}
-//		if(isEdge()) {
-//			return edge.has_on(p);
-//		} else {
-//			return ray.has_on(p);
-//		}
 	}
 
 	inline bool hasZeroLength() const { return (firstNodeIdx == secondNodeIdx);}
@@ -434,39 +346,23 @@ bool isLinesParallel(const T& a, const U& b);
 
 template<class T, class U>
 Point intersectElements(const T& a, const U& b) {
-//	Point intersectionPoint = INFPOINT;
-
-//	LOG(INFO) << "(" << a << " -- " << b << ") ";
-
-//	if(CGAL::do_intersect(a,b)) {
-		auto result = CGAL::intersection(a, b);
-		if (result) {
-			if (const Point* p = boost::get<Point>(&*result)) {
-				return Point(*p);
-			} else if (const Segment* e = boost::get<Segment>(&*result)) {
-//				LOG(INFO) << "# Intersection forms a segment - returning edge-point(0)";
-				return Point(e->point(0));
-//			} else {
-//				LOG(WARNING) << "# Intersection forms a something else?!? - returning INFPOINT";
-//				return INFPOINT;
-			}
+	auto result = CGAL::intersection(a, b);
+	if (result) {
+		if (const Point* p = boost::get<Point>(&*result)) {
+			return Point(*p);
+		} else if (const Segment* e = boost::get<Segment>(&*result)) {
+			return Point(e->point(0));
 		}
-//	}
+	}
 	return INFPOINT;
 }
 
 ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
-//Point intersectArcArc(const Arc& arcA, const Arc& arcB);
-//Point intersectRayArc(const Ray& ray, const Arc& arc);
-//Point intersectBisectorEdge(const Bisector& bis, const Segment& edge);
 
 template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
 	return CGAL::parallel(Line(a),Line(b));
 }
-
-//bool do_intersect(const Bisector& ray, const Arc& arc);
-//bool do_intersect(const Bisector& ray, const Segment& edge);
 
 #endif /* CGALTYPES_H_ */

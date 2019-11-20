@@ -66,24 +66,16 @@ void Monos::run() {
 
 	if(!wf->ComputeSkeleton(ChainType::LOWER)) {return;}
 	if(config.verbose) {LOG(INFO) << "lower skeleton done";}
-//
+
 	if(!wf->ComputeSkeleton(ChainType::UPPER)) {return;}
 	if(config.verbose) {LOG(INFO) << "upper skeleton done";}
 
-//	/* sort nodes s.t. incident 'arcs' are in correct order, i.e.,
-//	 * their incidences. */
-//	wf->SortArcsOnNodes();
-//
 	s->MergeUpperLowerSkeleton();
-//	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
+	if(config.verbose) {LOG(INFO) << "merging upper and lower skeleton done";}
 
 
 	/****************** TIMING END ********************************/
 	if(config.timings) {end = clock();}
-
-//	for(auto v : input.vertices()) {
-//		LOG(INFO) << v;
-//	}
 
 	write();
 
@@ -100,7 +92,7 @@ void Monos::run() {
 }
 
 void Monos::write() {
-	if( s->computationFinished) {
+	if( s->computationFinished ) {
 		s->writeOBJ(config);
 		data->addPolyToOBJ(config);
 		if(config.verbose) {LOG(INFO) << "output written";}
@@ -126,6 +118,8 @@ bool Monos::init() {
 	/** input must be monotone */
 	wf->ChainDecomposition();
 	if(config.verbose) {LOG(INFO) << "chain decomposition done";}
+	wf->printChain(wf->getChain(ChainType::UPPER));
+	wf->printChain(wf->getChain(ChainType::LOWER));
 
 	s->storeChains(wf->getChain(ChainType::UPPER), wf->getChain(ChainType::LOWER));
 

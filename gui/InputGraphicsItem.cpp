@@ -13,6 +13,7 @@
 
 #include "InputGraphicsItem.h"
 #include "cgTypes.h"
+#include "BasicInput.h"
 
 InputGraphicsItem::
 InputGraphicsItem(const BasicInput * const input)

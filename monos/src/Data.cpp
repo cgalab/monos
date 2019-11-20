@@ -119,12 +119,6 @@ bool Data::ensureMonotonicity() {
 		return true;
 	}
 
-//	std::stringstream ss;
-//	for(auto i : intervals) {
-//		ss << i << std::endl;
-//	}
-//	LOG(INFO) << ss.str();
-
 	/* iterate to first START vector */
 	auto itStart  = intervals.begin();
 	auto it 	  = itStart;
@@ -234,13 +228,10 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 	auto dir = line.direction().perpendicular(CGAL::POSITIVE);
 	auto idxIt = startIdx;
 	do {
-//		LOG(INFO) << "pa " << eA(idxIt) << ", pb " << eB(idxIt);
 		auto testLine = Line(eA(idxIt),-dir);
 		if(rightward && testLine.has_on_negative_side(eB(idxIt))) {
-//			LOG(INFO) << "end rightward";
 			rightward = false;
 		} else if(!rightward && testLine.has_on_positive_side(eB(idxIt))) {
-//			LOG(INFO) << "end monotone";
 			monotone = false;
 		}
 

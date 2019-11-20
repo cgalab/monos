@@ -18,53 +18,8 @@
 #include "Data.h"
 #include "Wavefront.h"
 
-//class Intersection {
-//	using ArcList = std::set<ul>;
-//public:
-//	Intersection(Point intersection = INFPOINT):intersection(intersection) {}
-//	~Intersection() {}
-//
-//	void addArc(ul arcIdx) {
-//	//	assert(!done);
-//		arcs.insert(arcIdx);
-//	}
-//	void clear() {arcs.clear();}
-//
-//	void add(Point intersection, ul arcIdx) {
-//		//assert(!done);
-//		setIntersection(intersection);
-//		addArc(arcIdx);
-//	}
-//
-//	void remove(const ul arcIdx) {
-//		auto it = arcs.find(arcIdx);
-//		if(it != arcs.end()) {
-//			arcs.erase(it);
-//		}
-//	}
-//
-//	void setIntersection(Point P) {intersection = P;}
-//	Point getIntersection() const {return intersection;}
-//
-//	void setDone() {done=true;}
-//	bool isDone() {return done;}
-//
-//	ul size() const {return arcs.size();}
-//	bool empty() const {return arcs.empty();}
-//	ArcList getArcs() const {return arcs;}
-//	ul getFirstArcIdx() const {return (!empty()) ? *arcs.begin() : MAX;}
-//	ul getSecondArcIdx() const {return (size()>1) ? *(++arcs.begin()) : MAX;}
-//
-//	friend std::ostream& operator<< (std::ostream& os, const Intersection& intersection);
-//
-//private:
-//	ArcList arcs;
-//	Point intersection = INFPOINT;
-//	bool done = false;
-//};
 
 /* FIRST is UpperChainIntersection / SECOND is LowerChainIntersection*/
-//using IntersectionPair = std::pair<Intersection,Intersection>;
 using IntersectionPair = std::pair<Point,Point>;
 
 class Skeleton {
@@ -79,9 +34,8 @@ public:
 
 	void initMerge();
 	bool SingleMergeStep();
-//	void finishMerge();
+	void finishMerge();
 
-//	void printSkeleton() const;
 	void writeOBJ(const Config& cfg) const;
 
 	bool computationFinished = false;
@@ -92,70 +46,25 @@ public:
 	}
 
 private:
-	IntersectionPair findNextIntersectingArc(Ray& bis);
-
-//	bool isIntersectionSimple(IntersectionPair& pair, const Bisector& bis) const;
-//	Intersection getIntersectionIfSimple(const Bisector& bis, const IntersectionPair& pair, bool& onUpperChain) const;
+	/* return std::pair upper/lower intersection Point */
+	IntersectionPair findNextIntersectingArc(const Ray& bis);
 
 	bool removePath(const ul& arcIdx, const ul& edgeIdx);
 
-//	ul handleDoubleMerge(IntersectionPair& intersectionPair, const ul& edgeIdxA, const ul& edgeIdxB, const Bisector& bis);
 	ul handleMerge(const IntersectionPair& intersectionPair, const Ray& bis);
 	void updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
-//
-//	ul nextUpperChainIndex(const ul& idx) const;
-//	ul nextLowerChainIndex(const ul& idx) const;
-//
-//	ul mergeStartNodeIdx() const {return data.bbox->monMin.id;}
-//	ul mergeEndNodeIdx() const {return data.bbox->monMax.id;}
-//	inline bool isMergeStartEndNodeIdx(const ul& idx) const {return idx == mergeStartNodeIdx() || idx == mergeEndNodeIdx();}
-//
+
 	inline bool isValidArc(const ul& arcIdx) const {return arcIdx < wf.arcList.size();}
-//	Arc& getArc(const ul& arcIdx) {assert(isValidArc(arcIdx)); return wf.arcList[arcIdx];}
-//	Point& getSourceNodePoint() const { return wf.nodes[sourceNodeIdx].point; }
-//	inline Point intersectArcRay(const Arc& arc, const Ray& ray) const {
-//		return (arc.type == ArcType::NORMAL) ? intersectElements(ray, arc.edge) : intersectElements(ray, arc.ray);
-//	}
-//
+
 	bool EndOfOneChains()  const {return EndOfUpperChain() || EndOfLowerChain();  }
 	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain();  }
-	bool EndOfUpperChain() const {return upperChainIndex == upperChain.back(); }
+	bool EndOfUpperChain() const {return upperChainIndex == upperChain.front(); }
 	bool EndOfLowerChain() const {return lowerChainIndex == lowerChain.back(); }
 	bool EndOfChain(ChainType t) { return (t == ChainType::UPPER) ? EndOfUpperChain() : EndOfLowerChain();}
-//
-//	bool hasCollinearEdges(const Arc& arcA, const Arc& arcB, bool avoidChainEdges=false) const;
-//	void CheckAndResetPath(MonotonePathTraversal* path, const MonotonePathTraversal& pathBackup, const Point& p);
-//
-//	bool hasPathReachedPoint(const MonotonePathTraversal& path, const Point& P) const;
-//
-//	bool hasEquidistantInputEdges(const Arc& arc, const Bisector& bis) const;
-//	bool isNodeIntersectionAndVerticalBisector(const Bisector& bis, const ul nodeIdx) const;
-//
-//	void reevaluateIntersectionIfMultipleArcs(const Bisector& bis, Intersection& intersection);
-//	void multiEventCheck(const Bisector& bis, IntersectionPair& pair);
-//	void checkAndHandlePossibleSourceGhostNode(IntersectionPair& pair, Bisector& bis);
-//
-//	bool hasArcCurrentChainIndices(const Arc& arc) const {
-//		return arc.leftEdgeIdx == lowerChainIndex || arc.rightEdgeIdx == lowerChainIndex || arc.leftEdgeIdx == upperChainIndex || arc.rightEdgeIdx == upperChainIndex;
-//	}
-//	bool areNextInputEdgesCollinear() const;
-//	bool handleGhostVertex(const MonotonePathTraversal& path, Bisector& bis, Intersection& intersection);
-//	void handleSourceGhostNode(Bisector& bis, IntersectionPair& pair);
-//
-//	bool secondIntersectionDoneAndWeCatchedUp(Bisector& bis, Intersection& upper, Intersection& lower, const Arc& arc_u, const Arc& arc_l, const bool localOnUpperChain) const;
-//	void checkNodeIntersection(Intersection& intersection, const Arc* arc);
-//
-//	void removeRaysFromIntersection(Intersection& intersection);
-//
-//	ul getNextEdgeIdxFromIntersection(const Intersection& intersection, bool onUpperChain);
-//
-//	ul getAVerticalArc(const Intersection& intersection) const;
-//	bool intersectionHasVerticalArc(const IntersectionPair& pair) const;
-//	bool intersectionHasVerticalCoallignedArc(const IntersectionPair& pair) const;
-//
-//	void nodeZeroEdgeRemoval(Node& node);
-//
-//	void initNextChainAndPath(bool upperChain);
+
+	Arc& getArc(ul arcIdx) {assert(arcIdx < wf.arcList.size()); return wf.arcList[arcIdx];}
+
+	bool initPathForEdge(ChainType type, const ul& edgeIdx);
 
 	bool isIntersecting(const Ray& ray, const Arc& arc) {
 		if(arc.isEdge()) {
@@ -171,12 +80,9 @@ private:
 
 	Chain  		upperChain, lowerChain;
 
+	/* using as state for the merge */
 	Node* sourceNode = nullptr;
 	ul sourceNodeIdx = 0, newNodeIdx = 0;
-	ul startIdxMergeNodes = 0;
-
-	/* adding ghost node */
-	bool addGhostNode = false;
 
 	ul upperChainIndex = 0, lowerChainIndex = 0;
 };

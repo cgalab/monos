@@ -40,20 +40,19 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	/************************************/
 	if(!InitSkeletonQueue(chain)) {return false;}
 
-	/* DEBUG PRINT QUEUE */
-//	LOG(INFO) << "------------------------- EVENT QUEUE -----------------------";
-//	for(auto e : eventTimes) {
-//		auto event = &events[e.edgeIdx];
-//		LOG(INFO) << *event;
-//	}
 
 	/*********************************************/
 	/* compute skeleton by working through queue */
 	/*********************************************/
+	LOG(INFO) << "PRINT CHAIN BEFORE SingleDequeues";
+	printChain(chain);
+
 	currentTime = 0;
 	while(!eventTimes.empty()) {
 		SingleDequeue(chain);
 	}
+	LOG(INFO) << "PRINT CHAIN BEFORE FINISHING";
+	printChain(chain);
 
 	/***********************************************************************/
 	/* construct rays from remaining edges in chain, i.e,. unbounded faces */
@@ -97,7 +96,6 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 		aEdgeIdx = bEdgeIdx;
 		bEdgeIdx = cEdgeIdx;
 	} while(chainIterator != chain.end());
-
 
 	currentTime = 0;
 
@@ -157,7 +155,6 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 			/********************************************************************************/
 			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
 			/********************************************************************************/
-//			LOG(INFO) << "SE " << *event;
 			HandleSingleEdgeEvent(chain,event);
 		}
 
@@ -166,18 +163,6 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 	return false;
 }
 
-///**
-// * computes a single skeleton event from the queue,
-// * returns false if queue is empty
-// * */
-//bool Wavefront::ComputeSingleSkeletonEvent(bool lower) {
-//	auto& chain     = (lower) ? getLowerChain()	: getUpperChain();
-//	auto& skeleton  = (lower) ? lowerSkeleton 	: upperSkeleton;
-//
-//	while(!eventTimes.empty() && !SingleDequeue(chain,skeleton));
-//
-//	return !eventTimes.empty();
-//}
 
 
 //
@@ -257,7 +242,6 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eve
 	auto& node = *getNode(nodeIdx);
 
 	/* add the single node, all arcs connect to this node */
-//	skeleton.emplace_back(nodeIdx);
 	LOG(INFO) << "adding node: " << node;
 
 	std::set<ul> mainEdges;
@@ -377,7 +361,6 @@ bool Wavefront::FinishSkeleton(Chain& chain) {
 	while(!eventTimes.empty()) {
 		SingleDequeue(chain);
 	}
-
 	ul aEdgeIdx, bEdgeIdx;
 	auto chainIterator = chain.begin();
 	/***********************************************************************/
@@ -392,52 +375,14 @@ bool Wavefront::FinishSkeleton(Chain& chain) {
 			/* last node on path of both edges must be the same, get that node */
 			auto endNodeIdx = pathFinder[aEdgeIdx].b;
 			auto node = &nodes[endNodeIdx];
-//			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 
 			auto bisSimple = data.simpleBisector(aEdgeIdx,bEdgeIdx);
-			auto check = normalDistance(data.get_segment(aEdgeIdx).supporting_line(),node->point + bisSimple.to_vector());
-			if(check < node->time) {
-				bisSimple = bisSimple.opposite();
-			}
+
+			const auto& seg = data.get_segment(aEdgeIdx);
+			const auto& pCheck = seg.point(0) + bisSimple.to_vector();
+			if(!seg.supporting_line().has_on_positive_side(pCheck)) {bisSimple = bisSimple.opposite();}
 
 			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,Ray(node->point,bisSimple.direction()));
-
-//			Ray bis;
-//
-//			/* compute bisector between the two edges */
-//			auto bisRet = constructBisector(aEdgeIdx,bEdgeIdx);
-//
-//			if(bisRet.isGhost()) {
-//				auto& n = nodes[pathFinder[bisRet.eIdxA].b];
-//				bisRet.newSource(n.point);
-//			}
-//
-//			if(bisRet.type == BisType::RAY) {
-//				bis = Ray(node->point,bisRet.ray.direction());
-//			} else {
-//				Line l(bisRet.line);
-//				Point pRef(data.monotonicityLine.point()+l.to_vector());
-//				if( isLowerChain(chain) && data.monotonicityLine.has_on_negative_side(pRef)) {
-//					/* vector points below monotonicity line */
-//					l = l.opposite();
-//				}
-//				if(!isLowerChain(chain) && data.monotonicityLine.has_on_positive_side(pRef)) {
-//					/* vector points above monotonicity line */
-//					l = l.opposite();
-//				}
-//
-//				bis = Ray(node->point,bisRet.line.direction());
-//			}
-//
-//			/* need to know if upper or lower chain! To distinguish bisector rays that lead up or down! */
-//			auto check = normalDistance(data.get_segment(aEdgeIdx).supporting_line(),node->point + bis.to_vector());
-//			if(check < node->time) {
-//				bis = bis.opposite();
-//			}
-//
-//			addArcRay(endNodeIdx,aEdgeIdx,bEdgeIdx,bis,bis.is_vertical(),bis.is_horizontal());
-
-//			LOG(INFO) << "edge: " << aEdgeIdx << ", node: " << *node;
 
 			/* iterate over remaining chain */
 			aEdgeIdx = bEdgeIdx;
@@ -459,7 +404,7 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 		--it;		edgeA = *it;
 
 		it = ChainRef(event.chainEdge); --it;
-		const auto& neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
+		auto neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
 		updateInsertEvent(neighborEvent);
 	}
 
@@ -470,44 +415,35 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 		++it;		edgeD = *it;
 
 		it = ChainRef(event.chainEdge); ++it;
-		const auto& neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
+		auto neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
 		updateInsertEvent(neighborEvent);
 	}
 }
 
-void Wavefront::updateInsertEvent(const Event& event) {
+void Wavefront::updateInsertEvent(Event& event) {
 	/* check if edge has already an event in the queue */
-	if(event.isEvent()) {
-		auto it = eventTimes.begin();
-		const auto& currentEvent =  events[event.mainEdge];
-		if(currentEvent.eventTime > 0) {
-			/* find remove timeslot from event times */
-			auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge);
-			auto item  = eventTimes.lower_bound(teOld);
+	auto it = eventTimes.begin();
+	auto& currentEvent =  events[event.mainEdge];
+	if(currentEvent.eventTime > 0) {
+		/* find remove timeslot from event times */
+		auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge);
+		auto item  = eventTimes.lower_bound(teOld);
 
-			if(item != eventTimes.end() && item->edgeIdx == event.mainEdge) {
-				it = eventTimes.erase(item);
-			}
+		if(item != eventTimes.end() && item->edgeIdx == event.mainEdge) {
+			it = eventTimes.erase(item);
 		}
+	}
 
-		assert(event.mainEdge == *event.chainEdge);
+	assert(event.mainEdge == *event.chainEdge);
 
+	if(event.isEvent()) {
 		auto te = TimeEdge(event.eventTime,event.mainEdge);
 		eventTimes.insert(it,te);
 		events[event.mainEdge] = event;
 	}
 }
 
-//bool Wavefront::hasParallelBisector(const Event& event) const {
-//	auto lA = data.get_segment(event.leftEdge).supporting_line();
-//	auto lB = data.get_segment(event.mainEdge).supporting_line();
-//	auto lC = data.get_segment(event.rightEdge).supporting_line();
-//	return CGAL::parallel(lA,lB) || CGAL::parallel(lB,lC) || CGAL::parallel(lA,lC);
-//}
-//
 Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const {
-//	Event e;
-
 	Line b = data.get_segment(bIdx).supporting_line();
 	/* compute bisector from edges */
 	auto abBisL = data.simpleBisector(aIdx,bIdx);
@@ -526,142 +462,8 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 	}
 
 	return Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
-
-//	auto abBis = constructBisector(aIdx, bIdx);
-//	auto bcBis = constructBisector(bIdx, cIdx);
-//
-//	LOG(INFO) << "bisectors before correction " << aIdx << "/" << bIdx;
-//	LOG(INFO) << abBis;
-//	LOG(INFO) << "bisectors before correction " << bIdx << "/" << cIdx;
-//	LOG(INFO) << bcBis;
-//
-//	/* in case of 'ghost' bisectors we have to determine where the start */
-//	for(auto b : {&abBis,&bcBis}) {
-//		if(b->isGhost()) {
-//			auto n = nodes[pathFinder[b->eIdxA].b];
-//			b->newSource(n.point);
-//			LOG(INFO) << "ghost bis, set new sourcepoint: " << n.point;
-//		}
-//	}
-//	LOG(INFO) << "bisectors after correction";
-//	LOG(INFO) << abBis;
-//	LOG(INFO) << bcBis;
-//
-//
-//	/* compute bisector intersection, this is the collapse
-//	 * time of the middle edge (b) 'edge-event' for b  */
-//	Point intersection = INFPOINT;
-//	if(abBis.isRay() && bcBis.isRay()) {
-//		intersection = intersectElements(abBis.ray, bcBis.ray);
-//	} else {
-//		intersection = intersectElements(abBis.supporting_line(), bcBis.supporting_line());
-//	}
-//
-//	Line b(data.get_segment(bIdx).supporting_line());
-//	if(intersection != INFPOINT && ( (abBis.isRay() && bcBis.isRay()) || b.has_on_positive_side(intersection)) ) {
-//		auto distance = normalDistance(b, intersection);
-//		assert(distance > 0);
-//		/* does collapse so we create an event
-//		 * and add it to the queue
-//		 **/
-//		e = Event(distance,intersection,aIdx,bIdx,cIdx,it);
-//	} else {
-//		if(CGAL::collinear(abBis.point(0),abBis.point(1),bcBis.point(1))) {
-//			LOG(INFO) << "bisectors are collinear!";
-//			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
-//		} else {
-//			e = Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
-//		}
-//	}
-//	LOG(INFO) << e << " ret event. ";
-//
-//	return e;
 }
 
-//Bisector Wavefront::constructBisector(const ul& aIdx, const ul& bIdx) const {
-//	assert(aIdx != bIdx);
-//	Line a(data.get_segment(aIdx).supporting_line());
-//	Line b(data.get_segment(bIdx).supporting_line());
-//
-//	Point intersectionA = intersectElements(a, b);
-//
-//	LOG(INFO) << " bis " << aIdx << "/" << bIdx << "  ";
-//
-//	if(intersectionA != INFPOINT) {
-//		Point aP, bP, cP;
-//		aP = data.eA(aIdx);
-//		bP = intersectionA;
-//		cP = data.eB(bIdx);
-//
-//		Line bisLine = CGAL::bisector(a,b.opposite());
-//		Point pBis = intersectionA + bisLine.to_vector();
-//		Ray bis(intersectionA,pBis);
-//
-//		if( !a.has_on_positive_side(pBis) || !b.has_on_positive_side(pBis) ) {
-//			bis = bis.opposite();
-//		}
-//
-//		if(bis.is_degenerate() || bis.is_horizontal() || bis.is_vertical()) {
-//			/* interesting BUG? If one of these conditions is true a Ray leads to
-//			 * some side effects but a line still works... */
-//			return Bisector(bis.supporting_line(),aIdx,bIdx);
-//		}
-//
-//		return Bisector(bis,aIdx,bIdx);
-//	} else {
-//		if(CGAL::collinear(a.point(0),a.point(1),b.point(0)+b.to_vector())) {
-//			LOG(INFO) << "constructBisector: ghost arc";
-//
-//			auto bis = Bisector(Line(a.point(0),a.perpendicular(a.point(0)).to_vector()),aIdx,bIdx);
-//
-//			if(pathFinder[aIdx].b != MAX) {
-//				auto n = nodes[pathFinder[aIdx].b];
-//				bis.newSource(n.point);
-//			}
-//
-//			bis.setGhost(true);
-//
-//			auto dir = a.perpendicular(a.point(0)).direction();
-//			if(dir == data.monotonicityLine.direction()) {
-//				LOG(INFO) << "-- unset ghost vertex";
-//				bis.setGhost(false);
-//			}
-//
-//			return bis;
-//		} else {
-//			LOG(INFO) << "constructBisector: bisector of parallel input edges";
-//			Line bisLine = CGAL::bisector(a,b.opposite());
-//			auto bis = Bisector(bisLine,aIdx,bIdx);
-//
-//			if(a.direction() == data.perpMonotonDir || a.opposite().direction() == data.perpMonotonDir) {
-//				LOG(INFO) << "bisector perpendicular to monotonicity line";
-//				bis.setParallel(true);
-//			}
-//
-//			LOG(INFO) << bisLine;
-//			return bis;
-//		}
-//	}
-//
-//	assert(false);
-//	return Bisector(Ray(),aIdx,bIdx);
-//}
-
-//Bisector Wavefront::getBisectorWRTMonotonicityLine(const Bisector& bisector) const {
-//	Bisector bis(bisector);
-//
-//	Line lp(ORIGIN,data.perpMonotonDir);
-//	Point p(ORIGIN+bis.to_vector());
-//
-//	if(lp.has_on_positive_side(p)) {
-//		bis.changeDirection();
-//	} else if(lp.has_on_boundary(p)) {
-//		bis.setParallel(true);
-//		LOG(WARNING) << "WARNUNG: ... bisector is perpendicular to monotonicity line.";
-//	}
-//
-//	return bis;
-//}
 
 void Wavefront::ChainDecomposition() {
 	/* assuming CCW orientation of polygon */
@@ -691,7 +493,7 @@ ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRi
 			ray
 	));
 	nodeA.arcs.emplace_back(arcIdx);
-	LOG(INFO) << "+/ adding ray: " << arcIdx;
+	LOG(INFO) << "+/ adding ray: " << arcIdx << " -- " << arcList.back();
 	return arcIdx;
 }
 
@@ -714,18 +516,6 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 	return arcIdx;
 }
 
-///* as the polygon boundary is index from 0 to n and we have start and end indices stored
-// * we can decide in O(1) if an index in in the lower chain */
-//bool Wavefront::isEdgeOnLowerChain(const ul edgeIdx) const {
-//	LOG(ERROR) << "not supported!";
-//	assert(false);
-//	return false;
-////	if(startLowerEdgeIdx < endLowerEdgeIdx) {
-////		return edgeIdx >= startLowerEdgeIdx && edgeIdx <= endLowerEdgeIdx;
-////	} else {
-////		return edgeIdx >= startLowerEdgeIdx || edgeIdx <= endLowerEdgeIdx;
-////	}
-//}
 
 void Wavefront::addNewNodefromEvent(const Event& event) {
 	ul nodeIdx  = nodes.size();
@@ -763,104 +553,11 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 		}
 	}
 
-
-//	if(nodes[paths.a].point == event.eventPoint && nodes[paths.b].point == event.eventPoint) {
-//		nodeIdx = paths.a;
-//	} else if(nodes[paths.a].point == event.eventPoint) {
-//		/* so we use the left referenced node and only create a new arc for the right side */
-//		nodeIdx = paths.a;
-//		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e.is_vertical(),e.is_horizontal());
-//	} else if(nodes[paths.b].point == event.eventPoint) {
-//		/* so we use the left referenced node and only create a new arc for the left side */
-//		nodeIdx = paths.b;
-//		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e.is_vertical(),e.is_horizontal());
-//	} else {
-//		/* a classical event to be handled */
-//		LOG(INFO) << "event point before adding node " << event.eventPoint;
-//		nodeIdx = addNode(event.eventPoint,event.eventTime);
-//		skeleton.emplace_back(nodeIdx);
-//
-//		Segment e1(Pa,event.eventPoint);
-//		Segment e2(Pb,event.eventPoint);
-//		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge,e1.is_vertical(),e1.is_horizontal());
-//		addArc(paths.b,nodeIdx,event.mainEdge,event.rightEdge,e2.is_vertical(),e2.is_horizontal());
-//	}
-
 	/* update path finder for left and right edge */
 	pathFinder[event.leftEdge].b  = nodeIdx;
 	pathFinder[event.rightEdge].a = nodeIdx;
 }
 
-///**
-// * traverse a path that starts on one terminal node of an input edge
-// * this traverse occurs in a monotone (i.r.t. the monotonicity line) way
-// * */
-//bool Wavefront::nextMonotoneArcOfPath(MonotonePathTraversal& path) {
-//	LOG(INFO) << "nextMonotoneArcOfPath" << path;
-//
-//	if(path.done()) {return false;}
-//
-//	auto currentArc  = &arcList[path.currentArcIdx];
-//	auto oppositeArc = &arcList[path.finalArcIdx];
-//
-//	/* check if rightmost end-point of both arcs is the same */
-//	if(currentArc->adjacent(*oppositeArc)) { // && getRightmostNodeIdxOfArc(currentArc) == getRightmostNodeIdxOfArc(oppositeArc))  {
-//		path.currentArcIdx = path.oppositeArcIdx;
-//		LOG(INFO) << "current and opposite are adjacent";
-//		return true;
-//	} else if(isArcLeftOfArc(*oppositeArc,*currentArc)) { // && getLeftmostNodeIdxOfArc(currentArc) != getLeftmostNodeIdxOfArc(oppositeArc) ) {
-//		/* opposite arcs left endpoint is to the left of the current arc ones */
-//		path.swap();
-//		path.iterateAwayFromEdge = !path.iterateAwayFromEdge;
-//		LOG(INFO) << "swap" << path;
-//		return true;
-//	} else {
-//		/* step to the next arc to the right of current arc */
-//		ul nextArcIdx = getNextArcIdx(path,*currentArc);
-//
-//		if(nextArcIdx != MAX) {
-//			LOG(INFO) << "next arc " << nextArcIdx << " found";
-//			path.currentArcIdx = nextArcIdx;
-//			currentArc  = &arcList[path.currentArcIdx];
-//			if(isArcLeftOfArc(*oppositeArc,*currentArc)) {
-//				path.swap();
-//				path.iterateAwayFromEdge = !path.iterateAwayFromEdge;
-//			}
-//			LOG(INFO) << "next arc " << path.currentArcIdx << " found";
-//			return true;
-//		} else {
-//			LOG(ERROR) << "No next arc found!";
-//			return false;
-//		}
-//	}
-//}
-
-//ul Wavefront::getCommonNodeIdx(const ul& arcIdxA, const ul& arcIdxB) {
-//	if(arcIdxA != MAX && arcIdxB != MAX) {
-//		Arc* arcA = getArc(arcIdxA);
-//		Arc* arcB = getArc(arcIdxB);
-//		return arcA->getCommonNodeIdx(*arcB);
-//	}
-//	return MAX;
-//}
-//
-//void Wavefront::updateArcNewNode(const ul idx, const ul nodeIdx) {
-//	auto arc = getArc(idx);
-//	Node* node = getNode(nodeIdx);
-//	if(arc->isEdge()) {
-//		if(arc->firstNodeIdx == nodeIdx) {
-//			arc->edge = Segment(node->point,arc->edge.target());
-//		} else if(arc->secondNodeIdx == nodeIdx) {
-//			arc->edge = Segment(arc->edge.source(),node->point);
-//		}
-//	} else /* arc is ray */ {
-//		LOG(WARNING) << "updateArcNewNode: all arcs should be bounded by now!";
-//		if(arc->firstNodeIdx == nodeIdx) {
-//			arc->ray = Ray(node->point,arc->ray.direction());
-//		}
-//	}
-//}
-//
 ul Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) const {
 	/* a ray is the 'outermost' arc */
 	if(arc.isRay()) {return MAX;}
@@ -871,7 +568,8 @@ ul Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) c
 		if( a != path.currentArcIdx ) {
 			const auto& arcIt = arcList[a];
 
-			if( liesOnFace(arcIt,path.edgeIdx) ) {
+			if( arcIt.firstNodeIdx == arc.secondNodeIdx && liesOnFace(arcIt,path.edgeIdx) ) {
+				LOG(INFO) << " --- found idx " << a;
 				return a;
 			}
 		}
@@ -879,32 +577,7 @@ ul Wavefront::getNextArcIdx(const MonotonePathTraversal& path, const Arc& arc) c
 
 	return MAX;
 }
-//
-//bool Wavefront::isArcLeftOfPoint(const Arc& arc, const Point& point) const {
-//	auto Idx = getRightmostNodeIdxOfArc(arc);
-//	auto Na = &nodes[Idx];
-//	if(arc.isEdge()) {
-//		return data.monotoneSmaller(Na->point,point);
-//	} else {
-//		assert(arc.isRay());
-//		return data.monotoneSmaller(Na->point,point) && !data.rayPointsLeft(arc.ray);
-//	}
-//}
-//
-//bool Wavefront::isArcLeftOfArc(const Arc* arcA, const Arc* arcB) const {
-//	assert(arcA != nullptr || arcB != nullptr);
-//	if(arcA == nullptr) {
-//		return false;
-//	} else if(arcB == nullptr) {
-//		return true;
-//	} else {
-//		return isArcLeftOfArc(data.monotonicityLine,*arcA,*arcB);
-//	}
-//}
 
-//bool Wavefront::isArcLeftOfArc(const Arc& arcA, const Arc& arcB) const {
-//	return isArcLeftOfArc(data.monotonicityLine,arcA,arcB);
-//}
 
 bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
 	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);
@@ -1004,209 +677,6 @@ ul Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
 	}
 }
 
-void Wavefront::initPathForEdge(ChainType type, const ul& edgeIdx) {
-	/* set the upperPath/lowerPath in 'wf' */
-	LOG(INFO) << "initPathForEdge " << edgeIdx;
-
-	const Node& terminalNode   = (ChainType::UPPER == type) ? getTerminalNodeForVertex(data.e(edgeIdx).u) : getTerminalNodeForVertex(data.e(edgeIdx).v);
-	const auto& path = (ChainType::UPPER == type) ? upperPath : lowerPath;
-
-	path.edgeIdx = edgeIdx;
-	path.currentArcIdx = terminalNode.arcs.front();
-
-	const Node* finalNode = (ChainType::UPPER == type) ? getNode(pathFinder[edgeIdx].a) : getNode(pathFinder[edgeIdx].a);
-	path.finalArcIdx = MAX;
-	for(auto a : finalNode->arcs) {
-		const auto* arc = getArc(a);
-		if(ChainType::UPPER == type && arc->rightEdgeIdx == edgeIdx) {
-			path.finalArcIdx = a;
-			if(arc->isRay()) {
-				break;
-			}
-		}
-	}
-
-//	if(!terminalNode.arcs.empty()) {
-//		ul  initialArcIdx  = terminalNode.arcs.front();
-//		Arc&  initialArc     = arcList[initialArcIdx];
-//
-//		auto ie = pathFinder[edgeIdx];
-//		Node& distantNode   = (upper) ? nodes[ie[0]] : nodes[ie[1]];
-//		ul  distantArcIdx = getPossibleRayIdx(distantNode,edgeIdx);
-//		LOG(INFO) << "initial/distantArcIdx " << initialArcIdx << " / " << distantArcIdx;
-//
-//		if(distantArcIdx == MAX || distantArcIdx == initialArcIdx) {
-//			path = MonotonePathTraversal(edgeIdx,initialArcIdx,initialArcIdx,upper);
-//		} else {
-//			Arc&  distantArc    = arcList[distantArcIdx];
-//
-//			LOG(INFO) << "isArcLeftOfArc " << initialArc << " || " << distantArc;
-//
-//			if(isArcLeftOfArc(initialArc,distantArc)) {
-//				path =  MonotonePathTraversal(edgeIdx,initialArcIdx,distantArcIdx,upper);
-//			} else {
-//				path = MonotonePathTraversal(edgeIdx,distantArcIdx,initialArcIdx,upper);
-//				path.iterateAwayFromEdge = false;
-//			}
-//		}
-//	} else {
-//		path = MonotonePathTraversal(edgeIdx,MAX,MAX,upper);
-//	}
-//
-//	if(upper) {
-//		upperPath = path;
-//	} else {
-//		lowerPath = path;
-//	}
-//
-//	LOG(INFO) << path;
-}
-
-//ul Wavefront::getPossibleRayIdx(const Node& node, ul edgeIdx) const {
-//	ul arcIdx = MAX;
-//	for(auto a : node.arcs) {
-//		auto& arc = arcList[a];
-//		if(arc.type == ArcType::RAY && liesOnFace(arc,edgeIdx)) {
-//			return a;
-//		} else if(liesOnFace(arc,edgeIdx)) {
-//			arcIdx = a;
-//		}
-//	}
-//	return arcIdx;
-//}
-//
-//Point Wavefront::intersectBisectorArc(const Bisector& bis, const Arc& arc) {
-//	auto lRef = bis.supporting_line();
-//
-//	if(arc.isAA() || bis.isAA()) {
-//		LOG(WARNING) << "AA elements might cause problems!";
-//
-//		Point P = INFPOINT;
-//
-//		if(arc.isEdge() && !bis.isAA()) {
-//
-//			Segment bisA = data.get_segment(bis.eIdxA);
-//			Segment bisB = data.get_segment(bis.eIdxB);
-//
-//			if(	bisA.supporting_line().has_on(arc.point(0)) &&
-//				bisB.supporting_line().has_on(arc.point(0))) {
-//				return arc.point(0);
-//			} else if(bisA.supporting_line().has_on(arc.point(1)) &&
-//				      bisB.supporting_line().has_on(arc.point(1))) {
-//				return arc.point(1);
-//			}
-//
-//			if(lRef.has_on_positive_side(arc.point(0)) && lRef.has_on_positive_side(arc.point(1))) {
-//				return INFPOINT;
-//			}
-//			if(lRef.has_on_negative_side(arc.point(0)) && lRef.has_on_negative_side(arc.point(1))) {
-//				return INFPOINT;
-//			}
-//		}
-//
-//		if(!arc.is_vertical() && arc.isEdge()) {
-//			P = intersectElements(bis.supporting_line(),arc.edge);
-//			return P;
-//		} else if(!arc.is_vertical() && arc.isRay()) {
-//			P = intersectElements(bis.supporting_line(),arc.ray);
-//			return P;
-//		} else {
-//			P = intersectElements(bis.supporting_line(),arc.supporting_line());
-//		}
-//
-//		if(P != INFPOINT) {
-//			auto arcSup = arc.supporting_line();
-//			auto arcNormalLineA = arcSup.perpendicular(arc.point(0));
-//			if(arc.isEdge()) {
-//				auto arcNormalLineB = arcSup.perpendicular(arc.point(1));
-//
-//				if(P != arc.point(0) && P != arc.point(1) && (arcNormalLineB.has_on_negative_side(P) || arcNormalLineA.has_on_positive_side(P)) )  {
-//					return INFPOINT;
-//				}
-//			} else {
-//				if(P != arc.point(0) && arcNormalLineA.has_on_positive_side(P))  {
-//					return INFPOINT;
-//				}
-//			}
-//		}
-//
-//		return P;
-//
-//	} else if(arc.isEdge()) {
-//		Point a = arc.edge.point(0);
-//		Point b = arc.edge.point(1);
-//
-//		if( (lRef.has_on_positive_side(a) && lRef.has_on_positive_side(b)) ||
-//			(lRef.has_on_negative_side(a) && lRef.has_on_negative_side(b))
-//		) {
-//			return INFPOINT;
-//		} else {
-//			if(bis.isRay()) {
-//				return intersectElements(bis.ray,arc.edge);
-//			} else {
-//				return intersectElements(bis.line,arc.edge);
-//			}
-//		}
-//	} else {
-//		if(bis.isRay()) {
-//			return intersectElements(bis.ray,arc.ray);
-//		} else {
-//			return intersectElements(bis.line,arc.ray);
-//		}
-//	}
-//}
-//
-//bool Wavefront::isArcPerpendicular(const Arc& arc) const {
-//	Point Aproj = data.monotonicityLine.projection(arc.point(0));
-//	Point Bproj = data.monotonicityLine.projection(arc.point(1));
-//	return Aproj == Bproj;
-//}
-//
-///* used for the output, an arc loses its index in its firstNode when the merge is done */
-//bool Wavefront::isArcInSkeleton(const ul& arcIdx) const {
-//	auto arc = &arcList[arcIdx];
-//	auto node = &nodes[arc->firstNodeIdx];
-//	ul appearenceCnt = 0;
-//	for(ul i = 0; i < 2; ++i) {
-//		for(auto idx : node->arcs) {
-//			if(idx == arcIdx) {
-//				++appearenceCnt;
-//			}
-//		}
-//		node = &nodes[arc->secondNodeIdx];
-//	}
-//	return appearenceCnt == 2;
-//}
-//
-//void Wavefront::SortArcsOnNodes() {
-//	ul i = 0;
-//	for(auto n : nodes) {
-//		n.sort(arcList);
-//
-//		/*	-- DEBUG ONLY --*/
-////		std::cout << i << " (" << n.point << ") " << n.arcs.size() << ": ";
-////		for(auto a : n.arcs) {
-////			std::cout << a << " [";
-////			auto arc = &arcList[a];
-////			std::cout << arc->firstNodeIdx << "-" << arc->secondNodeIdx << "] ";
-////
-////			auto nodeB = &nodes[ arc->firstNodeIdx ];
-////			if(arc->type != ArcType::RAY && arc->firstNodeIdx == i) {
-////				nodeB = &nodes[ arc->secondNodeIdx ];
-////			}
-////
-////			if(arc->firstNodeIdx == i) {
-////				std::cout << arc->secondNodeIdx;
-////			} else {
-////				std::cout << arc->firstNodeIdx;
-////			}
-////			std::cout <<  " (" << nodeB->arcs.size() << ") ";
-////		}
-////		std::cout << std::endl;
-//		/*	-- DEBUG ONLY --*/
-//		++i;
-//	}
-//}
 
 void Wavefront::printChain(const Chain& chain) const {
 	std::stringstream ss;
@@ -1227,16 +697,3 @@ void Wavefront::printEvents() const {
 	LOG(INFO) << ss.str();
 }
 
-//void Wavefront::reset() {
-//	nodes.clear();
-//	events.clear();
-//	arcList.clear();
-//	pathFinder.clear();
-//	upperSkeleton.clear();
-//	lowerSkeleton.clear();
-//	upperChain.clear();
-//	lowerChain.clear();
-////	data.lines.clear();
-//	InitializeEventsAndPathsPerEdge();
-//	InitializeNodes();
-//}

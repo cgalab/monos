@@ -8,27 +8,41 @@
 
 #include <QMimeData>
 
+#include "ui_mainwindow.h"
+
 #include "ArcGraphicsItem.h"
 #include "InputGraphicsItem.h"
 #include "Config.h"
 #include "Monos.h"
 
-#include "weightdialog.h"
-
 class MainWindow : public CGAL::Qt::DemosMainWindow {
     Q_OBJECT
+
+	enum class STATE : ul {STARTLOWER=0,LOWER,FINISHLOWER,STARTUPPER,UPPER,FINISHUPPER,INITMERGE,MERGE,FINISHED};
+
 
   public:
     explicit MainWindow(const std::string& title, Monos& _monos);
     ~MainWindow();
   private:
     int merge_counter = 0;
-    bool first_show_event = true;
-    bool did_finish = false;
+//    bool first_show_event = true;
+//    bool did_finish = false;
+//
+//    bool onLowerChain = true;
+//    bool firstStart = true, lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
+//    bool mergeDone = false;
 
-    bool onLowerChain = true;
-    bool firstStart = true, lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
-    bool mergeDone = false;
+    STATE state = STATE::STARTLOWER;
+
+    bool isChainState() const {
+    	return   state == STATE::STARTLOWER ||
+    			 state == STATE::LOWER ||
+				 state == STATE::FINISHLOWER ||
+				 state == STATE::STARTUPPER ||
+				 state == STATE::UPPER ||
+				 state == STATE::FINISHUPPER;
+    }
 
   private slots:
     void showEvent(QShowEvent *);
@@ -49,9 +63,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void on_actionTimeForwardAfterChains_triggered();
     void on_actionFinishComputation_triggered();
 
-    void dragEnterEvent(QDragEnterEvent *e);
-    void dropEvent(QDropEvent *e);
-
   private:
     std::string title;
     std::unique_ptr<Ui::MainWindow> ui;
@@ -68,8 +79,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     void update_time_label();
     void time_changed();
     void simulation_has_finished();
-
-    void updateWeightValue(int idx);
 };
 
 

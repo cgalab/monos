@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "weightdialog.h"
 
 #include "ui_mainwindow.h"
 
@@ -33,7 +32,6 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 
 	/* read input file */
 	monos.readInput();
-
 	/* general init. of monos */
 	monos.init();
 
@@ -103,9 +101,9 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
 void MainWindow::update_time_label() {
 	scene.update(scene.sceneRect());
 	skeleton_gi->update(scene.sceneRect());
-	if(bothChainsDone && !mergeDone) {
+	if(state == STATE::MERGE) {
 		time_label->setText(QString(" -merging- "));
-	} else if(mergeDone) {
+	} else if(state == STATE::FINISHED) {
 		time_label->setText(QString(" -finished- "));
 	} else {
 		auto t = CGAL::to_double( monos.wf->getTime() );
@@ -124,7 +122,7 @@ void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 	if(!monos.config.isValid()) {return;}
 	if(!monos.data->isMonotone) {return;}
 
-	while(!bothChainsDone) {
+	while(isChainState()) {
 		on_actionEventStep_triggered();
 		time_changed();
 	}
@@ -139,7 +137,7 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 	on_actionTimeForwardAfterChains_triggered();
 
-	while(!mergeDone) {
+	while(state != STATE::FINISHED) {
 		on_actionEventStep_triggered();
 		time_changed();
 	}
@@ -152,57 +150,107 @@ void MainWindow::on_actionEventStep_triggered() {
 	if(!monos.config.isValid()) {return;}
 	if(!monos.data->isMonotone) {return;}
 
-	if(firstStart) {
-		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
-		auto& chain     = monos.wf->getChain(type);
-
-		if (!monos.wf->InitSkeletonQueue(chain)) {
-			LOG(WARNING) << "Error Init SkeletonQueue!";
+	switch(state) {
+	case STATE::STARTLOWER:
+		LOG(INFO) << "STARTLOWER";
+		{
+		auto& chain = monos.wf->getChain(ChainType::LOWER);
+		monos.wf->InitSkeletonQueue(chain);
 		}
-		firstStart = false;
-	}
-
-	if(!upperChainDone || !lowerChainDone) {
-		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
-		auto& chain     = monos.wf->getChain(type);
-
-		while(!monos.wf->eventTimes.empty() && !monos.wf->SingleDequeue(chain));
-
+		state = STATE::LOWER;
+		break;
+	case STATE::LOWER:
+		LOG(INFO) << "LOWER";
+		{
+		auto& chain = monos.wf->getChain(ChainType::LOWER);
+		monos.wf->SingleDequeue(chain);
+		}
 		if(monos.wf->eventTimes.empty()) {
-			if(onLowerChain) {
-				lowerChainDone = true;
-				LOG(INFO) << "Lower Chain Finished!";
-			} else {
-				upperChainDone = true;
-				LOG(INFO) << "Upper Chain Finished!";
-			}
-
-			if(lowerChainDone && !upperChainDone) {
-				onLowerChain = false;
-				type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
-				chain     = monos.wf->getChain(type);
-				monos.wf->InitSkeletonQueue(chain);
-			}
+			state = STATE::FINISHLOWER;
 		}
-	} else if(lowerChainDone && upperChainDone && !bothChainsDone) {
-		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
-		auto& chain     = monos.wf->getChain(type);
+		break;
+	case STATE::FINISHLOWER:
+		LOG(INFO) << "FINISHLOWER";
+		{
+		auto& chain = monos.wf->getChain(ChainType::LOWER);
 		monos.wf->FinishSkeleton(chain);
-		bothChainsDone = true;
-//		monos.s->initMerge();
+		}
+		state = STATE::STARTUPPER;
+		break;
+	case STATE::STARTUPPER:
+		LOG(INFO) << "STARTUPPER";
+		{
+		auto& chain = monos.wf->getChain(ChainType::UPPER);
+		monos.wf->InitSkeletonQueue(chain);
+		}
+		state = STATE::UPPER;
+		break;
+	case STATE::UPPER:
+		LOG(INFO) << "UPPER";
+		{
+		auto& chain = monos.wf->getChain(ChainType::UPPER);
+		monos.wf->SingleDequeue(chain);
+		}
+		if(monos.wf->eventTimes.empty()) {
+			state = STATE::FINISHUPPER;
+		}
+		break;
+	case STATE::FINISHUPPER:
+		LOG(INFO) << "FINISHUPPER";
+		{
+		auto& chain = monos.wf->getChain(ChainType::UPPER);
+		monos.wf->FinishSkeleton(chain);
+		}
+		state = STATE::INITMERGE;
+		break;
+	case STATE::INITMERGE:
+		LOG(INFO) << "INITMERGE";
+		monos.s->initMerge();
+		state = STATE::MERGE;
+		break;
+	case STATE::MERGE:
+		LOG(INFO) << "MERGE";
+		if(!monos.s->SingleMergeStep()) {
+			monos.s->finishMerge();
+			state = STATE::FINISHED;
+		}
+		break;
+	case STATE::FINISHED:
+		LOG(INFO) << "FINISHED";
+		break;
 	}
 
-	if(bothChainsDone && !mergeDone) {
-		LOG(INFO) << " -------------------- || Merge-Step: " << ++merge_counter << "|| -------------------- " ;
 
-//		if(!monos.s->SingleMergeStep()) {
-//			monos.s->finishMerge();
-//			mergeDone = true;
-//			if(!monos.data->lines.empty()) {
-//				monos.data->lines.clear();
+//	if(!upperChainDone || !lowerChainDone) {
+//		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+//		auto& chain     = monos.wf->getChain(type);
+//
+//		while(!monos.wf->eventTimes.empty() && !monos.wf->SingleDequeue(chain));
+//
+//		if(monos.wf->eventTimes.empty()) {
+//			if(onLowerChain) {
+//				lowerChainDone = true;
+//				LOG(INFO) << "Lower Chain Finished!";
+//			} else {
+//				upperChainDone = true;
+//				LOG(INFO) << "Upper Chain Finished!";
+//			}
+//
+//			if(lowerChainDone && !upperChainDone) {
+//				onLowerChain = false;
+//				type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+//				chain     = monos.wf->getChain(type);
+//				monos.wf->InitSkeletonQueue(chain);
 //			}
 //		}
-	}
+//	} else if(lowerChainDone && upperChainDone && !bothChainsDone) {
+//		auto type = onLowerChain ? ChainType::LOWER : ChainType::UPPER;
+//		auto& chain     = monos.wf->getChain(type);
+//		monos.wf->FinishSkeleton(chain);
+//		bothChainsDone = true;
+//		monos.s->initMerge();
+//	}
+
 
 	on_actionResize_triggered();
 	time_changed();
@@ -210,32 +258,8 @@ void MainWindow::on_actionEventStep_triggered() {
 
 
 void MainWindow::simulation_has_finished() {
-	if (did_finish) return;
-	did_finish = true;
+	if (state == STATE::FINISHED) return;
 	updateVisibilities();
 }
 
-void MainWindow::dragEnterEvent(QDragEnterEvent *e) {
-    if (e->mimeData()->hasUrls()) {
-        e->acceptProposedAction();
-    }
-}
 
-void MainWindow::dropEvent(QDropEvent *e) {
-//    foreach (const QUrl &url, e->mimeData()->urls()) {
-//        QString fileName = url.toLocalFile();
-//        LOG(INFO) << "Dropped file:" << fileName.toStdString();
-//        if (fileName.endsWith(".obj") || fileName.endsWith(".graphml")) {
-//
-//        	monos.reinitialize(fileName.toStdString(),true);
-//
-//        	input_gi = std::make_shared<InputGraphicsItem>(&monos.data->getBasicInput(), &monos.data->getPolygon(), &monos.data->getWeights(), &monos.data->getVertices());
-//        	scene.addItem(input_gi.get());
-//
-//        	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
-//        	scene.addItem(skeleton_gi.get());
-//
-//        	on_actionResize_triggered();
-//        }
-//    }
-}

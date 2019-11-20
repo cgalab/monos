@@ -10,7 +10,7 @@
 #include <QGraphicsView>
 #include <QMouseEvent>
 #include <QApplication>
-
+#include <math.h>
 #include <CGAL/Qt/GraphicsViewNavigation.h>
 
 class MyQGraphicsView : public QGraphicsView {
@@ -108,7 +108,7 @@ public:
 
 		/* 2) zoom */
 		double zoom_ratio = 120.0;
-		qreal scaleFactor = pow((double)2, wheel_event->delta() / zoom_ratio);
+		qreal scaleFactor = pow(2, wheel_event->delta() / zoom_ratio);
 		v->scale(scaleFactor, scaleFactor);
 
 		/* 3) translate back */
