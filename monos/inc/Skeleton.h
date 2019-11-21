@@ -47,11 +47,11 @@ public:
 
 private:
 	/* return std::pair upper/lower intersection Point */
-	IntersectionPair findNextIntersectingArc(const Ray& bis);
+	IntersectionPair findNextIntersectingArc(const Line& bis);
 
 	void removePath(const ul& arcIdx, const ul& edgeIdx);
 
-	ul handleMerge(const IntersectionPair& intersectionPair, const Ray& bis);
+	ul handleMerge(const IntersectionPair& intersectionPair, const Line& bis);
 	void updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain();  }
@@ -61,25 +61,22 @@ private:
 
 	void initPathForEdge(ChainType type);
 
-	inline bool isIntersecting(const Ray& ray, const Arc& arc) {
-		if(arc.isEdge()) {
-			const Line& l = ray.supporting_line();
-			bool a = l.has_on_positive_side(arc.segment.source());
-			bool b = l.has_on_positive_side(arc.segment.target());
-			if( (a && b) || (!a && !b) ) {
-			   return false;
-			}
-			return CGAL::do_intersect(ray,arc.segment);
-		}
-		return CGAL::do_intersect(ray,arc.ray);
+	inline bool isIntersecting(const Line& l, const Arc& arc) {
+		bool a = l.has_on_positive_side(arc.source());
+		bool b = l.has_on_positive_side(arc.target());
+		return (a && !b) || (!a && b);
+//
+//		if( (a && b) || (!a && !b) ) {
+//			return false;
+//		}
+//		return true;
 	}
 
 	/* true is formward, false is backwards */
-	bool decideDirection(ChainType type, const Ray& bis) const;
+	bool decideDirection(ChainType type, const Line& bis) const;
 
 	/* for the merge to keep track of the current state */
 	ul upperPath = MAX, lowerPath = MAX;
-
 
 	Data& 		data;
 	Wavefront& 	wf;
@@ -91,6 +88,17 @@ private:
 	ul sourceNodeIdx = 0, newNodeIdx = 0;
 
 	ul upperChainIndex = 0, lowerChainIndex = 0;
+
+	/*********************************************************/
+	/* 		state variables of findNextIntersectingArc 		 */
+//	Point Pu = INFPOINT;
+//	Point Pl = INFPOINT;
+//	Point uPa, uPb, lPa, lPb;
+//	bool doneU = false, doneL = false;
+//	bool iterateForwardU = true, iterateForwardL = true;
+//	Arc* upperArc = nullptr; Arc* lowerArc = nullptr;
+//	ChainType searchChain;
+	/*********************************************************/
 };
 
 #endif /* SKELETON_H_ */

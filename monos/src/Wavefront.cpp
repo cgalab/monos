@@ -59,6 +59,14 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	/***********************************************************************/
 	if(!FinishSkeleton(chain)) {return false;}
 
+	nextState();
+
+//	if(type == ChainType::LOWER) {
+//		state = STATE::UPPER;
+//	} else  if(type == ChainType::UPPER) {
+//		state = STATE::MERGE;
+//	}
+
 	return true;
 }
 
@@ -485,13 +493,25 @@ void Wavefront::ChainDecomposition() {
 ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray) {
 	auto& nodeA = nodes[nodeAIdx];
 	auto arcIdx = arcList.size();
-	arcList.emplace_back(Arc(ArcType::RAY,
+
+	const Segment seg = restrictRay(ray);
+
+	arcList.emplace_back(Arc(
+			ArcType::RAY,
 			nodeAIdx,
+			MAX,
 			edgeLeft,
 			edgeRight,
 			arcList.size(),
-			ray
+			seg
 	));
+//	arcList.emplace_back(Arc(ArcType::RAY,
+//			nodeAIdx,
+//			edgeLeft,
+//			edgeRight,
+//			arcList.size(),
+//			ray
+//	));
 	nodeA.arcs.emplace_back(arcIdx);
 	LOG(INFO) << "+/ adding ray: " << arcIdx << " -- " << arcList.back();
 	return arcIdx;
@@ -516,6 +536,22 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 	return arcIdx;
 }
 
+Segment Wavefront::restrictRay(const Ray& ray) {
+	Point Pa = ray.source();
+	Point Pb;
+
+	LOG(INFO) << data.bbox->yMin.p << " -- " << data.bbox->yMax.p;
+
+	if(state == STATE::UPPER) {
+		NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMin.p.y());
+		Pb = Point(Pb_x,data.bbox->yMin.p.y());
+	} else {
+		NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMax.p.y());
+		Pb = Point(Pb_x,data.bbox->yMax.p.y());
+	}
+
+	return Segment(ray.source(),Pb);
+}
 
 void Wavefront::addNewNodefromEvent(const Event& event) {
 	ul nodeIdx  = nodes.size();
@@ -577,16 +613,10 @@ ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
 	return MAX;
 }
 
-std::tuple<Point,Point> Wavefront::getArcEndpoints(const Arc* arc, ChainType type) {
-	LOG(INFO) << "getArcEndpoints: " << *arc;
-	if(!arc->isRay()) {
-		return {arc->segment.source(),arc->segment.target()};
-	} else {
-		Point toProj = (type == ChainType::UPPER) ?  data.bbox->yMin.p : data.bbox->yMax.p;
-		Point Pb = arc->ray.supporting_line().projection(toProj);
-		return {arc->ray.source(),Pb};
-	}
-}
+//std::tuple<Point,Point> Wavefront::getArcEndpoints(const Arc* arc, ChainType type) {
+////	LOG(INFO) << "getArcEndpoints: " << *arc;
+//	return {arc->source(),arc->target()};
+//}
 
 //bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
 //	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);

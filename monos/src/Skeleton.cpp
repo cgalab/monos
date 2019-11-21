@@ -43,18 +43,20 @@ bool Skeleton::SingleMergeStep() {
 	/* correct direction if necessary */
 	const auto& Pa = bisLine.point(0);	const auto Pb = Pa + bisLine.to_vector();
 	if(!data.monotoneSmaller(Pa,Pb)) {bisLine = bisLine.opposite();}
-	const auto bis = Ray(sourceNode->point,bisLine.direction());
+//	const auto bis = Ray(sourceNode->point,bisLine.direction());
 
-	LOG(INFO) << "Bisector-dir: " << bis.direction();
+	LOG(INFO) << "Bisector-dir: " << bisLine.direction();
 
 	/* setup intersection call */
 	/* obtain the arcIdx and newPoint for the next bis arc intersection */
-	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
+	IntersectionPair intersectionPair = findNextIntersectingArc(bisLine);
+//	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
 
 	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl
 			  << "intersection lower: " << intersectionPair.second;
 
-	newNodeIdx = handleMerge(intersectionPair, bis);
+	newNodeIdx = handleMerge(intersectionPair, bisLine);
+//	newNodeIdx = handleMerge(intersectionPair, bis);
 
 
 	/* we iterate the sourcenode to the newly added node and go on merging */
@@ -71,10 +73,14 @@ bool Skeleton::SingleMergeStep() {
 
 /* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
  * in respect to the 'monotonicityLine' */
-IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
+IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 	assert(sourceNode != nullptr);
-	Point Pu = INFPOINT;
-	Point Pl = INFPOINT;
+//	Pu = INFPOINT;
+//	Pl = INFPOINT;
+//	doneU = false; doneL = false;
+//	iterateForwardU = true; iterateForwardL = true;
+//	upperArc = nullptr; lowerArc = nullptr;
+	Point Pu = INFPOINT; Point Pl = INFPOINT;
 	Point uPa, uPb, lPa, lPb;
 	bool doneU = false, doneL = false;
 	bool iterateForwardU = true, iterateForwardL = true;
@@ -96,13 +102,12 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 
 	do {
 		if(!doneU && !doneL) {
-			std::tie(uPa, uPb) = wf.getArcEndpoints(upperArc,ChainType::UPPER);
-			std::tie(lPa, lPb) = wf.getArcEndpoints(lowerArc,ChainType::LOWER);
-			LOG(INFO) << "~~~~ found these points: u: " << uPa << " - " << uPb << ", l: " << lPa << " - " << lPb;
-			if(!data.monotoneSmaller(bis.supporting_line(),uPa,uPb)) {std::swap(uPa, uPb);}
-			if(!data.monotoneSmaller(bis.supporting_line(),lPa,lPb)) {std::swap(lPa, lPb);}
+			uPa = upperArc->source(); uPb = upperArc->target();
+			lPa = lowerArc->source(); lPb = lowerArc->target();
+			if(!data.monotoneSmaller(bis,uPa,uPb)) {std::swap(uPa, uPb);}
+			if(!data.monotoneSmaller(bis,lPa,lPb)) {std::swap(lPa, lPb);}
 
-			searchChain = (data.monotoneSmaller(bis.supporting_line(),uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
+			searchChain = (data.monotoneSmaller(bis,uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
 		}
 
 		if(doneU) {searchChain = ChainType::LOWER;}
@@ -111,11 +116,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 		if(!doneU && searchChain == ChainType::UPPER && !EndOfUpperChain()) {
 			LOG(INFO) << "upper checking " << *upperArc;
 			if(isIntersecting(bis,*upperArc)) {
-				if(upperArc->isEdge()) {
-					Pu = intersectElements(bis,upperArc->segment);
-				} else {
-					Pu = intersectElements(bis,upperArc->ray);
-				}
+				Pu = intersectElements(bis,upperArc->supporting_line());
 				doneU = true;
 			} else {
 //				if(Pl != INFPOINT && data.monotoneSmaller(Pl,uPa) && data.monotoneSmaller(bis.supporting_line(),Pl,uPa)) {
@@ -135,11 +136,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 			LOG(INFO) << "lower checking " << *lowerArc;
 
 			if(isIntersecting(bis,*lowerArc)) {
-				if(lowerArc->isEdge()) {
-					Pl = intersectElements(bis,lowerArc->segment);
-				} else {
-					Pl = intersectElements(bis,lowerArc->ray);
-				}
+				Pl = intersectElements(bis,lowerArc->supporting_line());
 				doneL = true;
 			} else {
 //				if(Pu != INFPOINT  && data.monotoneSmaller(Pu,lPa) && data.monotoneSmaller(bis.supporting_line(),Pu,lPa)) {
@@ -155,6 +152,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 			}
 		}
 	} while(!doneU || !doneL);
+
 	return std::make_pair(Pu,Pl);
 }
 
@@ -174,7 +172,7 @@ void Skeleton::initPathForEdge(ChainType type) {
 }
 
 
-ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Ray& bis) {
+ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Line& bis) {
 	const Point& Pu = intersectionPair.first;
 	const Point& Pl = intersectionPair.second;
 
@@ -182,7 +180,7 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Ray& bi
 	ChainType winner;
 
 	if(Pu != INFPOINT && Pl != INFPOINT) {
-		winner = data.monotoneSmaller(bis.supporting_line(),Pu,Pl) ? ChainType::UPPER : ChainType::LOWER;
+		winner = data.monotoneSmaller(bis,Pu,Pl) ? ChainType::UPPER : ChainType::LOWER;
 		P = (winner == ChainType::UPPER) ? Pu : Pl;
 	} else if(Pu != INFPOINT) {
 		winner = ChainType::UPPER;
@@ -244,51 +242,35 @@ void Skeleton::updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& s
 	if(arc->point(0) == newNode->point) {
 		arc->disable();
 		return;
-	} else if(arc->isRay()) {
-		arc->type = ArcType::NORMAL;
-		arc->segment = Segment(arc->ray.source(),edgeEndPoint);
-		arc->ray = Ray();
-	} else if(arc->isEdge()){
-		arc->segment = Segment(arc->segment.source(),edgeEndPoint);
+	} else {
+		wf.arcList[arcIdx] = Arc(ArcType::NORMAL, arc->firstNodeIdx, secondNodeIdx,
+				arc->leftEdgeIdx, arc->rightEdgeIdx, arc->id,
+				Segment(arc->source(),edgeEndPoint)
+				);
 	}
 
-	arc->secondNodeIdx = secondNodeIdx;
+//	arc->secondNodeIdx = secondNodeIdx;
 
 	newNode->arcs.push_back(arcIdx);
 
 	LOG(INFO) << "after update" << *arc;
 }
 
-bool Skeleton::decideDirection(ChainType type, const Ray& bis) const {
+bool Skeleton::decideDirection(ChainType type, const Line& bis) const {
 	Arc* arc = nullptr;
-//	Point Pa, Pb;
 	if(type == ChainType::UPPER) {
 		arc = wf.getArc(upperPath);
 		if(arc->isRay()) {return false;}
-//		Pa = data.p(data.e(upperChainIndex).u);
-//		Pb = wf.getNode(wf.pathFinder[upperChainIndex].a)->point;
 	} else /* ChainType::LOWER */ {
 		arc = wf.getArc(lowerPath);
 		if(arc->isRay()) {return false;}
-//		Pa = data.p(data.e(lowerChainIndex).v);
-//		Pb = wf.getNode(wf.pathFinder[lowerChainIndex].b)->point;
 	}
 
-//	Segment s( Pa, Pb);
-
-//	Point PbisIntsectsS = intersectElements(bis,s.supporting_line());
-	const Point& arcA = wf.nodes[arc->firstNodeIdx].point;
-//	const Point& arcB = wf.nodes[arc->secondNodeIdx].point;
-//
-//	if(PbisIntsectsS == INFPOINT) {
 	if(type == ChainType::UPPER) {
-		return bis.supporting_line().has_on_positive_side(arcA);
+		return bis.has_on_positive_side(arc->source());
 	} else {
-		return bis.supporting_line().has_on_negative_side(arcA);
+		return bis.has_on_negative_side(arc->source());
 	}
-//	}
-//
-//	return data.monotoneSmaller(s.supporting_line(),arcA,PbisIntsectsS);
 }
 
 void Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {

@@ -6,7 +6,19 @@
 #include "Data.h"
 
 class Wavefront {
+
+enum class STATE : ul {LOWER=0,UPPER,MERGE};
+
 public:
+	STATE state = STATE::LOWER;
+
+	void nextState() {
+		if(state == STATE::LOWER) {
+			state = STATE::UPPER;
+		} else if(state == STATE::UPPER) {
+			state = STATE::MERGE;
+		}
+	}
 
 	Wavefront(Data& dat):data(dat) {}
 
@@ -52,13 +64,8 @@ public:
 
 	Node* getNode(const ul& idx) {return &nodes[idx];}
 	Arc* getArc(const ul& idx) {assert(idx < arcList.size()); return &arcList[idx];}
-	std::tuple<Point,Point> getArcEndpoints(const Arc* arc, ChainType type);
 
 	ul getNextArcIdx(const ul& path, bool forward, ul edgeIdx);
-
-//	bool isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const;
-//	ul getLeftmostNodeIdxOfArc(const Arc& arc) const;
-//	ul getRightmostNodeIdxOfArc(const Arc& arc) const;
 
 	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 
@@ -89,6 +96,8 @@ public:
 //	}
 
 private:
+	Segment restrictRay(const Ray& ray);
+
 	Chain  			upperChain, lowerChain;
 	Data&    		data;
 };

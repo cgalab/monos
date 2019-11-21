@@ -174,6 +174,7 @@ void MainWindow::on_actionEventStep_triggered() {
 		{
 		auto& chain = monos.wf->getChain(ChainType::LOWER);
 		monos.wf->FinishSkeleton(chain);
+		monos.wf->nextState();
 		}
 		state = STATE::STARTUPPER;
 		break;
@@ -200,6 +201,7 @@ void MainWindow::on_actionEventStep_triggered() {
 		{
 		auto& chain = monos.wf->getChain(ChainType::UPPER);
 		monos.wf->FinishSkeleton(chain);
+		monos.wf->nextState();
 		}
 		state = STATE::INITMERGE;
 		break;

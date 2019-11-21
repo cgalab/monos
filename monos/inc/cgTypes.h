@@ -34,8 +34,9 @@
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Aff_transformation_2.h>
 #include <CGAL/aff_transformation_tags.h>
-#include <CGAL/intersections.h>
+//#include <CGAL/intersections.h>
 #include <CGAL/squared_distance_2.h>
+#include <CGAL/intersection_2.h>
 
 using K 			 	= CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
 
@@ -182,30 +183,27 @@ public:
 
 using Events		     = std::vector<Event>;
 
-class Arc {
+class Arc : public Segment {
 public:
-	Arc(ArcType t, ul firstNode, ul leftEdge, ul rightEdge, unsigned id, Ray r):
-		type(t), firstNodeIdx(firstNode), secondNodeIdx(MAX),
-		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id),
-		segment(Segment()),ray(r) {}
-	Arc(ArcType t, ul firstNode, ul secondNode, ul leftEdge, ul rightEdge, unsigned id, Segment e):
+	Arc(ArcType t, ul firstNode, ul secondNode, ul leftEdge, ul rightEdge, unsigned id, Segment e) :
+		Segment(e),
 		type(t), firstNodeIdx(firstNode), secondNodeIdx(secondNode),
-		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id),
-		segment(e),ray(Ray()) {}
+		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id)
+	{}
 
-	inline bool isAA() const {
-		return is_vertical() || is_horizontal();
-	}
+//	inline bool isAA() const {
+//		return is_vertical() || is_horizontal();
+//	}
+//
+//	inline bool has_on(const Point& p) const {
+//		if(isEdge()) {
+//			return segment.has_on(p);
+//		} else {
+//			return ray.has_on(p);
+//		}
+//	}
 
-	inline bool has_on(const Point& p) const {
-		if(isEdge()) {
-			return segment.has_on(p);
-		} else {
-			return ray.has_on(p);
-		}
-	}
-
-	inline bool hasZeroLength() const { return (firstNodeIdx == secondNodeIdx);}
+//	inline bool hasZeroLength() const { return (firstNodeIdx == secondNodeIdx);}
 
 	ul getCommonNodeIdx(const Arc& arc) {
 		if(firstNodeIdx == arc.firstNodeIdx || firstNodeIdx == arc.secondNodeIdx) {
@@ -217,20 +215,20 @@ public:
 		return MAX;
 	}
 
-	bool isParallel(const Arc& arc) const {
-		return !isDisable() && CGAL::parallel(supporting_line(),arc.supporting_line());
-	}
-	bool isCollinear(const Arc& arc) const {
-		return !isDisable() && CGAL::collinear(point(0),point(1), arc.point(0) + arc.to_vector());
-	}
-
-	bool adjacent(const Arc& arc) const {
-		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
-			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
-	}
-	bool is_vertical()   const { return (isEdge()) ? segment.is_vertical()   : ray.is_vertical();}
-	bool is_horizontal() const { return (isEdge()) ? segment.is_horizontal() : ray.is_horizontal();}
-
+//	bool isParallel(const Arc& arc) const {
+//		return !isDisable() && CGAL::parallel(supporting_line(),arc.supporting_line());
+//	}
+//	bool isCollinear(const Arc& arc) const {
+//		return !isDisable() && CGAL::collinear(point(0),point(1), arc.point(0) + arc.to_vector());
+//	}
+//
+//	bool adjacent(const Arc& arc) const {
+//		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
+//			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
+//	}
+//
+//	bool is_horizontal() const { return (isEdge()) ? segment.is_horizontal() : ray.is_horizontal();}
+//
 	ul getSecondNodeIdx(const ul idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
 
 	std::vector<ul> getNodeIndices() {
@@ -241,27 +239,23 @@ public:
 		}
 	}
 
-	Line supporting_line() const {return (isEdge()) ? segment.supporting_line() : ray.supporting_line();}
-	Vector to_vector() const {return supporting_line().to_vector();}
+//	Line supporting_line() const {return (isEdge()) ? segment.supporting_line() : ray.supporting_line();}
+//	Vector to_vector() const {return supporting_line().to_vector();}
 	inline bool isRay()  const { return type == ArcType::RAY;    }
 	inline bool isEdge() const { return type == ArcType::NORMAL; }
 	inline bool isDisable() const {return type == ArcType::DISABLED;}
 	inline void disable() {type = ArcType::DISABLED;}
 
-	Point point(int i) const {return (isEdge()) ? segment.vertex(i) : ray.point(i);}
+//	Point point(int i) const {return (isEdge()) ? segment.vertex(i) : ray.point(i);}
 
 	bool hasEndPoint(const Point& P) const {
-		LOG(INFO) << "hasEndPoint";
-		return P == point(0) || (isEdge() && P == point(1));
+		return P == source() || P == target();
 	}
 
 	ArcType type;
 	ul firstNodeIdx, secondNodeIdx;
 	ul leftEdgeIdx,  rightEdgeIdx;
 	unsigned id;
-
-	Segment segment;
-	Ray  ray;
 
 	friend std::ostream& operator<< (std::ostream& os, const Arc& arc);
 };
