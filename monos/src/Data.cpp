@@ -26,27 +26,15 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 	return os;
 }
 
-bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-	assert(a != b);
-//	auto checkDir = line.direction().perpendicular(CGAL::POSITIVE);
-	return line.perpendicular(b).has_on_positive_side(a);
-//	return perpL.has_on_positive_side(a);
-}
+//bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
+//	assert(a != b);
+//	return line.perpendicular(b).has_on_positive_side(a);
+//}
 
-bool Data::monotoneSmaller(const Point& a, const Point& b) const {
-	assert(a != b);
-//	Line perpL = Line(b,perpMonotonDir);
-	return Line(b,perpMonotonDir).has_on_positive_side(a);
-//	if(perpL.has_on_positive_side(a)) {
-//		return true;
-//	} else if(perpL.has_on_negative_side(a)) {
-//		return false;
-//	} else {
-//		Line L = Line(a,monotonicityLine.direction());
-//		return L.has_on_positive_side(b);
-//	}
-//	return false;
-}
+//bool Data::monotoneSmaller(const Point& a, const Point& b) const {
+//	assert(a != b);
+//	return Line(b,perpMonotonDir).has_on_positive_side(a);
+//}
 
 
 bool Data::ensureMonotonicity() {
