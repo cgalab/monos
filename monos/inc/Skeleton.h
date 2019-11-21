@@ -63,6 +63,12 @@ private:
 
 	inline bool isIntersecting(const Ray& ray, const Arc& arc) {
 		if(arc.isEdge()) {
+			const Line& l = ray.supporting_line();
+			bool a = l.has_on_positive_side(arc.segment.source());
+			bool b = l.has_on_positive_side(arc.segment.target());
+			if( (a && b) || (!a && !b) ) {
+			   return false;
+			}
 			return CGAL::do_intersect(ray,arc.segment);
 		}
 		return CGAL::do_intersect(ray,arc.ray);

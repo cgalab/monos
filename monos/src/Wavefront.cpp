@@ -578,17 +578,14 @@ ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
 }
 
 std::tuple<Point,Point> Wavefront::getArcEndpoints(const Arc* arc, ChainType type) {
-	Point Pa = getNode(arc->firstNodeIdx)->point;
-	Point Pb = INFPOINT;
-	LOG(INFO) << "getArcEndpoints: " << *arc << " - " << Pa;
+	LOG(INFO) << "getArcEndpoints: " << *arc;
 	if(!arc->isRay()) {
-		Pb = getNode(arc->secondNodeIdx)->point;
+		return {arc->segment.source(),arc->segment.target()};
 	} else {
 		Point toProj = (type == ChainType::UPPER) ?  data.bbox->yMin.p : data.bbox->yMax.p;
-		Pb = arc->ray.supporting_line().projection(toProj);
+		Point Pb = arc->ray.supporting_line().projection(toProj);
+		return {arc->ray.source(),Pb};
 	}
-
-	return {Pa,Pb};
 }
 
 //bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {

@@ -99,9 +99,10 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 			std::tie(uPa, uPb) = wf.getArcEndpoints(upperArc,ChainType::UPPER);
 			std::tie(lPa, lPb) = wf.getArcEndpoints(lowerArc,ChainType::LOWER);
 			LOG(INFO) << "~~~~ found these points: u: " << uPa << " - " << uPb << ", l: " << lPa << " - " << lPb;
-			if(!data.monotoneSmaller(uPa,uPb)) {std::swap(uPa, uPb);}
-			if(!data.monotoneSmaller(lPa,lPb)) {std::swap(lPa, lPb);}
-			searchChain = (data.monotoneSmaller(uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
+			if(!data.monotoneSmaller(bis.supporting_line(),uPa,uPb)) {std::swap(uPa, uPb);}
+			if(!data.monotoneSmaller(bis.supporting_line(),lPa,lPb)) {std::swap(lPa, lPb);}
+
+			searchChain = (data.monotoneSmaller(bis.supporting_line(),uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
 		}
 
 		if(doneU) {searchChain = ChainType::LOWER;}
@@ -117,9 +118,9 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 				}
 				doneU = true;
 			} else {
-				if(Pl != INFPOINT && data.monotoneSmaller(lPb,uPb)) {
-					doneU = true;
-				}
+//				if(Pl != INFPOINT && data.monotoneSmaller(Pl,uPa) && data.monotoneSmaller(bis.supporting_line(),Pl,uPa)) {
+//					doneU = true;
+//				}
 				upperPath = wf.getNextArcIdx(upperPath,iterateForwardU,upperChainIndex);
 				if(upperPath == MAX) {
 					doneU = true;
@@ -141,9 +142,9 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 				}
 				doneL = true;
 			} else {
-				if(Pu != INFPOINT && data.monotoneSmaller(uPb,lPb)) {
-					doneL = true;
-				}
+//				if(Pu != INFPOINT  && data.monotoneSmaller(Pu,lPa) && data.monotoneSmaller(bis.supporting_line(),Pu,lPa)) {
+//					doneL = true;
+//				}
 				lowerPath = wf.getNextArcIdx(lowerPath,iterateForwardL,lowerChainIndex);
 				if(lowerPath == MAX) {
 					doneL = true;

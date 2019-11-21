@@ -102,6 +102,7 @@ public:
 		monotonicityLine = line;
 		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
 		isMonotone = true;
+		assignBoundingBox();
 	}
 
 	Line			monotonicityLine;

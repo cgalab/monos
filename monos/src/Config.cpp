@@ -31,7 +31,7 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 			break;
 
 		case 'x':
-			timings = true;
+			x_mon = true;
 			break;
 
 		default:

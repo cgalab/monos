@@ -113,9 +113,7 @@ bool Data::ensureMonotonicity() {
 
 	if(intervals.empty()) {
 		/* polygon is convex, let us choose the x-axis */
-		monotonicityLine = Line(ORIGIN, ORIGIN + Vector(1,0));
-		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
-		isMonotone = true;
+		setMonotonicity(Line(ORIGIN, ORIGIN + Vector(1,0)));
 		return true;
 	}
 
@@ -149,9 +147,8 @@ bool Data::ensureMonotonicity() {
 		Vector b = intervals.begin()->vector;
 		Line line = getMonotonicityLineFromVector(a,b);
 		if(testMonotonicityLineOnPolygon(line)) {
-			monotonicityLine = line;
-			perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
-			isMonotone = true;
+			setMonotonicity(line);
+			return true;
 		} else {
 			assert(false);
 		}
@@ -186,9 +183,8 @@ bool Data::ensureMonotonicity() {
 				LOG(INFO) << "monotonicity Line " << line << " dir: " << line.direction().to_vector() << " found ... testing.";
 
 				if(testMonotonicityLineOnPolygon(line)) {
-					monotonicityLine = line;
-					perpMonotonDir   = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
-					isMonotone = true;
+					setMonotonicity(line);
+					return true;
 					break;
 				} else {
 					success = false;
@@ -206,8 +202,6 @@ bool Data::ensureMonotonicity() {
 		LOG(WARNING) << "Polygon not monotone!";
 		return false;
 	}
-
-	assignBoundingBox();
 
 	return true;
 }
