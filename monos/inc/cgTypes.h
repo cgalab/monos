@@ -20,6 +20,17 @@
 #ifndef CGTYPES_H_
 #define CGTYPES_H_
 
+#if !defined(NDEBUG)
+#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
+#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+#endif
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/global_fun.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+
+
 #include <iterator>
 #include <array>
 #include <algorithm>
@@ -36,7 +47,6 @@
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Aff_transformation_2.h>
 #include <CGAL/aff_transformation_tags.h>
-//#include <CGAL/intersections.h>
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/intersection_2.h>
 
@@ -135,6 +145,7 @@ public:
 		time(t),
 		edgeIdx(e) {}
 	NT  time;
+//	NT timeOfEdge;
 	ul  edgeIdx;
 
 	inline bool operator==(const TimeEdge& rhs) const {
@@ -150,9 +161,29 @@ struct TimeEdgeCmp {
 };
 
 
+//using PoolType = boost::fast_pool_allocator<TimeEdge>;
+//using EventTimes = std::set<TimeEdge,TimeEdgeCmp,PoolType>;
 using PoolType = boost::fast_pool_allocator<TimeEdge>;
+using EventTimes = std::set<TimeEdge,TimeEdgeCmp>;
 
-using EventTimes = std::set<TimeEdge,TimeEdgeCmp,PoolType>;
+
+//struct timeOfEdge{};
+
+//using MyContainer = boost::multi_index::multi_index_container<
+//	TimeEdge,
+//	boost::multi_index::indexed_by<
+//	boost::multi_index::ordered_unique<
+//	boost::multi_index::tag<timeOfEdge>, BOOST_MULTI_INDEX_MEMBER(TimeEdge,NT,timeOfEdge)>
+////    indexed_by<
+////        hashed_unique<identity<TimeEdge>>, // O(1) erasure/lookup, O(log N) insertion
+////        ordered_unique<TimeEdgeCmp<TimeEdge>>  // track minimum/maximum in O(log N)
+////    >
+//	>
+//>;
+
+
+
+
 
 class Event {
 public:
