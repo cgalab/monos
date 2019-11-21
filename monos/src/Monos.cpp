@@ -91,13 +91,15 @@ void Monos::run() {
 		if(config.verbose) {
 			LOG(INFO) << "number of vertices: " << data->getPolygon().size();
 			LOG(INFO) << "time spent: " << time_spent << " seconds";
+			LOG(INFO) << "mem usage : " << usage.ru_maxrss;
 			LOG(INFO) << "filename: " << config.fileName;
 		} else {
-			std::cout << data->getPolygon().size() << "," << time_spent << "," << usage.ru_maxrss << "," << config.fileName << std::endl;
+			std::cout << data->getPolygon().size()
+					  << "," << time_spent
+					  << "," << usage.ru_maxrss
+					  << "," << config.fileName
+					  << std::endl;
 		}
-
-
-
 	}
 }
 
