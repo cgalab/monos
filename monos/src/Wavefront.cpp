@@ -111,7 +111,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
 	auto etIt  = eventTimes.begin();
 	Event* event = &events[etIt->edgeIdx];
-	auto eventTime = etIt->time;
+	NT eventTime = etIt->time;
 	eventTimes.erase(etIt);
 	event->queuePosition = eventTimes.end();
 
@@ -121,7 +121,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 
 		std::vector<Event*> multiEventStack;
 		multiEventStack.emplace_back(event);
-		while(!eventTimes.empty() && *etIt == *eventTimes.begin()) {
+		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
 			/* check for multi-events */
 			auto etCheck = eventTimes.begin();
 			event = &events[etCheck->edgeIdx];
@@ -403,7 +403,7 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 	ul edgeA, edgeB, edgeC, edgeD;
 	edgeB = event.leftEdge;
 	edgeC = event.rightEdge;
-	LOG(INFO) << event;
+//	LOG(INFO) << event;
 	ChainRef it(event.chainEdge);
 	--it;
 
@@ -435,6 +435,7 @@ void Wavefront::updateInsertEvent(Event& event) {
 		if(currentEvent.queuePosition != eventTimes.end() && currentEvent.queuePosition->edgeIdx == event.mainEdge) {
 			eventTimes.erase(currentEvent.queuePosition);
 			currentEvent.queuePosition = eventTimes.end();
+			currentEvent.eventTime = 0;
 		}
 	}
 
@@ -451,12 +452,12 @@ void Wavefront::updateInsertEvent(Event& event) {
 }
 
 Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const {
-	Line b = data.get_segment(bIdx).supporting_line();
+	Line b = data.get_line(bIdx);
 	/* compute bisector from edges */
 	auto abBisL = data.simpleBisector(aIdx,bIdx);
 	auto bcBisL = data.simpleBisector(bIdx,cIdx);
 
-	if(CGAL::do_intersect(abBisL, bcBisL)) {
+//	if(CGAL::do_intersect(abBisL, bcBisL)) {
 		auto intersectionSimple = intersectElements(abBisL, bcBisL);
 		if(intersectionSimple != INFPOINT && ( b.has_on_positive_side(intersectionSimple)) ) {
 			auto distance = normalDistance(b, intersectionSimple);
@@ -466,7 +467,7 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 			 **/
 			return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it,eventTimes.end());
 		}
-	}
+//	}
 
 	return Event(0,INFPOINT,aIdx,bIdx,cIdx,it,eventTimes.end());
 }
@@ -551,9 +552,7 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 	Point& Pa = getNode(paths.a)->point; Point& Pb = getNode(paths.b)->point;
 
 	/* if this is already done, i.e., left and/or right path ends at a node of the event */
-	if((nodes[paths.a].time != event.eventTime && nodes[paths.b].time != event.eventTime) ||
-	   (Pa != event.eventPoint && Pb != event.eventPoint)
-	) {
+	if( Pa != event.eventPoint && Pb != event.eventPoint ) {
 		/* a classical event to be handled */
 		LOG(INFO) << "event point before adding node " << event.eventPoint;
 		nodeIdx = addNode(event.eventPoint,event.eventTime);
@@ -593,8 +592,7 @@ ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
 		if( a != path ) {
 			if( forward && arcList[a].firstNodeIdx == arc->secondNodeIdx ) {
 				return a;
-			}
-			if( !forward && arcList[a].secondNodeIdx == arc->firstNodeIdx  &&
+			} else if( !forward && arcList[a].secondNodeIdx == arc->firstNodeIdx  &&
 				(arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
 			) {
 				return a;

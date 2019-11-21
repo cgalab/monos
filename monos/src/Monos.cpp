@@ -23,6 +23,8 @@
 #include <iostream>
 #include <exception>
 
+#include <sys/resource.h>
+
 #include "Monos.h"
 #include "Data.h"
 #include "BGLGraph.h"
@@ -80,14 +82,22 @@ void Monos::run() {
 	write();
 
 	if(config.timings) {
+		struct rusage usage;
+		if (getrusage(RUSAGE_SELF, &usage) < 0) {
+			LOG(ERROR) << "getrusage() failed: " << strerror(errno);
+			exit(1);
+		}
 		double time_spent = 0.0 + (double)(end - begin) / CLOCKS_PER_SEC;
 		if(config.verbose) {
 			LOG(INFO) << "number of vertices: " << data->getPolygon().size();
 			LOG(INFO) << "time spent: " << time_spent << " seconds";
 			LOG(INFO) << "filename: " << config.fileName;
 		} else {
-			std::cout << data->getPolygon().size() << "," << time_spent << "," << config.fileName << std::endl;
+			std::cout << data->getPolygon().size() << "," << time_spent << "," << usage.ru_maxrss << "," << config.fileName << std::endl;
 		}
+
+
+
 	}
 }
 

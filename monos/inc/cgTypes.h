@@ -76,12 +76,14 @@ public:
 	const unsigned u, v;
 	const unsigned id;
 	const Segment segment;
+	const Line line;
 
 	Edge(unsigned u, unsigned v, unsigned id, Segment s)
 	: u(u)
 	, v(v)
 	, id(id)
-	, segment(s) {}
+	, segment(s)
+	, line(s.supporting_line()){}
 
 	inline bool has(const unsigned idx) const {return u == idx || v == idx;}
 
@@ -124,33 +126,27 @@ struct MonVectCmp {
 	}
 };
 
-
 class TimeEdge {
 public:
 	TimeEdge(NT t, ul e):
-		timeApprox(t.doubleValue()),
 		time(t),
 		edgeIdx(e) {}
-	double timeApprox;
 	NT  time;
 	ul  edgeIdx;
 
 	inline bool operator==(const TimeEdge& rhs) const {
-		return this->timeApprox - rhs.timeApprox <= smallEPS &&
-			   rhs.timeApprox - this->timeApprox <= smallEPS &&
-			   this->time == rhs.time;
+		return this->time == rhs.time;
 	}
 };
 
 struct TimeEdgeCmp {
 	bool operator()(const TimeEdge &left, const TimeEdge &right) const {
-		return ( (left.timeApprox - right.timeApprox) < 0.0 ) ||
-			   ( (left.timeApprox - right.timeApprox) >= 0.0 && left.time < right.time) ||
-			   ( (left.timeApprox - right.timeApprox) >= 0.0 && left.time == right.time && left.edgeIdx < right.edgeIdx);
+		return ( left.time < right.time) ||
+			   ( left.time == right.time && left.edgeIdx < right.edgeIdx );
 	}
 };
 
-using EventTimes 	     = std::set<TimeEdge,TimeEdgeCmp>;
+using EventTimes = std::set<TimeEdge,TimeEdgeCmp>;
 
 class Event {
 public:
@@ -193,20 +189,6 @@ public:
 		leftEdgeIdx(leftEdge), rightEdgeIdx(rightEdge), id(id)
 	{}
 
-//	inline bool isAA() const {
-//		return is_vertical() || is_horizontal();
-//	}
-//
-//	inline bool has_on(const Point& p) const {
-//		if(isEdge()) {
-//			return segment.has_on(p);
-//		} else {
-//			return ray.has_on(p);
-//		}
-//	}
-
-//	inline bool hasZeroLength() const { return (firstNodeIdx == secondNodeIdx);}
-
 	ul getCommonNodeIdx(const Arc& arc) {
 		if(firstNodeIdx == arc.firstNodeIdx || firstNodeIdx == arc.secondNodeIdx) {
 			return firstNodeIdx;
@@ -217,20 +199,6 @@ public:
 		return MAX;
 	}
 
-//	bool isParallel(const Arc& arc) const {
-//		return !isDisable() && CGAL::parallel(supporting_line(),arc.supporting_line());
-//	}
-//	bool isCollinear(const Arc& arc) const {
-//		return !isDisable() && CGAL::collinear(point(0),point(1), arc.point(0) + arc.to_vector());
-//	}
-//
-//	bool adjacent(const Arc& arc) const {
-//		return firstNodeIdx  == arc.firstNodeIdx || firstNodeIdx  == arc.secondNodeIdx ||
-//			   secondNodeIdx == arc.firstNodeIdx || secondNodeIdx == arc.secondNodeIdx;
-//	}
-//
-//	bool is_horizontal() const { return (isEdge()) ? segment.is_horizontal() : ray.is_horizontal();}
-//
 	ul getSecondNodeIdx(const ul idx) const { return (idx == firstNodeIdx) ? secondNodeIdx : firstNodeIdx; }
 
 	std::vector<ul> getNodeIndices() {
@@ -241,14 +209,10 @@ public:
 		}
 	}
 
-//	Line supporting_line() const {return (isEdge()) ? segment.supporting_line() : ray.supporting_line();}
-//	Vector to_vector() const {return supporting_line().to_vector();}
 	inline bool isRay()  const { return type == ArcType::RAY;    }
 	inline bool isEdge() const { return type == ArcType::NORMAL; }
 	inline bool isDisable() const {return type == ArcType::DISABLED;}
 	inline void disable() {type = ArcType::DISABLED;}
-
-//	Point point(int i) const {return (isEdge()) ? segment.vertex(i) : ray.point(i);}
 
 	bool hasEndPoint(const Point& P) const {
 		return P == source() || P == target();

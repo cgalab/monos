@@ -42,7 +42,7 @@ public:
 	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
 	void updateInsertEvent(Event& event);
 
-	void disableEdge(ul edgeIdx) {
+	inline void disableEdge(ul edgeIdx) {
 		events[edgeIdx].eventPoint = INFPOINT;
 		events[edgeIdx].eventTime = 0;
 	}
@@ -61,16 +61,16 @@ public:
 		return arc.leftEdgeIdx == edgeIdx || arc.rightEdgeIdx == edgeIdx;
 	}
 
-	NT getTime() const {return currentTime;}
+	inline NT getTime() const {return currentTime;}
 
-	Node& getTerminalNodeForVertex(const ul& vertexIdx)  {return nodes[vertexIdx];}
+	inline Node& getTerminalNodeForVertex(const ul& vertexIdx)  {return nodes[vertexIdx];}
 
-	Node* getNode(const ul& idx) {return &nodes[idx];}
-	Arc* getArc(const ul& idx) {assert(idx < arcList.size()); return &arcList[idx];}
+	inline Node* getNode(const ul& idx) {return &nodes[idx];}
+	inline Arc* getArc(const ul& idx) {assert(idx < arcList.size()); return &arcList[idx];}
 
 	ul getNextArcIdx(const ul& path, bool forward, ul edgeIdx);
 
-	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
+	inline bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 
 	/* the chain skeleton and the final skeleton is stored in nodes and arcList */
 	Nodes				nodes;
