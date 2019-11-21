@@ -28,6 +28,8 @@
 #include <set>
 #include <cmath>
 
+#include <boost/pool/pool_alloc.hpp>
+
 #include "Definitions.h"
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
@@ -109,6 +111,7 @@ struct MonotoneVector {
 	friend std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv);
 };
 
+/* compare functor */
 struct MonVectCmp {
 	bool operator()(const MonotoneVector &first, const MonotoneVector &second) const {
 		Point A = ORIGIN + first.vector;
@@ -146,7 +149,10 @@ struct TimeEdgeCmp {
 	}
 };
 
-using EventTimes = std::set<TimeEdge,TimeEdgeCmp>;
+
+using PoolType = boost::fast_pool_allocator<TimeEdge>;
+
+using EventTimes = std::set<TimeEdge,TimeEdgeCmp,PoolType>;
 
 class Event {
 public:

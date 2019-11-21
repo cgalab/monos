@@ -214,8 +214,9 @@ void Wavefront::HandleMultiEvent(Chain& chain, std::vector<Event*> eventList) {
 
 			for(;it!=points.end();++it) {
 				B = *it;
-				if( ( data.isAbove(A,B) &&  isLowerChain(chain)) ||
-					( data.isAbove(B,A) && !isLowerChain(chain))) {
+				bool aAboveB = data.isAbove(A,B);
+				if( (  aAboveB  &&  isLowerChain(chain)) ||
+					( !aAboveB  && !isLowerChain(chain))) {
 					std::swap(A,B);
 				}
 			}
@@ -314,7 +315,6 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList
 		--chainIt;
 		ChainRef it1 = ChainRef(chainIt);
 		ChainRef it2 = ChainRef(++chainIt);
-
 
 		if(idxA != idxB && idxB != idxC && idxC != idxD) {
 			/**/
