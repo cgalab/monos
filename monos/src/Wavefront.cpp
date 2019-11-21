@@ -515,7 +515,10 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 	));
 	nodeA.arcs.emplace_back(arcIdx);
 	nodeB.arcs.emplace_back(arcIdx);
+#ifdef NDEBUG
+	LOG(WARNING) << "++ TEST TEST TEST: " << arcIdx;
 	LOG(INFO) << "++ adding arc: " << arcIdx;
+#endif
 	return arcIdx;
 }
 

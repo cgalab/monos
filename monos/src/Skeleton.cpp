@@ -43,20 +43,17 @@ bool Skeleton::SingleMergeStep() {
 	/* correct direction if necessary */
 	const auto& Pa = bisLine.point(0);	const auto Pb = Pa + bisLine.to_vector();
 	if(!data.monotoneSmaller(Pa,Pb)) {bisLine = bisLine.opposite();}
-//	const auto bis = Ray(sourceNode->point,bisLine.direction());
 
 	LOG(INFO) << "Bisector-dir: " << bisLine.direction();
 
 	/* setup intersection call */
 	/* obtain the arcIdx and newPoint for the next bis arc intersection */
 	IntersectionPair intersectionPair = findNextIntersectingArc(bisLine);
-//	IntersectionPair intersectionPair = findNextIntersectingArc(bis);
 
-	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl
-			  << "intersection lower: " << intersectionPair.second;
+//	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl
+//			  << "intersection lower: " << intersectionPair.second;
 
 	newNodeIdx = handleMerge(intersectionPair, bisLine);
-//	newNodeIdx = handleMerge(intersectionPair, bis);
 
 
 	/* we iterate the sourcenode to the newly added node and go on merging */
@@ -75,11 +72,6 @@ bool Skeleton::SingleMergeStep() {
  * in respect to the 'monotonicityLine' */
 IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 	assert(sourceNode != nullptr);
-//	Pu = INFPOINT;
-//	Pl = INFPOINT;
-//	doneU = false; doneL = false;
-//	iterateForwardU = true; iterateForwardL = true;
-//	upperArc = nullptr; lowerArc = nullptr;
 	Point Pu = INFPOINT; Point Pl = INFPOINT;
 	Point uPa, uPb, lPa, lPb;
 	bool doneU = false, doneL = false;
