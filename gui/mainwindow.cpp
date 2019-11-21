@@ -38,7 +38,7 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 	input_gi = std::make_shared<InputGraphicsItem>(monos.getBasicInput());
 	scene.addItem(input_gi.get());
 
-	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList, &monos.data->lines);
+	skeleton_gi = std::make_shared<ArcGraphicsItem>(&monos.wf->nodes, &monos.wf->arcList);
 	scene.addItem(skeleton_gi.get());
 
 	auto input_size = input_gi->boundingRect().size();

@@ -26,45 +26,27 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 	return os;
 }
 
-bool Data::isEdgeCollinear(const Segment& eA, const Segment& eB) const {
-	return CGAL::parallel(eA,eB) && CGAL::collinear(eA.point(0),eA.point(1),eB.point(0));
+bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
+	assert(a != b);
+//	auto checkDir = line.direction().perpendicular(CGAL::POSITIVE);
+	return line.perpendicular(b).has_on_positive_side(a);
+//	return perpL.has_on_positive_side(a);
 }
 
-bool Data::isEdgeCollinear(const ul& i, const ul& j) const {
-	return isEdgeCollinear(get_segment(i),get_segment(j));
+bool Data::monotoneSmaller(const Point& a, const Point& b) const {
+	assert(a != b);
+//	Line perpL = Line(b,perpMonotonDir);
+	return Line(b,perpMonotonDir).has_on_positive_side(a);
+//	if(perpL.has_on_positive_side(a)) {
+//		return true;
+//	} else if(perpL.has_on_negative_side(a)) {
+//		return false;
+//	} else {
+//		Line L = Line(a,monotonicityLine.direction());
+//		return L.has_on_positive_side(b);
+//	}
+//	return false;
 }
-
-bool Data::isEdgeCollinearAndCommonInteriorDirection(const ul& i, const ul& j) const {
-	if(isEdgeCollinear(i,j)) {
-		auto lI = get_segment(i).supporting_line();
-		auto lJ = get_segment(j).supporting_line();
-		auto nEI = lI.perpendicular(lI.point(0)).direction();
-		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
-		return nEI == nEJ;
-	}
-	return false;
-}
-bool Data::isEdgeCollinearAndInteriorRight(const ul& i, const ul& j) const {
-	if(isEdgeCollinear(i,j)) {
-		auto lI = get_segment(i).supporting_line();
-		auto lJ = get_segment(j).supporting_line();
-		auto nEI = lI.perpendicular(lI.point(0)).direction();
-		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
-		return nEI == nEJ && nEJ == monotonicityLine.direction();
-	}
-	return false;
-}
-bool Data::isEdgeCollinearAndInteriorLeft(const ul& i, const ul& j) const {
-	if(isEdgeCollinear(i,j)) {
-		auto lI = get_segment(i).supporting_line();
-		auto lJ = get_segment(j).supporting_line();
-		auto nEI = lI.perpendicular(lI.point(0)).direction();
-		auto nEJ = lJ.perpendicular(lJ.point(0)).direction();
-		return nEI == nEJ && nEJ == monotonicityLine.opposite().direction();
-	}
-	return false;
-}
-
 
 
 bool Data::ensureMonotonicity() {
@@ -248,32 +230,6 @@ Line Data::getMonotonicityLineFromVector(const Vector a, const Vector b) const {
 	return l;
 }
 
-bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-	assert(a != b);
-	auto checkDir = line.direction().perpendicular(CGAL::POSITIVE);
-	Line perpL = Line(b,checkDir);
-	return perpL.has_on_positive_side(a);
-}
-
-bool Data::monotoneSmaller(const Point& a, const Point& b) const {
-	assert(a != b);
-	Line perpL = Line(b,perpMonotonDir);
-
-	if(perpL.has_on_positive_side(a)) {
-		return true;
-	} else if(perpL.has_on_negative_side(a)) {
-		return false;
-	} else {
-		Line L = Line(a,monotonicityLine.direction());
-		return L.has_on_positive_side(b);
-	}
-	return false;
-}
-bool Data::rayPointsLeft(const Ray& ray) const {
-	Point Pa = monotonicityLine.point(0);
-	Point Pb = Pa + ray.to_vector();
-	return monotoneSmaller(Pb,Pa);
-}
 
 void Data::assignBoundingBox() {
 	auto xMin   = getVertices().begin();

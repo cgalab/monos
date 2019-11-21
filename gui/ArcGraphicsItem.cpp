@@ -13,11 +13,10 @@
 #include "cgTypes.h"
 
 ArcGraphicsItem::
-ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs, const std::vector<Segment> * lines)
+ArcGraphicsItem(const Nodes * const nodes, const ArcList * arcs)
   : Base()
   , nodes(nodes)
   , arcs(arcs)
-  , lines(lines)
   , painterostream(0)
   , vertices_pen(QPen(::Qt::blue, 3))
   , segments_pen(QPen(::Qt::blue, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin))
@@ -53,11 +52,6 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 		if(e.type != ArcType::DISABLED) {
 			painterostream << e;
 		}
-	}
-
-	painter->setPen(segmentsDebugPen());
-	for(auto l : *lines) {
-		painterostream << l;
 	}
 
 	painter->setPen(verticesPen());
