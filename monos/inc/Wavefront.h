@@ -27,8 +27,8 @@ public:
 	bool FinishSkeleton(Chain& chain);
 
 	void HandleSingleEdgeEvent(Chain& chain, const Event* event);
-	void HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eventList);
-	void HandleMultiEvent(Chain& chain, std::vector<const Event*> eventList);
+	void HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList);
+	void HandleMultiEvent(Chain& chain, std::vector<Event*> eventList);
 
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
@@ -42,7 +42,10 @@ public:
 	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
 	void updateInsertEvent(Event& event);
 
-	void disableEdge(ul edgeIdx) {events[edgeIdx].eventPoint = INFPOINT; }
+	void disableEdge(ul edgeIdx) {
+		events[edgeIdx].eventPoint = INFPOINT;
+		events[edgeIdx].eventTime = 0;
+	}
 
 	/* construct skeletal structure using nodes and arcs */
 	ul addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRight, const Ray& ray);

@@ -154,13 +154,14 @@ using EventTimes 	     = std::set<TimeEdge,TimeEdgeCmp>;
 
 class Event {
 public:
-	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
+	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef(), EventTimes::iterator queuePos = EventTimes::iterator()):
 		eventTime(time),
 		eventPoint(point),
 		leftEdge(edgeA),
 		mainEdge(edgeB),
 		rightEdge(edgeC),
-		chainEdge(ref) {}
+		chainEdge(ref),
+		queuePosition(queuePos) {}
 
 	inline bool isEvent() const { return eventPoint != INFPOINT;}
 
@@ -169,6 +170,7 @@ public:
 	ul 				leftEdge, mainEdge, rightEdge;
 
 	ChainRef 		chainEdge;
+	EventTimes::iterator queuePosition;
 
 	inline bool operator==(const Event& rhs) const {
 		return this->leftEdge == rhs.leftEdge

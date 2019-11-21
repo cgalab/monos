@@ -61,12 +61,6 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 
 	nextState();
 
-//	if(type == ChainType::LOWER) {
-//		state = STATE::UPPER;
-//	} else  if(type == ChainType::UPPER) {
-//		state = STATE::MERGE;
-//	}
-
 	return true;
 }
 
@@ -94,8 +88,11 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 		auto event = getEdgeEvent(aEdgeIdx,bEdgeIdx,cEdgeIdx,it);
 		if(event.isEvent()) {
 			auto te = TimeEdge(event.eventTime,event.mainEdge);
-			eventTimes.insert(te);
-			events[event.mainEdge] = event;
+			auto pos = eventTimes.insert(te);
+			if(pos.second) {
+				events[event.mainEdge] = event;
+				events[event.mainEdge].queuePosition = pos.first;
+			}
 		}
 
 		/* iterate over the chainIterator */
@@ -113,15 +110,16 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 bool Wavefront::SingleDequeue(Chain& chain) {
 	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
 	auto etIt  = eventTimes.begin();
-	const Event* event = &events[etIt->edgeIdx];
+	Event* event = &events[etIt->edgeIdx];
 	auto eventTime = etIt->time;
 	eventTimes.erase(etIt);
+	event->queuePosition = eventTimes.end();
 
 	if(currentTime <= eventTime) {
 
 		currentTime = eventTime;
 
-		std::vector<const Event*> multiEventStack;
+		std::vector<Event*> multiEventStack;
 		multiEventStack.emplace_back(event);
 		while(!eventTimes.empty() && *etIt == *eventTimes.begin()) {
 			/* check for multi-events */
@@ -129,6 +127,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 			event = &events[etCheck->edgeIdx];
 			multiEventStack.emplace_back(event);
 			eventTimes.erase(etCheck);
+			event->queuePosition = eventTimes.end();
 		}
 
 		if(multiEventStack.size() > 1) {
@@ -139,7 +138,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
 			std::map<Point,ul> pointToIndex;
 			/* we store a list of events per point (projected on the monotonicity line)  */
-			std::vector<std::vector<const Event*>> eventsPerPoint;
+			std::vector<std::vector<Event*>> eventsPerPoint;
 			for(auto e : multiEventStack) {
 				Point p = data.pointOnMonotonicityLine(e->eventPoint);
 
@@ -149,7 +148,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 					eventsPerPoint[it->second].emplace_back(e);
 				} else {
 					pointToIndex.insert(std::pair<Point,ul>(p,eventsPerPoint.size()));
-					std::vector<const Event*> list = {e};
+					std::vector<Event*> list = {e};
 					eventsPerPoint.emplace_back( list );
 				}
 			}
@@ -182,7 +181,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
  *       exactly two points:
  * --> after adding both points (connected with a vertical segment) we apply
  *     (i) for the 'upper' (or higher) point. */
-void Wavefront::HandleMultiEvent(Chain& chain, std::vector<const Event*> eventList) {
+void Wavefront::HandleMultiEvent(Chain& chain, std::vector<Event*> eventList) {
 	if(eventList.size() == 1) {
 		LOG(INFO) << "size 1 ";
 		HandleSingleEdgeEvent(chain,eventList[0]);
@@ -242,7 +241,7 @@ void Wavefront::HandleMultiEvent(Chain& chain, std::vector<const Event*> eventLi
 	}
 }
 
-void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eventList) {
+void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList) {
 	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
 
 	auto anEvent = eventList[0];
@@ -430,15 +429,12 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 
 void Wavefront::updateInsertEvent(Event& event) {
 	/* check if edge has already an event in the queue */
-	auto it = eventTimes.begin();
 	auto& currentEvent =  events[event.mainEdge];
 	if(currentEvent.eventTime > 0) {
 		/* find remove timeslot from event times */
-		auto teOld = TimeEdge(currentEvent.eventTime,currentEvent.mainEdge);
-		auto item  = eventTimes.lower_bound(teOld);
-
-		if(item != eventTimes.end() && item->edgeIdx == event.mainEdge) {
-			it = eventTimes.erase(item);
+		if(currentEvent.queuePosition != eventTimes.end() && currentEvent.queuePosition->edgeIdx == event.mainEdge) {
+			eventTimes.erase(currentEvent.queuePosition);
+			currentEvent.queuePosition = eventTimes.end();
 		}
 	}
 
@@ -446,8 +442,11 @@ void Wavefront::updateInsertEvent(Event& event) {
 
 	if(event.isEvent()) {
 		auto te = TimeEdge(event.eventTime,event.mainEdge);
-		eventTimes.insert(it,te);
-		events[event.mainEdge] = event;
+		auto pos = eventTimes.insert(te);
+		if(pos.second) {
+			events[event.mainEdge] = event;
+			events[event.mainEdge].queuePosition = pos.first;
+		}
 	}
 }
 
@@ -465,11 +464,11 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 			/* does collapse so we create an event
 			 * and add it to the queue
 			 **/
-			return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it);
+			return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it,eventTimes.end());
 		}
 	}
 
-	return Event(0,INFPOINT,aIdx,bIdx,cIdx,it);
+	return Event(0,INFPOINT,aIdx,bIdx,cIdx,it,eventTimes.end());
 }
 
 
@@ -505,13 +504,7 @@ ul Wavefront::addArcRay(const ul& nodeAIdx, const ul& edgeLeft, const ul& edgeRi
 			arcList.size(),
 			seg
 	));
-//	arcList.emplace_back(Arc(ArcType::RAY,
-//			nodeAIdx,
-//			edgeLeft,
-//			edgeRight,
-//			arcList.size(),
-//			ray
-//	));
+
 	nodeA.arcs.emplace_back(arcIdx);
 	LOG(INFO) << "+/ adding ray: " << arcIdx << " -- " << arcList.back();
 	return arcIdx;
@@ -539,8 +532,6 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 Segment Wavefront::restrictRay(const Ray& ray) {
 	Point Pa = ray.source();
 	Point Pb;
-
-	LOG(INFO) << data.bbox->yMin.p << " -- " << data.bbox->yMax.p;
 
 	if(state == STATE::UPPER) {
 		NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMin.p.y());
@@ -612,109 +603,6 @@ ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
 	}
 	return MAX;
 }
-
-//std::tuple<Point,Point> Wavefront::getArcEndpoints(const Arc* arc, ChainType type) {
-////	LOG(INFO) << "getArcEndpoints: " << *arc;
-//	return {arc->source(),arc->target()};
-//}
-
-//bool Wavefront::isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const {
-//	auto NaIdx = getLeftmostNodeIdxOfArc(arcA);
-//	auto NbIdx = getLeftmostNodeIdxOfArc(arcB);
-//	auto Na = &nodes[NaIdx];
-//	auto Nb = &nodes[NbIdx];
-//
-//	/* left endpoints are adjacent, check right endpoints */
-//	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
-//		NbIdx = getRightmostNodeIdxOfArc(arcB);
-//		Nb = &nodes[NbIdx];
-//	}
-//	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
-//		NbIdx = getLeftmostNodeIdxOfArc(arcB);
-//		Nb = &nodes[NbIdx];
-//		NaIdx = getRightmostNodeIdxOfArc(arcA);
-//		Na = &nodes[NaIdx];
-//	}
-//	if(NaIdx == NbIdx || Na->point == Nb->point || data.pointsEqualIfProjectedToMonotonicityLine(Na->point,Nb->point)) {
-//		NbIdx = getRightmostNodeIdxOfArc(arcB);
-//		Nb = &nodes[NbIdx];
-//		NaIdx = getRightmostNodeIdxOfArc(arcA);
-//		Na = &nodes[NaIdx];
-//	}
-//
-//	bool pointAmonotoneSmaller = (Na->point != Nb->point) && data.monotoneSmaller(line,Na->point,Nb->point);
-//
-//	if(arcA.isEdge() && arcB.isEdge()) {
-//		/* 1st: both arcs are edges */
-//		return pointAmonotoneSmaller;
-//	} else if( (arcA.isEdge() && arcB.isRay()) || (arcA.isRay() && arcB.isEdge()) ) {
-//		/* 2nd: one edge one ray */
-//		auto& ray  = (arcA.isRay())  ? arcA : arcB;
-//		bool rayPointsLeft = data.rayPointsLeft(ray.ray);
-//
-//		if(    ( rayPointsLeft && arcA.isRay())
-//			|| (!rayPointsLeft && pointAmonotoneSmaller)
-//		) {
-//			return true;
-//		} else {
-//			return false;
-//		}
-//	} else {
-//		/* 3rd: both arcs are rays */
-//		assert(arcA.isRay());
-//		assert(arcB.isRay());
-//
-//		bool rayAPointsLeft = data.rayPointsLeft(arcA.ray);
-//		bool rayBPointsLeft = data.rayPointsLeft(arcB.ray);
-//
-//		if( (rayAPointsLeft && rayBPointsLeft) || (!rayAPointsLeft && !rayBPointsLeft) ) {
-//			return pointAmonotoneSmaller;
-//		} else if(rayAPointsLeft) {
-//			return true;
-//		} else if(rayBPointsLeft) {
-//			return false;
-//		}
-//	}
-//
-//	assert(false);
-//	return false;
-//}
-
-//ul Wavefront::getRightmostNodeIdxOfArc(const Arc& arc) const {
-//	const auto& Na = nodes[arc.firstNodeIdx];
-//	if(arc.isEdge()) {
-//		const auto& Nb = nodes[arc.secondNodeIdx];
-//		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
-//	} else if (arc.isRay()) {
-//		return arc.firstNodeIdx;
-//	} else {
-//		LOG(ERROR) << "(R) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
-//		if(arc.secondNodeIdx == MAX) {
-//			return arc.firstNodeIdx;
-//		} else {
-//			const auto& Nb = nodes[arc.secondNodeIdx];
-//			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.secondNodeIdx : arc.firstNodeIdx;
-//		}
-//	}
-//}
-//
-//ul Wavefront::getLeftmostNodeIdxOfArc(const Arc& arc) const {
-//	const auto& Na = nodes[arc.firstNodeIdx];
-//	if(arc.isEdge()) {
-//		const auto& Nb = nodes[arc.secondNodeIdx];
-//		return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
-//	} else if (arc.isRay()) {
-//		return arc.firstNodeIdx;
-//	} else {
-//		LOG(ERROR) << "(L) Traversing a disabled arc/ray! " << arc.firstNodeIdx << " " << arc;
-//		if(arc.secondNodeIdx == MAX) {
-//			return arc.firstNodeIdx;
-//		} else {
-//			const auto& Nb = nodes[arc.secondNodeIdx];
-//			return (data.monotoneSmaller(Na.point,Nb.point)) ? arc.firstNodeIdx : arc.secondNodeIdx;
-//		}
-//	}
-//}
 
 
 void Wavefront::printChain(const Chain& chain) const {
