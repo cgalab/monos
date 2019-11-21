@@ -71,6 +71,12 @@ using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 static Point ORIGIN = Point(0,0);
 static Point INFPOINT(std::numeric_limits<double>::max(),std::numeric_limits<double>::max());
 
+static Line* gMonotonicityLine = nullptr;
+
+//bool operator<(const Point& lhs, const Point& rhs) {
+//	return gMonotonicityLine->perpendicular(rhs).has_on_positive_side(lhs);
+//}
+
 class Vertex {
 public:
 	const Point p;

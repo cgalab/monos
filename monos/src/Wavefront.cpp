@@ -1,15 +1,5 @@
 #include "Wavefront.h"
 
-//std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path) {
-//	os << "path-edge (" << path.edgeIdx << ") - current:";
-//	if(path.currentArcIdx == MAX) {
-//		os << "MAX" << " opposite: ";} else {	os << path.currentArcIdx << " opposite: ";
-//	}
-//	if(path.finalArcIdx == MAX) {os << "MAX";} else {os << path.finalArcIdx;}
-//	return os;
-//}
-
-
 void Wavefront::InitializeEventsAndPathsPerEdge() {
 	/* set up empty events for every edge;
 	* set up initial target node for pathfinder
@@ -140,7 +130,7 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 			/* we store a list of events per point (projected on the monotonicity line)  */
 			std::vector<std::vector<Event*>> eventsPerPoint;
 			for(auto e : multiEventStack) {
-				Point p = data.pointOnMonotonicityLine(e->eventPoint);
+				Point p = data.monotonicityLine.projection(e->eventPoint);
 
 				/* build map point -> list of events */
 				auto it = pointToIndex.find(p);
@@ -164,7 +154,6 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 			/********************************************************************************/
 			HandleSingleEdgeEvent(chain,event);
 		}
-
 		return true;
 	}
 	return false;
@@ -458,16 +447,16 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 	auto bcBisL = data.simpleBisector(bIdx,cIdx);
 
 //	if(CGAL::do_intersect(abBisL, bcBisL)) {
-		auto intersectionSimple = intersectElements(abBisL, bcBisL);
-		if(intersectionSimple != INFPOINT && ( b.has_on_positive_side(intersectionSimple)) ) {
-			auto distance = normalDistance(b, intersectionSimple);
-			assert(distance > 0);
-			/* does collapse so we create an event
-			 * and add it to the queue
-			 **/
-			return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it,eventTimes.end());
-		}
-//	}
+	auto intersectionSimple = intersectElements(abBisL, bcBisL);
+	if(intersectionSimple != INFPOINT && ( b.has_on_positive_side(intersectionSimple)) ) {
+		auto distance = normalDistance(b, intersectionSimple);
+		assert(distance > 0);
+		/* does collapse so we create an event
+		 * and add it to the queue
+		 **/
+		return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it,eventTimes.end());
+	}
+	//	}
 
 	return Event(0,INFPOINT,aIdx,bIdx,cIdx,it,eventTimes.end());
 }
@@ -554,7 +543,7 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 	/* if this is already done, i.e., left and/or right path ends at a node of the event */
 	if( Pa != event.eventPoint && Pb != event.eventPoint ) {
 		/* a classical event to be handled */
-		LOG(INFO) << "event point before adding node " << event.eventPoint;
+//		LOG(INFO) << "event point before adding node " << event.eventPoint;
 		nodeIdx = addNode(event.eventPoint,event.eventTime);
 
 		addArc(paths.a,nodeIdx,event.leftEdge,event.mainEdge);

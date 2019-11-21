@@ -57,11 +57,11 @@ public:
 	const VertexList& getVertices() const { return input.vertices(); }
 	const EdgeList&   getPolygon()  const { return input.edges();    }
 
-	const Edge e(const ul& idx) const { return input.get_edge(idx); }
+	inline const Edge e(const ul& idx) const { return input.get_edge(idx); }
 	const Vertex& v(const ul& idx) const { return getVertices()[idx]; }
 	const Point& p(const ul& idx) const { return v(idx).p; }
-	Line get_line(const ul& idx) const {return e(idx).line;}
-	Line get_line(const EdgeIterator& it) const {return it->line;}
+	inline Line get_line(const ul& idx) const {return e(idx).line;}
+	inline Line get_line(const EdgeIterator& it) const {return it->line;}
 	Segment get_segment(const ul& idx) const {return e(idx).segment;}
 	Segment get_segment(const EdgeIterator& it) const {return it->segment;}
 
@@ -80,16 +80,16 @@ public:
 	 * the vertices such that x-monotonicity holds for P */
 	bool ensureMonotonicity();
 	bool isAbove(const Point& a, const Point &b) const;
-	bool monotoneSmaller(const Point& a, const Point& b) const;
-	bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const;
-	Point pointOnMonotonicityLine(const Point p) const { return monotonicityLine.projection(p); }
-
-	bool pointsEqualIfProjectedToMonotonicityLine(const Point a, const Point b) const {
-		return pointOnMonotonicityLine(a) == pointOnMonotonicityLine(b);
+	inline bool monotoneSmaller(const Point& a, const Point& b) const {
+		return Line(b,perpMonotonDir).has_on_positive_side(a);
+	}
+	inline bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
+		return line.perpendicular(b).has_on_positive_side(a);
 	}
 
 	void setMonotonicity(Line line) {
 		monotonicityLine = line;
+		gMonotonicityLine = &line;
 		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
 		isMonotone = true;
 		assignBoundingBox();
