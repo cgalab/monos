@@ -30,6 +30,10 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 			timings = true;
 			break;
 
+		case 'x':
+			timings = true;
+			break;
+
 		default:
 			std::cerr << "Invalid option " << (char)r << std::endl;
 			validConfig = false;

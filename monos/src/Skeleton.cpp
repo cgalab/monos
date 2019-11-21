@@ -75,59 +75,85 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Ray& bis) {
 	assert(sourceNode != nullptr);
 	Point Pu = INFPOINT;
 	Point Pl = INFPOINT;
+	Point uPa, uPb, lPa, lPb;
+	bool doneU = false, doneL = false;
+	bool iterateForwardU = true, iterateForwardL = true;
+	Arc* upperArc = nullptr; Arc* lowerArc = nullptr;
+	ChainType searchChain;
 
+	if(EndOfUpperChain()) {doneU = true; LOG(WARNING) << "end of upper chain!";}
+	if(EndOfLowerChain()) {doneL = true; LOG(WARNING) << "end of lower chain!";}
 
-	/* holds the arcs we find in this search */
+	if(!doneU) {
+		iterateForwardU = decideDirection(ChainType::UPPER,bis);
+		upperArc = wf.getArc(upperPath);
+	}
 
-	if(!EndOfUpperChain()) {
-		bool iterateForward = decideDirection(ChainType::UPPER,bis);
-		Arc* upperArc = nullptr;
-		do {
-			upperArc = wf.getArc(upperPath);
+	if(!doneL) {
+		iterateForwardL = decideDirection(ChainType::LOWER,bis);
+		lowerArc = wf.getArc(lowerPath);
+	}
+
+	do {
+		if(!doneU && !doneL) {
+			std::tie(uPa, uPb) = wf.getArcEndpoints(upperArc,ChainType::UPPER);
+			std::tie(lPa, lPb) = wf.getArcEndpoints(lowerArc,ChainType::LOWER);
+			LOG(INFO) << "~~~~ found these points: u: " << uPa << " - " << uPb << ", l: " << lPa << " - " << lPb;
+			if(!data.monotoneSmaller(uPa,uPb)) {std::swap(uPa, uPb);}
+			if(!data.monotoneSmaller(lPa,lPb)) {std::swap(lPa, lPb);}
+			searchChain = (data.monotoneSmaller(uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
+		}
+
+		if(doneU) {searchChain = ChainType::LOWER;}
+		if(doneL) {searchChain = ChainType::UPPER;}
+
+		if(!doneU && searchChain == ChainType::UPPER && !EndOfUpperChain()) {
 			LOG(INFO) << "upper checking " << *upperArc;
-			upperPath = wf.getNextArcIdx(upperPath,iterateForward,upperChainIndex);
 			if(isIntersecting(bis,*upperArc)) {
-				upperPath = upperArc->id;
-				break;
-			}
-		} while(upperPath != MAX);
-
-		if(upperPath != MAX) {
-			if(upperArc->isEdge()) {
-				Pu = intersectElements(bis,upperArc->segment);
+				if(upperArc->isEdge()) {
+					Pu = intersectElements(bis,upperArc->segment);
+				} else {
+					Pu = intersectElements(bis,upperArc->ray);
+				}
+				doneU = true;
 			} else {
-				Pu = intersectElements(bis,upperArc->ray);
+				if(Pl != INFPOINT && data.monotoneSmaller(lPb,uPb)) {
+					doneU = true;
+				}
+				upperPath = wf.getNextArcIdx(upperPath,iterateForwardU,upperChainIndex);
+				if(upperPath == MAX) {
+					doneU = true;
+					upperPath = upperArc->id;
+				} else {
+					upperArc = wf.getArc(upperPath);
+				}
 			}
-			LOG(INFO) << "upperPath found intersection with " << upperArc->id << ", " << upperPath << " in pathvar";
-		} else {
-			upperPath = upperArc->id;
 		}
-	}
 
-	if(!EndOfLowerChain()) {
-		bool iterateForward = decideDirection(ChainType::LOWER,bis);
-		Arc* lowerArc = nullptr;
-		do {
-			lowerArc = wf.getArc(lowerPath);
+		if(!doneL && searchChain == ChainType::LOWER && !EndOfLowerChain()) {
 			LOG(INFO) << "lower checking " << *lowerArc;
-			lowerPath = wf.getNextArcIdx(lowerPath,iterateForward,lowerChainIndex);
-			if(isIntersecting(bis,*lowerArc)) {
-				lowerPath = lowerArc->id;
-				break;
-			}
-		} while(lowerPath != MAX);
 
-		if(lowerPath != MAX) {
-			if(lowerArc->isEdge()) {
-				Pl = intersectElements(bis,lowerArc->segment);
+			if(isIntersecting(bis,*lowerArc)) {
+				if(lowerArc->isEdge()) {
+					Pl = intersectElements(bis,lowerArc->segment);
+				} else {
+					Pl = intersectElements(bis,lowerArc->ray);
+				}
+				doneL = true;
 			} else {
-				Pl = intersectElements(bis,lowerArc->ray);
+				if(Pu != INFPOINT && data.monotoneSmaller(uPb,lPb)) {
+					doneL = true;
+				}
+				lowerPath = wf.getNextArcIdx(lowerPath,iterateForwardL,lowerChainIndex);
+				if(lowerPath == MAX) {
+					doneL = true;
+					lowerPath = lowerArc->id;
+				} else {
+					lowerArc = wf.getArc(lowerPath);
+				}
 			}
-			LOG(INFO) << "lowerPath found intersection with " << lowerArc->id << ", " << lowerPath << " in pathvar";
-		} else {
-			lowerPath = lowerArc->id;
 		}
-	}
+	} while(!doneU || !doneL);
 	return std::make_pair(Pu,Pl);
 }
 

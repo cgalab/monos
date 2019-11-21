@@ -5,41 +5,6 @@
 #include "Definitions.h"
 #include "Data.h"
 
-
-//class MonotonePathTraversal {
-//public:
-//	MonotonePathTraversal(ul edgeIdx=0, ul currentArcIdx=0, ul oppositeArcIdx=0, ChainType type = ChainType::UPPER)
-//	: edgeIdx(edgeIdx)
-//	, currentArcIdx(currentArcIdx)
-//	, finalArcIdx(oppositeArcIdx)
-//	, type(type)
-//	{}
-//
-//	bool done() const {return currentArcIdx == finalArcIdx;}
-//	bool isUpperChain() const { return ChainType::UPPER == type; }
-//
-//	void set(const MonotonePathTraversal& reset) {
-//		edgeIdx 		    = reset.edgeIdx;
-//		currentArcIdx 	    = reset.currentArcIdx;
-//		finalArcIdx 	    = reset.finalArcIdx;
-//		type 		   	 	= reset.type;
-//	}
-//
-//	ul edgeIdx;
-//	ul currentArcIdx, finalArcIdx;
-//	ChainType type;
-//
-//
-//	bool operator==(const MonotonePathTraversal& rhs) const {
-//		return this->currentArcIdx == rhs.currentArcIdx && this->edgeIdx == rhs.edgeIdx && this->finalArcIdx == rhs.finalArcIdx && this->type == rhs.type;
-//	}
-//	bool operator!=(const MonotonePathTraversal& rhs) const {
-//		return !(*this == rhs);
-//	}
-//
-//	friend std::ostream& operator<< (std::ostream& os, const MonotonePathTraversal& path);
-//};
-
 class Wavefront {
 public:
 
@@ -87,12 +52,13 @@ public:
 
 	Node* getNode(const ul& idx) {return &nodes[idx];}
 	Arc* getArc(const ul& idx) {assert(idx < arcList.size()); return &arcList[idx];}
+	std::tuple<Point,Point> getArcEndpoints(const Arc* arc, ChainType type);
 
 	ul getNextArcIdx(const ul& path, bool forward, ul edgeIdx);
-	bool isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const;
 
-	ul getLeftmostNodeIdxOfArc(const Arc& arc) const;
-	ul getRightmostNodeIdxOfArc(const Arc& arc) const;
+//	bool isArcLeftOfArc(const Line& line, const Arc& arcA, const Arc& arcB) const;
+//	ul getLeftmostNodeIdxOfArc(const Arc& arc) const;
+//	ul getRightmostNodeIdxOfArc(const Arc& arc) const;
 
 	bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 
@@ -102,10 +68,6 @@ public:
 	/* helping to find the paths, holds for every edge of polygon
 	 * the index to the last node on the left/right path */
 	PathFinder 			pathFinder;
-
-	/* MISC */
-	void printChain(const Chain& chain) const;
-	void printEvents() const;
 
 	/* EVENT QUEUE --------------------------------------------------------------------
 	 * Events stored in events, times sorted in eventTimes, with associated edge idx
@@ -117,11 +79,14 @@ public:
 	/* for a polygon edge at position idx in data.polygon we have a respective event
 	 * for that edge at position idx as well */
 
-	void printAllArcs() {
-		for(auto a : arcList) {
-			LOG(WARNING) << a;
-		}
-	}
+	/* MISC */
+	void printChain(const Chain& chain) const;
+	void printEvents() const;
+//	void printAllArcs() {
+//		for(auto a : arcList) {
+//			LOG(WARNING) << a;
+//		}
+//	}
 
 private:
 	Chain  			upperChain, lowerChain;

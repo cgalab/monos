@@ -104,9 +104,13 @@ bool Monos::init() {
 	data = new Data(input);
 
 	/* verify monotonicity and compute monotonicity line */
-	if(!data->ensureMonotonicity()) {
-		if(config.verbose) {LOG(WARNING) << "polygon is not monotone!";}
-		return false;
+	if(config.x_mon) {
+		data->setMonotonicity(Line(ORIGIN, ORIGIN + Vector(1,0)));
+	} else {
+		if(!data->ensureMonotonicity()) {
+			if(config.verbose) {LOG(WARNING) << "polygon is not monotone!";}
+			return false;
+		}
 	}
 
 	wf = new Wavefront(*data);

@@ -98,6 +98,12 @@ public:
 		return pointOnMonotonicityLine(a) == pointOnMonotonicityLine(b);
 	}
 
+	void setMonotonicity(Line line) {
+		monotonicityLine = line;
+		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
+		isMonotone = true;
+	}
+
 	Line			monotonicityLine;
 	Direction		perpMonotonDir;
 	bool			isMonotone = false;
