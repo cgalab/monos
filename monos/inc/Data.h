@@ -68,19 +68,8 @@ public:
 	const Point& eA(const ul& edgeIdx) const {return p(e(edgeIdx).u);}
 	const Point& eB(const ul& edgeIdx) const {return p(e(edgeIdx).v);}
 
-	NT normalDistance(const ul& edgeIdx, const Point& p) const {
-		Line l(get_segment(edgeIdx));
-		return CGAL::squared_distance(l,p);
-	}
-
-
-	bool isEdgeCollinear(const ul& i, const ul& j) const;
-	bool isEdgeCollinear(const Segment& eA, const Segment& eB) const;
-	bool isEdgeCollinearAndInteriorRight(const ul& i, const ul& j) const;
-	bool isEdgeCollinearAndInteriorLeft(const ul& i, const ul& j) const;
-	bool isEdgeCollinearAndCommonInteriorDirection(const ul& i, const ul& j) const;
-	bool isEdgesParallel(const ul& i, const ul& j) const {
-		return isLinesParallel(get_line(i),get_line(j));
+	inline NT normalDistance(const ul& edgeIdx, const Point& p) const {
+		return CGAL::squared_distance(get_line(edgeIdx),p);
 	}
 
 	inline Line simpleBisector(const ul& a, const ul& b) {
@@ -93,7 +82,6 @@ public:
 	bool isAbove(const Point& a, const Point &b) const;
 	bool monotoneSmaller(const Point& a, const Point& b) const;
 	bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const;
-	bool rayPointsLeft(const Ray& ray) const;
 	Point pointOnMonotonicityLine(const Point p) const { return monotonicityLine.projection(p); }
 
 	bool pointsEqualIfProjectedToMonotonicityLine(const Point a, const Point b) const {
@@ -112,15 +100,6 @@ public:
 	bool			isMonotone = false;
 
 	BBox			*bbox = nullptr;
-
-
-	std::vector<Segment> lines;
-//	void visualizeBisector(Segment edge) {
-//		if(gui) {
-//			if(!lines.empty()) {lines.pop_back();}
-//			lines.push_back(edge);
-//		}
-//	}
 
 	EdgeIterator findEdgeWithVertex(const Vertex& v) const {
 		for(auto eit = getPolygon().begin(); eit != getPolygon().end(); ++eit) {
@@ -145,7 +124,6 @@ private:
 	Line getMonotonicityLineFromVector(const Vector a, const Vector b) const;
 	bool testMonotonicityLineOnPolygon(const Line line) const;
 
-//	const bool 			gui;
 	const BasicInput& 	input;
 };
 
