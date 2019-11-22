@@ -2,6 +2,7 @@ set(SRC_LIST
                main.cpp cgTypes.cpp Data.cpp Skeleton.cpp
                Wavefront.cpp tools.cpp Monos.cpp Config.cpp
                BasicInput.cpp BGLGraph.cpp
+               EventQueue.cpp CollapseSpec.cpp
                easyloggingpp/src/easylogging++.cc
 )
 

@@ -9,7 +9,17 @@
 #include <ctime>
 #include <fstream>
 
+#include <vector>
+
 /* 'inspired' by surfer tools.h */
+static inline int log2i(unsigned v) {
+	int r = -1;
+	while (v > 0) {
+		r++;
+		v >>= 1;
+	};
+	return r;
+}
 
 template <class T>
 void sort_tuple(T& a, T& b) {
@@ -44,14 +54,60 @@ static T compute_determinant(const T& x0, const T& y0,
   );
 }
 
+template <class T>
+struct FixedVector
+		: private std::vector<T> {
+		private:
+	using Base = std::vector<T>;
+	using size_type = typename Base::size_type;
+	using value_type = typename Base::value_type;
 
-#include "cgTypes.h"
+	using Base::capacity;
+		public:
+	using const_iterator = typename Base::const_iterator;
+
+	void reserve(size_type new_size) {
+		assert(size() == 0);
+		Base::reserve(new_size);
+	}
+	void resize(size_type new_size, const value_type& val) {
+		assert(size() == 0);
+		Base::resize(new_size, val);
+	}
+	//using Base::vector;
+	//using Base::operator=;
+	//using Base::get_allocator;
+	using Base::at;
+	//using Base::front;
+	using Base::back;
+	//using Base::clear;
+	//using Base::data;
+	using Base::begin;
+	//using Base::cbegin
+	using Base::end;
+	//using Base::cend;
+	//using Base::empty;
+	using Base::size;
+	using Base::operator[];
+
+	void emplace_back (value_type&& val) {
+		assert(size() < capacity());
+		Base::emplace_back(std::forward<value_type>(val));
+	}
+	void push_back (const value_type& val) {
+		assert(size() < capacity());
+		Base::push_back(val);
+	}
+	void push_back (value_type&& val) {
+		assert(size() < capacity());
+		Base::push_back(std::forward<value_type>(val));
+	}
+};
 
 bool fileExists(const std::string& fileName);
 
 std::string currentTimeStamp();
 
-void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm);
 
 void setupEasylogging(int argc, char** argv);
 void resetLogging(bool output);

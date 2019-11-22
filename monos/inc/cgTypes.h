@@ -20,16 +20,17 @@
 #ifndef CGTYPES_H_
 #define CGTYPES_H_
 
-#if !defined(NDEBUG)
-#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
-#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
-#endif
-
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/global_fun.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-
+//#if !defined(NDEBUG)
+//#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
+//#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+//#endif
+//#include <boost/multi_index_container.hpp>
+//#include <boost/multi_index/global_fun.hpp>
+//#include <boost/multi_index/mem_fun.hpp>
+//#include <boost/multi_index/ordered_index.hpp>
+//#include <boost/multi_index_container.hpp>
+//#include <boost/multi_index/hashed_index.hpp>
+//#include <boost/multi_index/member.hpp>
 
 #include <iterator>
 #include <array>
@@ -42,6 +43,7 @@
 #include <boost/pool/pool_alloc.hpp>
 
 #include "Definitions.h"
+#include "tools.h"
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <CGAL/Bbox_2.h>
@@ -70,12 +72,7 @@ using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
 
 static Point ORIGIN = Point(0,0);
 static Point INFPOINT(std::numeric_limits<double>::max(),std::numeric_limits<double>::max());
-
-static Line* gMonotonicityLine = nullptr;
-
-//bool operator<(const Point& lhs, const Point& rhs) {
-//	return gMonotonicityLine->perpendicular(rhs).has_on_positive_side(lhs);
-//}
+#define CORE_ZERO NT(0)
 
 class Vertex {
 public:
@@ -147,16 +144,16 @@ struct MonVectCmp {
 
 class TimeEdge {
 public:
-	TimeEdge(NT t, ul e):
+	TimeEdge(NT t, ul e) :
 		time(t),
 		edgeIdx(e) {}
 	NT  time;
-//	NT timeOfEdge;
 	ul  edgeIdx;
 
 	inline bool operator==(const TimeEdge& rhs) const {
 		return this->time == rhs.time;
 	}
+	friend std::ostream& operator<< (std::ostream& os, const TimeEdge& mv);
 };
 
 struct TimeEdgeCmp {
@@ -169,38 +166,40 @@ struct TimeEdgeCmp {
 
 //using PoolType = boost::fast_pool_allocator<TimeEdge>;
 //using EventTimes = std::set<TimeEdge,TimeEdgeCmp,PoolType>;
-using PoolType = boost::fast_pool_allocator<TimeEdge>;
-using EventTimes = std::set<TimeEdge,TimeEdgeCmp>;
+//using EventTimes = std::set<TimeEdge,TimeEdgeCmp>;
 
+using TimeEdges = std::vector<TimeEdge>;
 
-//struct timeOfEdge{};
-
-//using MyContainer = boost::multi_index::multi_index_container<
-//	TimeEdge,
-//	boost::multi_index::indexed_by<
-//	boost::multi_index::ordered_unique<
-//	boost::multi_index::tag<timeOfEdge>, BOOST_MULTI_INDEX_MEMBER(TimeEdge,NT,timeOfEdge)>
-////    indexed_by<
-////        hashed_unique<identity<TimeEdge>>, // O(1) erasure/lookup, O(log N) insertion
-////        ordered_unique<TimeEdgeCmp<TimeEdge>>  // track minimum/maximum in O(log N)
-////    >
-//	>
+//namespace tags {
+//    struct time_asc {};
+//    struct edges {};
+//}
+//using EventTimes = boost::multi_index::multi_index_container<
+//  TimeEdge,
+//  boost::multi_index::indexed_by<
+//  	  boost::multi_index::ordered_unique<
+//  	  	  boost::multi_index::tag<tags::time_asc>,
+//		  boost::multi_index::member<TimeEdge, NT, &TimeEdge::time>,
+//		  TimeEdgeCmp
+//	  >,
+//	  boost::multi_index::ordered_unique<
+//	   	  boost::multi_index::tag<tags::edges>,
+//	  	  boost::multi_index::member<TimeEdge, ul, &TimeEdge::edgeIdx>,
+//	  	  std::less<ul>
+//  	  >
+//   >
 //>;
-
-
-
 
 
 class Event {
 public:
-	Event(NT time = 0, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef(), EventTimes::iterator queuePos = EventTimes::iterator()):
+	Event(NT time = MAX, Point point = INFPOINT, ul edgeA = 0, ul edgeB = 0, ul edgeC = 0, ChainRef ref = ChainRef()):
 		eventTime(time),
 		eventPoint(point),
 		leftEdge(edgeA),
 		mainEdge(edgeB),
 		rightEdge(edgeC),
-		chainEdge(ref),
-		queuePosition(queuePos) {}
+		chainEdge(ref) {}
 
 	inline bool isEvent() const { return eventPoint != INFPOINT;}
 
@@ -209,8 +208,15 @@ public:
 	ul 				leftEdge, mainEdge, rightEdge;
 
 	ChainRef 		chainEdge;
-	EventTimes::iterator queuePosition;
-
+//	EventTimes::iterator queuePosition;
+//	inline void operator=(const Event& rhs)  {
+//			this->leftEdge = rhs.leftEdge;
+//			this->mainEdge = rhs.mainEdge;
+//			this->rightEdge = rhs.rightEdge;
+//			this->eventTime = rhs.eventTime;
+//			this->eventPoint = rhs.eventPoint;
+//			this->chainEdge = rhs.chainEdge;
+//		}
 	inline bool operator==(const Event& rhs) const {
 		return this->leftEdge == rhs.leftEdge
 			&& this->mainEdge == rhs.mainEdge
@@ -222,7 +228,8 @@ public:
 	friend std::ostream& operator<< (std::ostream& os, const Event& event);
 };
 
-using Events		     = std::vector<Event>;
+//using Events		     = std::vector<Event>;
+using Events		     = FixedVector<Event>;
 
 class Arc : public Segment {
 public:
@@ -363,5 +370,7 @@ template<class T, class U>
 bool isLinesParallel(const T& a, const U& b) {
 	return CGAL::parallel(Line(a),Line(b));
 }
+
+void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm);
 
 #endif /* CGALTYPES_H_ */

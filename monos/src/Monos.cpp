@@ -30,6 +30,8 @@
 #include "BGLGraph.h"
 #include "BasicInput.h"
 
+#include "EventQueue.h"
+#include <random>
 Monos::Monos(const Config& cfg):config(cfg) {}
 
 Monos::~Monos() {
@@ -54,6 +56,43 @@ bool Monos::readInput() {
 
 void Monos::run() {
 	clock_t begin, end;
+
+//	/**************************************************************/
+//	/*				TESTING THE HEAP							  */
+//	/**************************************************************/
+//
+//
+//	TimeEdges bla;
+//	for(int i = 0; i < 100; ++i) {
+//		bla.emplace_back(TimeEdge(NT(i),i));
+//		LOG(INFO) << bla.back();
+//	}
+//
+//	LOG(INFO) << "now shuffle:";
+//
+//	std::default_random_engine rng = std::default_random_engine {};
+//	std::shuffle(std::begin(bla), std::end(bla), rng);
+//
+//	for(auto a : bla) {
+//		LOG(INFO) << a;
+//	}
+//
+//	LOG(INFO) << "now the queue:";
+//
+//	EventQueue myQueue(bla);
+//
+//	while(!myQueue.empty()) {
+//		auto eidx = myQueue.peak()->idx_in_heap;
+//		auto e = myQueue.peak()->priority;
+//		LOG(INFO) << e.t->time << " heap idx: " << eidx;
+//		myQueue.remove(eidx);
+//	}
+//
+//	return;
+//	/**************************************************************/
+//	/*				END TESTING THE HEP      					  */
+//	/**************************************************************/
+
 
 	if(!readInput()) {return;}
 
@@ -91,7 +130,7 @@ void Monos::run() {
 		if(config.verbose) {
 			LOG(INFO) << "number of vertices: " << data->getPolygon().size();
 			LOG(INFO) << "time spent: " << time_spent << " seconds";
-			LOG(INFO) << "mem usage : " << usage.ru_maxrss;
+			LOG(INFO) << "mem usage : " << usage.ru_maxrss << " kB";
 			LOG(INFO) << "filename: " << config.fileName;
 		} else {
 			std::cout << data->getPolygon().size()

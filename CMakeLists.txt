@@ -72,7 +72,6 @@ if (NOT DEFINED DEBUG_OUTPUT)
   SET (DEBUG_OUTPUT ${DEBUG_OUTPUT_DEFAULT})
 endif()
 
-
 option(DEBUG_OUTPUT               "Include logging at debug level" ${DEBUG_OUTPUT})
 option(DEBUG_OUTPUT_WITH_FILES    "Include filenames and line numbersin debug output" OFF)
 

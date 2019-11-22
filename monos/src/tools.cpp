@@ -1,4 +1,4 @@
-
+#include "../easyloggingpp/src/easylogging++.h"
 #include "tools.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -21,20 +21,6 @@ std::string currentTimeStamp() {
 	return str;
 }
 
-void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm) {
-	double x_span  = (1.0/OBJSCALE) * (bbox.xMax.p.x().doubleValue() - bbox.xMin.p.x().doubleValue());
-	double y_span  = (1.0/OBJSCALE) * (bbox.yMax.p.y().doubleValue() - bbox.yMin.p.y().doubleValue());
-
-	xt = bbox.xMin.p.x().doubleValue() + (0.5 * (OBJSCALE) * x_span);
-	yt = bbox.yMin.p.y().doubleValue() + (0.5 * (OBJSCALE) * y_span);
-	zt = 0.0;
-
-	xm = (x_span + smallEPS > 0.0) ? OBJSCALE/x_span : 1;
-	ym = (y_span + smallEPS > 0.0) ? OBJSCALE/y_span : 1;
-
-	xm = ym = std::max(xm,ym);
-	zm = xm;
-}
 
 
 void setupEasylogging(int argc, char** argv) {

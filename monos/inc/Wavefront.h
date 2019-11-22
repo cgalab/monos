@@ -5,6 +5,8 @@
 #include "Definitions.h"
 #include "Data.h"
 
+#include "EventQueue.h"
+
 class Wavefront {
 
 enum class STATE : ul {LOWER=0,UPPER,MERGE};
@@ -14,6 +16,7 @@ public:
 
 	void nextState() {
 		if(state == STATE::LOWER) {
+			delete eventTimes;
 			state = STATE::UPPER;
 		} else if(state == STATE::UPPER) {
 			state = STATE::MERGE;
@@ -21,7 +24,7 @@ public:
 	}
 
 	Wavefront(Data& dat):data(dat) {}
-
+	~Wavefront() {delete eventTimes;}
 	bool InitSkeletonQueue(Chain& chain);
 	bool SingleDequeue(Chain& chain);
 	bool FinishSkeleton(Chain& chain);
@@ -84,7 +87,8 @@ public:
 	 * thus, we can modify the event queue with logarithmic update remove insert times.
 	 */
 	Events 			events;
-	EventTimes 		eventTimes;
+//	EventTimes 		eventTimes;
+	EventQueue 		*eventTimes = nullptr;
 	NT				currentTime;
 	/* for a polygon edge at position idx in data.polygon we have a respective event
 	 * for that edge at position idx as well */

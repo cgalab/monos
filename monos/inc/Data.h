@@ -53,7 +53,6 @@ public:
 
 	~Data() {delete bbox;}
 
-
 	const VertexList& getVertices() const { return input.vertices(); }
 	const EdgeList&   getPolygon()  const { return input.edges();    }
 
@@ -89,7 +88,6 @@ public:
 
 	void setMonotonicity(Line line) {
 		monotonicityLine = line;
-		gMonotonicityLine = &line;
 		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
 		isMonotone = true;
 		assignBoundingBox();
@@ -103,15 +101,13 @@ public:
 
 	EdgeIterator findEdgeWithVertex(const Vertex& v) const {
 		for(auto eit = getPolygon().begin(); eit != getPolygon().end(); ++eit) {
-			if(eit->u == v.id) {
-				return eit;
-			}
+			if(eit->u == v.id) {return eit;}
 		}
 		return getPolygon().end();
 	}
 
 
-	EdgeIterator cNext(EdgeIterator it) {return (std::next(it) == getPolygon().end()) ? getPolygon().begin(): std::next(it);}
+	inline EdgeIterator cNext(EdgeIterator it) {return (std::next(it) == getPolygon().end()) ? getPolygon().begin(): std::next(it);}
 	EdgeIterator cPrev(EdgeIterator it) {return (it == getPolygon().begin()) ? std::prev(getPolygon().end()) : std::prev(it);}
 
 	/* write output & debug misc */
