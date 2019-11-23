@@ -42,11 +42,11 @@ private:
 
 	void tidx_to_qitem_map_add(const Event * t, ElementType qi);
 	void drop_by_tidx(unsigned tidx);
-	void update_by_tidx(unsigned tidx, const NT& now);
 	void assert_no_pending() const;
 public:
-	EventQueue(const Events& events);
+	EventQueue(const Events& events, Chain chain);
 
+	void update_by_tidx(unsigned tidx, const NT& now);
 	/* we /could/ make this const, and our heap a mutable
 	 * object attribute and the vectors also mutable.
 	 * At which point pretty much everything in here is

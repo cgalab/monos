@@ -205,6 +205,7 @@ class HeapBase {
     /** Fix the heap property with respect to a single element whose key has changed.
      */
     void fix_idx(int idx) {
+    	LOG(INFO) << "idx: " << idx << " and size: " << size(); fflush(stdout);
       CGAL_precondition(idx >= 0 && idx < size());
 
       if (idx != 0 && (v_[idx]->priority <= v_[parent_idx(idx)]->priority)) {

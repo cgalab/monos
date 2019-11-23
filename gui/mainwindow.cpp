@@ -165,7 +165,7 @@ void MainWindow::on_actionEventStep_triggered() {
 		auto& chain = monos.wf->getChain(ChainType::LOWER);
 		monos.wf->SingleDequeue(chain);
 		}
-		if(monos.wf->eventTimes->empty()) {
+		if(! (monos.wf->eventTimes->empty() && monos.wf->eventTimes->peak()->priority.e->eventTime < MAX) ) {
 			state = STATE::FINISHLOWER;
 		}
 		break;
@@ -192,7 +192,8 @@ void MainWindow::on_actionEventStep_triggered() {
 		auto& chain = monos.wf->getChain(ChainType::UPPER);
 		monos.wf->SingleDequeue(chain);
 		}
-		if(monos.wf->eventTimes->empty()) {
+//		if(monos.wf->eventTimes->empty()) {
+		if(! (monos.wf->eventTimes->empty() && monos.wf->eventTimes->peak()->priority.e->eventTime < MAX) ) {
 			state = STATE::FINISHUPPER;
 		}
 		break;
