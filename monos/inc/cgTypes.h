@@ -208,15 +208,7 @@ public:
 	ul 				leftEdge, mainEdge, rightEdge;
 
 	ChainRef 		chainEdge;
-//	EventTimes::iterator queuePosition;
-//	inline void operator=(const Event& rhs)  {
-//			this->leftEdge = rhs.leftEdge;
-//			this->mainEdge = rhs.mainEdge;
-//			this->rightEdge = rhs.rightEdge;
-//			this->eventTime = rhs.eventTime;
-//			this->eventPoint = rhs.eventPoint;
-//			this->chainEdge = rhs.chainEdge;
-//		}
+
 	inline bool operator==(const Event& rhs) const {
 		return this->leftEdge == rhs.leftEdge
 			&& this->mainEdge == rhs.mainEdge

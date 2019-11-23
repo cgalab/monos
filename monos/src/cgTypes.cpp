@@ -55,7 +55,18 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 }
 
 std::ostream& operator<< (std::ostream& os, const Event& event) {
-    os << "(" << event.eventTime.doubleValue() << " : " << event.eventPoint.x().doubleValue() << "," << event.eventPoint.y().doubleValue() << ")["
+	if(event.eventTime == MAX) {
+		os << "(MAX";
+	} else {
+		os << "(" << event.eventTime.doubleValue();
+	}
+	if(event.eventPoint == INFPOINT) {
+		os << " : INFPNT ";
+	} else {
+		os << " : " << event.eventPoint.x().doubleValue()
+			 << "," << event.eventPoint.y().doubleValue();
+	}
+	os << ")["
     		<< event.leftEdge << ","
 			<< event.mainEdge << ","
 			<< event.rightEdge << "]";

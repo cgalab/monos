@@ -19,17 +19,18 @@ update_collapse(const NT& now) {
 }
 
 EventQueue::
-EventQueue(const Events& events) {
+EventQueue(const Events& events, Chain chain) {
 	ArrayType a;
 	tidx_to_qitem_map.resize(events.size(), NULL);
 	tidx_in_need_dropping.resize(events.size(), false);
 	tidx_in_need_update.resize(events.size(), false);
 
-	for (auto t = events.begin(); t != events.end(); ++t) {
-		LOG(INFO) << "add event at time " << t->eventTime << " main edge: "<< t->mainEdge;
-		auto qi = std::make_shared<EventQueueItem>(&*t, t->eventTime);
+	/* we skip the first and last edge of each chain */
+	for (auto t = std::next(chain.begin()); t != std::prev(chain.end()); ++t) {
+		LOG(INFO) << "add event " << events[*t];
+		auto qi = std::make_shared<EventQueueItem>(&events[*t], events[*t].eventTime);
 		a.emplace_back(qi);
-		tidx_to_qitem_map_add(&*t, qi);
+		tidx_to_qitem_map_add(&events[*t], qi);
 	}
 	setArray(a);
 	//  DBG(DBG_EVENTQ) << "heap array:";
@@ -104,7 +105,7 @@ process_pending_updates(const NT& now) {
 	}
 	need_dropping.clear();
 
-		LOG(INFO) << "update size: " << need_update.size();
+	LOG(INFO) << "update size: " << need_update.size();
 	for (auto t : need_update) {
 		assert(t);
 		LOG(INFO) << "update: " << t->mainEdge;
@@ -112,6 +113,8 @@ process_pending_updates(const NT& now) {
 	}
 	need_update.clear();
 
+	LOG(INFO) << "update size: " << need_update.size(); fflush(stdout);
+	LOG(INFO) << "dropping size: " << need_dropping.size(); fflush(stdout);
 	assert_no_pending();
 }
 
@@ -133,7 +136,7 @@ void
 EventQueue::
 needs_update(const Event * t, bool may_have_valid_collapse_spec) {
 	// DBG_FUNC_BEGIN(DBG_EVENTQ);
-	LOG(INFO) << "t" << *t;
+	LOG(INFO) << "t " << *t;
 
 	assert(tidx_in_need_update.size() > t->mainEdge);
 	//  assert(!t->is_collapse_spec_valid() || may_have_valid_collapse_spec);
@@ -141,6 +144,7 @@ needs_update(const Event * t, bool may_have_valid_collapse_spec) {
 	if (! tidx_in_need_update[t->mainEdge]) {
 		tidx_in_need_update[t->mainEdge ] = true;
 		need_update.push_back(t);
+
 		LOG(INFO) << "added " << t->mainEdge;
 		auto ubm = need_update.back();
 		LOG(INFO) << "aka " << ubm->mainEdge;
@@ -154,7 +158,7 @@ void
 EventQueue::
 needs_dropping(Event * t) {
 	// DBG_FUNC_BEGIN(DBG_EVENTQ);
-	LOG(INFO) << "t" << t;
+	LOG(INFO) << "t" << *t;
 
 	assert(tidx_in_need_dropping.size() > t->mainEdge);
 	//  assert(t->is_dying());
