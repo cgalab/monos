@@ -278,6 +278,12 @@ bool Data::isAbove(const Point& a, const Point &b) const {
 		   (!aAbove && !bAbove && distA < distB);
 }
 
+void Data::printLineFormat() {
+	for(auto e : getPolygon()) {
+		std::cout << p(e.u) << std::endl;
+	}
+	std::cout << p(getPolygon().back().v) << std::endl;
+}
 
 /*
  * NOTE: this only works if writeOBJ was invoced before, as we only
