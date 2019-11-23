@@ -62,30 +62,35 @@ void Monos::run() {
 //	/**************************************************************/
 //
 //
-//	TimeEdges bla;
+
+//	std::vector<Event> bla;
+//	Chain c;
 //	for(int i = 0; i < 100; ++i) {
-//		bla.emplace_back(TimeEdge(NT(i),i));
-//		LOG(INFO) << bla.back();
+//		c.push_back(i+5);
+//		bla.emplace_back(Event(NT(i),INFPOINT,i,i+1,i+2));
 //	}
 //
-//	LOG(INFO) << "now shuffle:";
+//
 //
 //	std::default_random_engine rng = std::default_random_engine {};
 //	std::shuffle(std::begin(bla), std::end(bla), rng);
 //
-//	for(auto a : bla) {
-//		LOG(INFO) << a;
+//	Events eve;
+//	eve.resize(106,Event());
+//	for(int i = 0; i < 100; ++i) {
+//		eve[i] = bla[i];
+//		eve[i].mainEdge = i+5;
 //	}
 //
 //	LOG(INFO) << "now the queue:";
 //
-//	EventQueue myQueue(bla);
+//	EventQueue myQueue(eve,c);
 //
 //	while(!myQueue.empty()) {
 //		auto eidx = myQueue.peak()->idx_in_heap;
 //		auto e = myQueue.peak()->priority;
-//		LOG(INFO) << e.t->time << " heap idx: " << eidx;
-//		myQueue.remove(eidx);
+//		std::cout << e.e->mainEdge << " heap idx: " << eidx << std::endl;
+//		myQueue.pop();
 //	}
 //
 //	return;

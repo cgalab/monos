@@ -41,7 +41,7 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	printChain(chain);
 
 	currentTime = 0;
-	while(!eventTimes->empty() && eventTimes->peak()->priority.e->eventTime < MAX) {
+	while(!eventTimes->empty()) {
 		SingleDequeue(chain);
 	}
 	LOG(INFO) << "PRINT CHAIN BEFORE FINISHING";
@@ -123,81 +123,80 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 //	Event* event = &events[etIt->edgeIdx];
 //	NT eventTime = etIt->time;
 //	eventTimes.erase(etIt);
-//	event->queuePosition = eventTimes.end();
+	//	event->queuePosition = eventTimes.end();
+	bool wasEvent = false;
 
+	//	eventTimes->process_pending_updates(currentTime);
+	auto e = eventTimes->peak();
+	LOG(INFO) << "event: " << *(e->priority.e) << " heap idx: " << e->idx_in_heap;
+	//	while(!eventTimes->empty()) {
+	//	LOG(INFO) << "main edge: " << *(e->priority.e) << " - "
+	//				<< " time: " << e->get_priority().time();
+	//
+	//	eventTimes->pop(); //(e->idx_in_heap);
+	//
+	//	}
+	if(currentTime <= e->priority.e->eventTime && e->priority.e->isEvent()) {
+		currentTime = e->priority.e->eventTime;
+		//		Event* event = e;
 
-	if(!eventTimes->empty()) {
-		//	eventTimes->process_pending_updates(currentTime);
-		auto e = eventTimes->peak(); //->priority.e;
-		LOG(INFO) << "event: " << *(e->priority.e);
-		//	while(!eventTimes->empty()) {
-		//	LOG(INFO) << "main edge: " << *(e->priority.e) << " - "
-		//				<< " time: " << e->get_priority().time();
+		LOG(INFO) << "TODO ... only if peak is equal to current time!";
+		HandleSingleEdgeEvent(chain,e->priority.e);
+		wasEvent = true;
+
+		//		std::vector<Event*> multiEventStack;
+		//		multiEventStack.emplace_back(event);
+		//		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
+		//			/* check for multi-events */
+		//			auto etCheck = eventTimes.begin();
+		//			event = &events[etCheck->edgeIdx];
+		//			multiEventStack.emplace_back(event);
+		//			eventTimes.erase(etCheck);
+		//			event->queuePosition = eventTimes.end();
+		//		}
 		//
-		//	eventTimes->pop(); //(e->idx_in_heap);
+		//		if(multiEventStack.size() > 1) {
+		//			/********************************************************************************/
+		//			/* ---------------------------- MULTI EVENTS HERE ------------------------------*/
+		//			/********************************************************************************/
 		//
-		//	}
-		if(currentTime <= e->priority.e->eventTime && e->priority.e->isEvent()) {
-			currentTime = e->priority.e->eventTime;
-			//		Event* event = e;
+		//			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
+		//			std::map<Point,ul> pointToIndex;
+		//			/* we store a list of events per point (projected on the monotonicity line)  */
+		//			std::vector<std::vector<Event*>> eventsPerPoint;
+		//			for(auto e : multiEventStack) {
+		//				Point p = data.monotonicityLine.projection(e->eventPoint);
+		//
+		//				/* build map point -> list of events */
+		//				auto it = pointToIndex.find(p);
+		//				if(it != pointToIndex.end()) {
+		//					eventsPerPoint[it->second].emplace_back(e);
+		//				} else {
+		//					pointToIndex.insert(std::pair<Point,ul>(p,eventsPerPoint.size()));
+		//					std::vector<Event*> list = {e};
+		//					eventsPerPoint.emplace_back( list );
+		//				}
+		//			}
+		//
+		//			for(auto eventList : eventsPerPoint) {
+		//				LOG(INFO) << "ME " << *event;
+		//				HandleMultiEvent(chain,eventList);
+		//			}
+		//
+		//		} else {
+		//			/********************************************************************************/
+		//			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
+		//			/********************************************************************************/
+		//			HandleSingleEdgeEvent(chain,event);
+		//		}
 
-			LOG(INFO) << "TODO ... only if peak is equal to current time!";
-			HandleSingleEdgeEvent(chain,e->priority.e);
-
-
-			//		std::vector<Event*> multiEventStack;
-			//		multiEventStack.emplace_back(event);
-			//		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
-			//			/* check for multi-events */
-			//			auto etCheck = eventTimes.begin();
-			//			event = &events[etCheck->edgeIdx];
-			//			multiEventStack.emplace_back(event);
-			//			eventTimes.erase(etCheck);
-			//			event->queuePosition = eventTimes.end();
-			//		}
-			//
-			//		if(multiEventStack.size() > 1) {
-			//			/********************************************************************************/
-			//			/* ---------------------------- MULTI EVENTS HERE ------------------------------*/
-			//			/********************************************************************************/
-			//
-			//			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
-			//			std::map<Point,ul> pointToIndex;
-			//			/* we store a list of events per point (projected on the monotonicity line)  */
-			//			std::vector<std::vector<Event*>> eventsPerPoint;
-			//			for(auto e : multiEventStack) {
-			//				Point p = data.monotonicityLine.projection(e->eventPoint);
-			//
-			//				/* build map point -> list of events */
-			//				auto it = pointToIndex.find(p);
-			//				if(it != pointToIndex.end()) {
-			//					eventsPerPoint[it->second].emplace_back(e);
-			//				} else {
-			//					pointToIndex.insert(std::pair<Point,ul>(p,eventsPerPoint.size()));
-			//					std::vector<Event*> list = {e};
-			//					eventsPerPoint.emplace_back( list );
-			//				}
-			//			}
-			//
-			//			for(auto eventList : eventsPerPoint) {
-			//				LOG(INFO) << "ME " << *event;
-			//				HandleMultiEvent(chain,eventList);
-			//			}
-			//
-			//		} else {
-			//			/********************************************************************************/
-			//			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
-			//			/********************************************************************************/
-			//			HandleSingleEdgeEvent(chain,event);
-			//		}
-			return true;
-		}
-
-		eventTimes->needs_dropping(&events[e->priority.e->mainEdge]);
-		eventTimes->process_pending_updates(currentTime);
 
 	}
-	return false;
+
+	LOG(INFO) << "idx on heap: " << e->idx_in_heap;
+	eventTimes->remove(e->idx_in_heap);
+
+	return wasEvent;
 }
 
 
@@ -386,7 +385,7 @@ void Wavefront::HandleSingleEdgeEvent(Chain& chain,  const Event* event) {
 
 	/* remove this edge from the chain (wavefront) */
 	chain.erase(event->chainEdge);
-	disableEdge(event->mainEdge);
+//	disableEdge(event->mainEdge);
 }
 
 bool Wavefront::FinishSkeleton(Chain& chain) {
@@ -468,10 +467,11 @@ void Wavefront::updateInsertEvent(Event& event) {
 		event.mainEdge == lowerChain.front() ||
 		event.mainEdge == lowerChain.back())
 	{
+		LOG(WARNING) << " -------------------------------> this actually occurs! ";
 		return;
 	}
 
-	auto& currentEvent =  events[event.mainEdge];
+	auto* currentEvent =  &events[event.mainEdge];
 //	if(currentEvent.eventTime > 0) {
 //
 //		auto e = eventTimes.in_needs_update(currentEvent.mainEdge);
@@ -494,15 +494,17 @@ void Wavefront::updateInsertEvent(Event& event) {
 //	assert(event.mainEdge == *event.chainEdge);
 //
 
-	LOG(INFO) << "OK..." << currentEvent << ", new event: " <<event; fflush(stdout);
+	LOG(INFO) << "OK..." << *currentEvent << ", new event: " <<event; fflush(stdout);
 
 //	if(event.isEvent()) {
-		currentEvent = event;
+		*currentEvent = event;
+	LOG(INFO) << "after update:  "<< *currentEvent;
+	LOG(INFO) << "after update:  "<< events[event.mainEdge];
 
 //		eventTimes->update_by_tidx(currentEvent.mainEdge,currentTime);
 
-		eventTimes->needs_update(&currentEvent);
-//		eventTimes->process_pending_updates(currentTime);
+		eventTimes->needs_update(&event);
+		eventTimes->process_pending_updates();
 //		auto te = TimeEdge(event.eventTime,event.mainEdge);
 //		events[event.mainEdge] = event;
 //		eventTimes.insert(te);

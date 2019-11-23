@@ -2,24 +2,23 @@
 #include "CollapseSpec.h"
 
 HeapEvent::
-HeapEvent(const Event *  p_t, const NT& now)
-: CollapseSpec(now)
-, e(p_t)
+HeapEvent(const Event *  p_t)
+: e(p_t)
 {
 }
 
-void
-HeapEvent::
-update_collapse(const NT& now) {
-	//  DBG_FUNC_BEGIN(DBG_EVENTQ);
-
-	CollapseSpec::operator=( CollapseSpec(now) );
-
-	//  DBG_FUNC_END(DBG_EVENTQ);
-}
+//void
+//HeapEvent::
+//update_collapse(const NT& now) {
+//	//  DBG_FUNC_BEGIN(DBG_EVENTQ);
+//
+////	CollapseSpec::operator=( CollapseSpec(now) );
+//
+//	//  DBG_FUNC_END(DBG_EVENTQ);
+//}
 
 EventQueue::
-EventQueue(const Events& events, Chain chain) {
+EventQueue(const Events& events, const Chain& chain) {
 	ArrayType a;
 	tidx_to_qitem_map.resize(events.size(), NULL);
 	tidx_in_need_dropping.resize(events.size(), false);
@@ -28,7 +27,7 @@ EventQueue(const Events& events, Chain chain) {
 	/* we skip the first and last edge of each chain */
 	for (auto t = std::next(chain.begin()); t != std::prev(chain.end()); ++t) {
 		LOG(INFO) << "add event " << events[*t];
-		auto qi = std::make_shared<EventQueueItem>(&events[*t], events[*t].eventTime);
+		auto qi = std::make_shared<EventQueueItem>(&events[*t]);
 		a.emplace_back(qi);
 		tidx_to_qitem_map_add(&events[*t], qi);
 	}
@@ -80,14 +79,14 @@ drop_by_tidx(unsigned tidx) {
 
 void
 EventQueue::
-update_by_tidx(unsigned tidx, const NT& now) {
+update_by_tidx(unsigned tidx) {
 	// DBG_FUNC_BEGIN(DBG_EVENTQ);
 	//  DBG(DBG_EVENTQ) << "tidx: " << tidx << "; now: " << CGAL::to_double(now);
-
+	LOG(INFO) << "update at index: " << tidx;
 	assert(tidx_in_need_update[tidx]);
 	auto qi = tidx_to_qitem_map.at(tidx);
 	assert(NULL != qi);
-	qi->update_priority(now);
+//	qi->update_priority(now);
 	fix_idx(qi);
 	tidx_in_need_update[tidx] = false;
 
@@ -97,7 +96,7 @@ update_by_tidx(unsigned tidx, const NT& now) {
 
 void
 EventQueue::
-process_pending_updates(const NT& now) {
+process_pending_updates() {
 
 	for (auto t : need_dropping) {
 		assert(t);
@@ -109,7 +108,7 @@ process_pending_updates(const NT& now) {
 	for (auto t : need_update) {
 		assert(t);
 		LOG(INFO) << "update: " << t->mainEdge;
-		update_by_tidx(t->mainEdge, now);
+		update_by_tidx(t->mainEdge);
 	}
 	need_update.clear();
 

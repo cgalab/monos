@@ -6,26 +6,38 @@
 #include "CollapseSpec.h"
 #include "Heap.h"
 
-class HeapEvent : public CollapseSpec {
+class HeapEvent {
 public:
 	const Event * const e;
-	HeapEvent(const Event * p_t, const NT& now);
+	HeapEvent(const Event * p_t);
 
-	void update_collapse(const NT& t);
-
+	const NT& time() const { return e->eventTime; };
 	friend std::ostream& operator<<(std::ostream& os, const Event& e);
+public:
+	CGAL::Comparison_result compare(const HeapEvent &o) const {
+			 if (this->time() < o.time()) {
+				 return CGAL::SMALLER;
+			 } else if (this->time() > o.time()) {
+				 return CGAL::LARGER;
+			 } else {
+				 return CGAL::EQUAL;
+			 }
+		 }
+public:
+	 bool operator< (const HeapEvent &o) const { return compare(o) == CGAL::SMALLER; }
+	 bool operator> (const HeapEvent &o) const { return compare(o) == CGAL::LARGER; }
+	 bool operator>= (const HeapEvent &o) const { return !(*this < o); };
+	 bool operator<= (const HeapEvent &o) const { return !(*this > o); };
+	 bool operator== (const HeapEvent &o) const { return compare(o) == CGAL::EQUAL; }
+	 bool operator!= (const HeapEvent &o) const { return !(*this == o); };
 };
 
 class EventQueueItem : public HeapItemBase <HeapEvent> {
 private:
 public:
-	EventQueueItem(const Event * e, const NT& now)
-: HeapItemBase<HeapEvent>(HeapEvent(e, now))
-  {};
-
-	void update_priority(const NT& now) {
-		priority.update_collapse(now);
-	}
+	EventQueueItem(const Event * e)
+	: HeapItemBase<HeapEvent>(HeapEvent(e))
+	{};
 };
 
 class EventQueue :  public HeapBase <HeapEvent, EventQueueItem> {
@@ -44,9 +56,9 @@ private:
 	void drop_by_tidx(unsigned tidx);
 	void assert_no_pending() const;
 public:
-	EventQueue(const Events& events, Chain chain);
+	EventQueue(const Events& events, const Chain& chain);
 
-	void update_by_tidx(unsigned tidx, const NT& now);
+	void update_by_tidx(unsigned tidx);
 	/* we /could/ make this const, and our heap a mutable
 	 * object attribute and the vectors also mutable.
 	 * At which point pretty much everything in here is
@@ -63,7 +75,7 @@ public:
 	using Base::size;
 	using Base::empty;
 
-	void process_pending_updates(const NT& now);
+	void process_pending_updates();
 
 	void needs_update(const Event * t, bool may_have_valid_collapse_spec = false);
 	void needs_dropping(Event * t);

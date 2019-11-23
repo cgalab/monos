@@ -48,7 +48,6 @@ add_library(monoslib
   src/Wavefront.cpp
   src/Monos.cpp
   src/EventQueue.cpp 
-  src/CollapseSpec.cpp
   easyloggingpp/src/easylogging++.cc
   )
 set_target_properties(monoslib PROPERTIES VERSION ${PROJECT_VERSION})

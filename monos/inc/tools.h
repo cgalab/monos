@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <ctime>
 #include <fstream>
-
+#include <iostream>
 #include <vector>
 
 /* 'inspired' by surfer tools.h */
