@@ -51,7 +51,7 @@ private:
 
 	void removePath(const ul& arcIdx, const ul& edgeIdx);
 
-	ul handleMerge(const IntersectionPair& intersectionPair, const Line& bis);
+	ul handleMerge(const IntersectionPair& intersectionPair);
 	void updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain();  }
@@ -65,11 +65,6 @@ private:
 		bool a = l.has_on_positive_side(arc.source());
 		bool b = l.has_on_positive_side(arc.target());
 		return (a && !b) || (!a && b);
-//
-//		if( (a && b) || (!a && !b) ) {
-//			return false;
-//		}
-//		return true;
 	}
 
 	/* true is formward, false is backwards */

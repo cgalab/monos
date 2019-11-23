@@ -41,9 +41,8 @@ bool Skeleton::SingleMergeStep() {
 	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
 
 	/* correct direction if necessary */
-	const auto& Pa = bisLine.point(0);	const auto Pb = Pa + bisLine.to_vector();
-//	if(!data.monotoneSmaller(Pa,Pb)) {bisLine = bisLine.opposite();}
-	if(Pa > Pb) {bisLine = bisLine.opposite();}
+//	const auto& Pa = bisLine.point(0);	const auto Pb = Pa + bisLine.to_vector();
+	if(ORIGIN > ORIGIN + bisLine.to_vector()) {bisLine = bisLine.opposite();}
 
 	LOG(INFO) << "Bisector-dir: " << bisLine.direction();
 
@@ -51,10 +50,7 @@ bool Skeleton::SingleMergeStep() {
 	/* obtain the arcIdx and newPoint for the next bis arc intersection */
 	IntersectionPair intersectionPair = findNextIntersectingArc(bisLine);
 
-//	LOG(INFO) << "intersection upper: " << intersectionPair.first << std::endl
-//			  << "intersection lower: " << intersectionPair.second;
-
-	newNodeIdx = handleMerge(intersectionPair, bisLine);
+	newNodeIdx = handleMerge(intersectionPair);
 
 
 	/* we iterate the sourcenode to the newly added node and go on merging */
@@ -97,12 +93,9 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 		if(!doneU && !doneL) {
 			uPa = upperArc->source(); uPb = upperArc->target();
 			lPa = lowerArc->source(); lPb = lowerArc->target();
-//			if(!data.monotoneSmaller(bis,uPa,uPb)) {std::swap(uPa, uPb);}
-//			if(!data.monotoneSmaller(bis,lPa,lPb)) {std::swap(lPa, lPb);}
 			if(uPb < uPa) {std::swap(uPa, uPb);}
 			if(lPb < lPa) {std::swap(lPa, lPb);}
 
-//			searchChain = (data.monotoneSmaller(bis,uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
 			searchChain = (uPa < lPa) ? ChainType::UPPER : ChainType::LOWER;
 		}
 
@@ -115,9 +108,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 				Pu = intersectElements(bis,upperArc->supporting_line());
 				doneU = true;
 			} else {
-//				if(Pl != INFPOINT && data.monotoneSmaller(Pl,uPa) && data.monotoneSmaller(bis.supporting_line(),Pl,uPa)) {
-//					doneU = true;
-//				}
 				upperPath = wf.getNextArcIdx(upperPath,iterateForwardU,upperChainIndex);
 				if(upperPath == MAX) {
 					doneU = true;
@@ -135,9 +125,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 				Pl = intersectElements(bis,lowerArc->supporting_line());
 				doneL = true;
 			} else {
-//				if(Pu != INFPOINT  && data.monotoneSmaller(Pu,lPa) && data.monotoneSmaller(bis.supporting_line(),Pu,lPa)) {
-//					doneL = true;
-//				}
 				lowerPath = wf.getNextArcIdx(lowerPath,iterateForwardL,lowerChainIndex);
 				if(lowerPath == MAX) {
 					doneL = true;
@@ -164,7 +151,7 @@ void Skeleton::initPathForEdge(ChainType type) {
 }
 
 
-ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Line& bis) {
+ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 	const Point& Pu = intersectionPair.first;
 	const Point& Pl = intersectionPair.second;
 
@@ -204,11 +191,9 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Line& b
 
 	if(edgeIdx == upperChainIndex) {
 		upperChainIndex = intersArc->leftEdgeIdx;
-//		initPathForEdge(ChainType::UPPER);
 		LOG(INFO) << "handleMerge: set upper chain to " << upperChainIndex << " arc: " << upperPath;
 	} else {
 		lowerChainIndex = intersArc->rightEdgeIdx;
-//		initPathForEdge(ChainType::LOWER);
 		LOG(INFO) << "handleMerge: set lower chain to " << lowerChainIndex << " arc: " << lowerPath;
 	}
 
@@ -243,8 +228,6 @@ void Skeleton::updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& s
 				);
 	}
 
-//	arc->secondNodeIdx = secondNodeIdx;
-
 	newNode->arcs.push_back(arcIdx);
 
 	LOG(INFO) << "after update" << *arc;
@@ -269,7 +252,6 @@ bool Skeleton::decideDirection(ChainType type, const Line& bis) const {
 
 void Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
 	auto arcIdxIt = arcIdx;
-//	LOG(INFO) << "in removePath";
 
 	while(true) {
 		auto arc  = &wf.arcList[arcIdxIt];
