@@ -57,48 +57,6 @@ bool Monos::readInput() {
 void Monos::run() {
 	clock_t begin, end;
 
-//	/**************************************************************/
-//	/*				TESTING THE HEAP							  */
-//	/**************************************************************/
-//
-//
-
-//	std::vector<Event> bla;
-//	Chain c;
-//	for(int i = 0; i < 100; ++i) {
-//		c.push_back(i+5);
-//		bla.emplace_back(Event(NT(i),INFPOINT,i,i+1,i+2));
-//	}
-//
-//
-//
-//	std::default_random_engine rng = std::default_random_engine {};
-//	std::shuffle(std::begin(bla), std::end(bla), rng);
-//
-//	Events eve;
-//	eve.resize(106,Event());
-//	for(int i = 0; i < 100; ++i) {
-//		eve[i] = bla[i];
-//		eve[i].mainEdge = i+5;
-//	}
-//
-//	LOG(INFO) << "now the queue:";
-//
-//	EventQueue myQueue(eve,c);
-//
-//	while(!myQueue.empty()) {
-//		auto eidx = myQueue.peak()->idx_in_heap;
-//		auto e = myQueue.peak()->priority;
-//		std::cout << e.e->mainEdge << " heap idx: " << eidx << std::endl;
-//		myQueue.pop();
-//	}
-//
-//	return;
-//	/**************************************************************/
-//	/*				END TESTING THE HEP      					  */
-//	/**************************************************************/
-
-
 	if(!readInput()) {return;}
 
 	/****************** TIMING START ******************************/
@@ -160,13 +118,15 @@ bool Monos::init() {
 	data = new Data(input);
 
 	/* verify monotonicity and compute monotonicity line */
-	if(config.x_mon) {
-		data->setMonotonicity(Line(ORIGIN, ORIGIN + Vector(1,0)));
-	} else {
+	if(config.not_x_mon) {
 		if(!data->ensureMonotonicity()) {
 			if(config.verbose) {LOG(WARNING) << "polygon is not monotone!";}
 			return false;
 		}
+		LOG(WARNING) << "use version from master branch, this is optimized for efficiency. Only x-monotone input!";
+		return false;
+	} else {
+		data->setMonotonicity(Line(ORIGIN, ORIGIN + Vector(1,0)));
 	}
 
 	wf = new Wavefront(*data);

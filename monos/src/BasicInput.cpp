@@ -44,29 +44,4 @@ BasicInput::add_graph(const BGLGraph& graph) {
 		add_edge(idx,map[idx]);
 		idx = map[idx];
 	} while(idx != 0);
-
-	assert_valid();
-}
-
-void
-BasicInput::assert_valid() const {
-	unsigned* d = new unsigned[vertices_.size()]();
-	unsigned deg1 = 0;
-
-	assert(edge_map.size() == edges_.size());
-	for (size_t i=0; i<edges_.size(); ++i) {
-		const auto & e = edges_[i];
-		LOG(INFO) << i << ": " << e.u << " " << e.v;
-		assert(e.u < vertices_.size());
-		assert(e.v < vertices_.size());
-		d[e.u]++;
-		d[e.v]++;
-		auto findres = edge_map.find(VertexIdxPair(e.u,e.v));
-		if(findres == edge_map.end()) {
-			findres = edge_map.find(VertexIdxPair(e.v,e.u));
-		}
-		assert(findres != edge_map.end());
-		assert(findres->second == i);
-	}
-	delete[] d;
 }

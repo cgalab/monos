@@ -30,8 +30,8 @@ public:
 	bool FinishSkeleton(Chain& chain);
 
 	void HandleSingleEdgeEvent(Chain& chain, const Event* event);
-	void HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList);
-	void HandleMultiEvent(Chain& chain, std::vector<Event*> eventList);
+//	void HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList);
+//	void HandleMultiEvent(Chain& chain, std::vector<Event*> eventList);
 
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
@@ -83,24 +83,16 @@ public:
 	PathFinder 			pathFinder;
 
 	/* EVENT QUEUE --------------------------------------------------------------------
-	 * Events stored in events, times sorted in eventTimes, with associated edge idx
-	 * thus, we can modify the event queue with logarithmic update remove insert times.
+	 * Events stored in events, priority queue is weasel's heap -> 'heap.h'
+	 * we place Event* in the Queue Items and sort by eventTime
 	 */
 	Events 			events;
-//	EventTimes 		eventTimes;
 	EventQueue 		*eventTimes = nullptr;
 	NT				currentTime;
-	/* for a polygon edge at position idx in data.polygon we have a respective event
-	 * for that edge at position idx as well */
 
 	/* MISC */
 	void printChain(const Chain& chain) const;
 	void printEvents() const;
-//	void printAllArcs() {
-//		for(auto a : arcList) {
-//			LOG(WARNING) << a;
-//		}
-//	}
 
 private:
 	Segment restrictRay(const Ray& ray);

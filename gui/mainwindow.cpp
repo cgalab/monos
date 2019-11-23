@@ -120,7 +120,6 @@ void MainWindow::time_changed() {
 
 void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 	if(!monos.config.isValid()) {return;}
-	if(!monos.data->isMonotone) {return;}
 
 	while(isChainState()) {
 		on_actionEventStep_triggered();
@@ -133,7 +132,6 @@ void MainWindow::on_actionTimeForwardAfterChains_triggered() {
 
 void MainWindow::on_actionFinishComputation_triggered() {
 	if(!monos.config.isValid()) {return;}
-	if(!monos.data->isMonotone) {return;}
 
 	on_actionTimeForwardAfterChains_triggered();
 
@@ -148,7 +146,6 @@ void MainWindow::on_actionFinishComputation_triggered() {
 
 void MainWindow::on_actionEventStep_triggered() {
 	if(!monos.config.isValid()) {return;}
-	if(!monos.data->isMonotone) {return;}
 
 	switch(state) {
 	case STATE::STARTLOWER:
@@ -163,10 +160,9 @@ void MainWindow::on_actionEventStep_triggered() {
 		LOG(INFO) << "LOWER";
 		{
 		auto& chain = monos.wf->getChain(ChainType::LOWER);
-		monos.wf->SingleDequeue(chain);
-		}
-		if(! (monos.wf->eventTimes->empty() && monos.wf->eventTimes->peak()->priority.e->eventTime < MAX) ) {
+		if(!monos.wf->SingleDequeue(chain)) {
 			state = STATE::FINISHLOWER;
+		}
 		}
 		break;
 	case STATE::FINISHLOWER:
@@ -191,10 +187,9 @@ void MainWindow::on_actionEventStep_triggered() {
 		{
 		auto& chain = monos.wf->getChain(ChainType::UPPER);
 		monos.wf->SingleDequeue(chain);
-		}
-//		if(monos.wf->eventTimes->empty()) {
-		if(! (monos.wf->eventTimes->empty() && monos.wf->eventTimes->peak()->priority.e->eventTime < MAX) ) {
+		if(!monos.wf->SingleDequeue(chain)) {
 			state = STATE::FINISHUPPER;
+		}
 		}
 		break;
 	case STATE::FINISHUPPER:

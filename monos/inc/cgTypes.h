@@ -142,54 +142,6 @@ struct MonVectCmp {
 	}
 };
 
-class TimeEdge {
-public:
-	TimeEdge(NT t, ul e) :
-		time(t),
-		edgeIdx(e) {}
-	NT  time;
-	ul  edgeIdx;
-
-	inline bool operator==(const TimeEdge& rhs) const {
-		return this->time == rhs.time;
-	}
-	friend std::ostream& operator<< (std::ostream& os, const TimeEdge& mv);
-};
-
-struct TimeEdgeCmp {
-	bool operator()(const TimeEdge &left, const TimeEdge &right) const {
-		return ( left.time < right.time) ||
-			   ( left.time == right.time && left.edgeIdx < right.edgeIdx );
-	}
-};
-
-
-//using PoolType = boost::fast_pool_allocator<TimeEdge>;
-//using EventTimes = std::set<TimeEdge,TimeEdgeCmp,PoolType>;
-//using EventTimes = std::set<TimeEdge,TimeEdgeCmp>;
-
-using TimeEdges = std::vector<TimeEdge>;
-
-//namespace tags {
-//    struct time_asc {};
-//    struct edges {};
-//}
-//using EventTimes = boost::multi_index::multi_index_container<
-//  TimeEdge,
-//  boost::multi_index::indexed_by<
-//  	  boost::multi_index::ordered_unique<
-//  	  	  boost::multi_index::tag<tags::time_asc>,
-//		  boost::multi_index::member<TimeEdge, NT, &TimeEdge::time>,
-//		  TimeEdgeCmp
-//	  >,
-//	  boost::multi_index::ordered_unique<
-//	   	  boost::multi_index::tag<tags::edges>,
-//	  	  boost::multi_index::member<TimeEdge, ul, &TimeEdge::edgeIdx>,
-//	  	  std::less<ul>
-//  	  >
-//   >
-//>;
-
 
 class Event {
 public:
@@ -220,7 +172,6 @@ public:
 	friend std::ostream& operator<< (std::ostream& os, const Event& event);
 };
 
-//using Events		     = std::vector<Event>;
 using Events		     = FixedVector<Event>;
 
 class Arc : public Segment {
@@ -324,8 +275,7 @@ struct Node {
 class EndNodes {
 public:
 	EndNodes(sl a_ = NIL, sl b_ = NIL):
-		a(a_),
-		b(b_) {}
+		a(a_),b(b_) {}
 	sl a, b;
 };
 
@@ -334,13 +284,10 @@ public:
 using Nodes 		= std::vector<Node>;
 using PathFinder    = std::vector<EndNodes>;
 
-NT normalDistance(const Line& l, const Point& p);
+inline const NT normalDistance(const Line& l, const Point& p) {return CGAL::squared_distance(l,p);}
 
 template<class T, class U>
 Point intersectElements(const T& a, const U& b);
-
-template<class T, class U>
-bool isLinesParallel(const T& a, const U& b);
 
 template<class T, class U>
 Point intersectElements(const T& a, const U& b) {
@@ -357,11 +304,13 @@ Point intersectElements(const T& a, const U& b) {
 
 ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
-
-template<class T, class U>
-bool isLinesParallel(const T& a, const U& b) {
-	return CGAL::parallel(Line(a),Line(b));
-}
+//template<class T, class U>
+//bool isLinesParallel(const T& a, const U& b);
+//
+//template<class T, class U>
+//bool isLinesParallel(const T& a, const U& b) {
+//	return CGAL::parallel(Line(a),Line(b));
+//}
 
 void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm);
 

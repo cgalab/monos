@@ -19,10 +19,6 @@
 
 #include "cgTypes.h"
 
-std::ostream& operator<< (std::ostream& os, const TimeEdge& te) {
-	os << te.edgeIdx << " at time " << te.time;
-	return os;
-}
 
 std::ostream& operator<< (std::ostream& os, const Vertex& vertex) {
 	os << "v " << vertex.id << ": " << vertex.p;
@@ -100,23 +96,6 @@ std::ostream& operator<< (std::ostream& os, const Arc& arc) {
     }
     return os;
 }
-
-
-NT normalDistance(const Line& l, const Point& p) {
-	return CGAL::squared_distance(l,p);
-}
-
-
-//ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB) {
-//	for(auto i : {arcA.firstNodeIdx,arcA.secondNodeIdx}) {
-//		for(auto j : {arcB.firstNodeIdx,arcB.secondNodeIdx}) {
-//			if(i != MAX && j != MAX && i == j) {
-//				return i;
-//			}
-//		}
-//	}
-//	return MAX;
-//}
 
 void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm) {
 	double x_span  = (1.0/OBJSCALE) * (bbox.xMax.p.x().doubleValue() - bbox.xMin.p.x().doubleValue());

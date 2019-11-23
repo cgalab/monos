@@ -1,21 +1,10 @@
 #include "EventQueue.h"
-#include "CollapseSpec.h"
 
 HeapEvent::
 HeapEvent(const Event *  p_t)
 : e(p_t)
 {
 }
-
-//void
-//HeapEvent::
-//update_collapse(const NT& now) {
-//	//  DBG_FUNC_BEGIN(DBG_EVENTQ);
-//
-////	CollapseSpec::operator=( CollapseSpec(now) );
-//
-//	//  DBG_FUNC_END(DBG_EVENTQ);
-//}
 
 EventQueue::
 EventQueue(const Events& events, const Chain& chain) {
@@ -26,37 +15,18 @@ EventQueue(const Events& events, const Chain& chain) {
 
 	/* we skip the first and last edge of each chain */
 	for (auto t = std::next(chain.begin()); t != std::prev(chain.end()); ++t) {
-		LOG(INFO) << "add event " << events[*t];
+//		LOG(INFO) << "add event " << events[*t];
 		auto qi = std::make_shared<EventQueueItem>(&events[*t]);
 		a.emplace_back(qi);
 		tidx_to_qitem_map_add(&events[*t], qi);
 	}
 	setArray(a);
-	//  DBG(DBG_EVENTQ) << "heap array:";
-	//  for (int i=0; i < size(); ++i) {
-	//    DBG(DBG_EVENTQ) << " item " << i << ": " << peak(i)->get_priority();
-	//  }
-	//	const auto x = peak();
-	//  DBG(DBG_EVENTQ) << "top: " << x->get_priority();
-	//#if defined (DEBUG_EXPENSIVE_PREDICATES) && DEBUG_EXPENSIVE_PREDICATES >= 1
-	//  if (! is_valid_heap() ) {
-	//    LOG(ERROR) << "Heap is not valid!";
-	//    exit(EXIT_INIT_INVALID_HEAP);
-	//  }
-	//#endif
 }
 
 void
 EventQueue::
 tidx_to_qitem_map_add(const Event * t, ElementType qi) {
 	unsigned id = t->mainEdge;
-	/*
-  if (id >= tidx_to_qitem_map.size()) {
-    tidx_to_qitem_map.resize(id+1);
-  };
-	 */
-	//  if(id >= tidx_to_qitem_map.size()) {LOG(INFO) << "oh .. " << *t << " with id: "<< id
-	//	  << " for map size: " << tidx_to_qitem_map.size();}
 	assert(id < tidx_to_qitem_map.size());
 	tidx_to_qitem_map[id] = qi;
 }
@@ -64,33 +34,23 @@ tidx_to_qitem_map_add(const Event * t, ElementType qi) {
 void
 EventQueue::
 drop_by_tidx(unsigned tidx) {
-	// DBG_FUNC_BEGIN(DBG_EVENTQ);
-	//  DBG(DBG_EVENTQ) << "tidx: " << tidx;
-
-	assert(tidx_in_need_dropping[tidx]);
 	auto qi = tidx_to_qitem_map.at(tidx);
 	assert(NULL != qi);
+//	LOG(WARNING) << "__________///////// REMOVE mainedge: " << tidx;
 	drop_element(qi);
 	tidx_to_qitem_map[tidx] = NULL;
 	tidx_in_need_dropping[tidx] = false;
-
-	// DBG_FUNC_END(DBG_EVENTQ);
 }
 
 void
 EventQueue::
 update_by_tidx(unsigned tidx) {
-	// DBG_FUNC_BEGIN(DBG_EVENTQ);
-	//  DBG(DBG_EVENTQ) << "tidx: " << tidx << "; now: " << CGAL::to_double(now);
-	LOG(INFO) << "update at index: " << tidx;
-	assert(tidx_in_need_update[tidx]);
+//	LOG(WARNING) << "\\\\\\\\_________ UPDATE mainedge: " << tidx;
+//	assert(tidx_in_need_update[tidx]);
 	auto qi = tidx_to_qitem_map.at(tidx);
 	assert(NULL != qi);
-//	qi->update_priority(now);
 	fix_idx(qi);
 	tidx_in_need_update[tidx] = false;
-
-	// DBG_FUNC_END(DBG_EVENTQ);
 }
 
 
@@ -104,17 +64,13 @@ process_pending_updates() {
 	}
 	need_dropping.clear();
 
-	LOG(INFO) << "update size: " << need_update.size();
 	for (auto t : need_update) {
 		assert(t);
-		LOG(INFO) << "update: " << t->mainEdge;
 		update_by_tidx(t->mainEdge);
 	}
 	need_update.clear();
 
-	LOG(INFO) << "update size: " << need_update.size(); fflush(stdout);
-	LOG(INFO) << "dropping size: " << need_dropping.size(); fflush(stdout);
-	assert_no_pending();
+//	assert_no_pending();
 }
 
 void
@@ -134,34 +90,20 @@ assert_no_pending() const {
 void
 EventQueue::
 needs_update(const Event * t, bool may_have_valid_collapse_spec) {
-	// DBG_FUNC_BEGIN(DBG_EVENTQ);
-	LOG(INFO) << "t " << *t;
-
 	assert(tidx_in_need_update.size() > t->mainEdge);
-	//  assert(!t->is_collapse_spec_valid() || may_have_valid_collapse_spec);
-	// during refinement, the same triangle may be tagged as needs_update multiple times.
 	if (! tidx_in_need_update[t->mainEdge]) {
 		tidx_in_need_update[t->mainEdge ] = true;
 		need_update.push_back(t);
-
-		LOG(INFO) << "added " << t->mainEdge;
 		auto ubm = need_update.back();
-		LOG(INFO) << "aka " << ubm->mainEdge;
 	}
 
 	assert(!tidx_in_need_dropping[t->mainEdge]); /* Can't drop and update both */
-	// DBG_FUNC_END(DBG_EVENTQ);
 }
 
 void
 EventQueue::
 needs_dropping(Event * t) {
-	// DBG_FUNC_BEGIN(DBG_EVENTQ);
-	LOG(INFO) << "t" << *t;
-
 	assert(tidx_in_need_dropping.size() > t->mainEdge);
-	//  assert(t->is_dying());
-	//  t->set_dead();
 
 	assert(!tidx_in_need_dropping[t->mainEdge]);
 	tidx_in_need_dropping[t->mainEdge] = true;
@@ -169,7 +111,6 @@ needs_dropping(Event * t) {
 	need_dropping.push_back(t);
 
 	assert(!tidx_in_need_update[t->mainEdge]); /* Can't drop and update both */
-	// DBG_FUNC_END(DBG_EVENTQ);
 }
 
 bool

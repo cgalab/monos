@@ -41,8 +41,8 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	printChain(chain);
 
 	currentTime = 0;
-	while(!eventTimes->empty()) {
-		SingleDequeue(chain);
+	while(SingleDequeue(chain)) {
+//		SingleDequeue(chain);
 	}
 	LOG(INFO) << "PRINT CHAIN BEFORE FINISHING";
 	printChain(chain);
@@ -79,11 +79,8 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 		cEdgeIdx = *chainIterator;
 		/* create Event and add it to the queue */
 		auto event = getEdgeEvent(aEdgeIdx,bEdgeIdx,cEdgeIdx,it);
-//		if(event.isEvent()) {
-			events[event.mainEdge] = event;
-//			auto te = TimeEdge(event.eventTime,event.mainEdge);
-//			timeEdges.emplace_back(te);
-//		}
+
+		events[event.mainEdge] = event;
 
 		/* iterate over the chainIterator */
 		it = chainIterator;
@@ -92,25 +89,8 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 		bEdgeIdx = cEdgeIdx;
 	} while(chainIterator != chain.end());
 
-
-//	for(auto te : timeEdges) {
-//			auto pos = eventTimes.add_element(te);
-//			if(pos.second) {
-//				events[event.mainEdge] = event;
-//				events[event.mainEdge].queuePosition = pos.first;
-//			}
-//	}
-
 	LOG(INFO) << "number of events " << events.size();
-
 	eventTimes = new EventQueue(events, chain);
-
-//	auto te = TimeEdge(event.eventTime,event.mainEdge);
-//			auto pos = eventTimes.add_element(te);
-//			if(pos.second) {
-//				events[event.mainEdge] = event;
-//				events[event.mainEdge].queuePosition = pos.first;
-//			}
 
 	currentTime = 0;
 
@@ -119,260 +99,238 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 
 bool Wavefront::SingleDequeue(Chain& chain) {
 	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
-//	auto etIt  = eventTimes.begin();
-//	Event* event = &events[etIt->edgeIdx];
-//	NT eventTime = etIt->time;
-//	eventTimes.erase(etIt);
-	//	event->queuePosition = eventTimes.end();
-	bool wasEvent = false;
 
-	//	eventTimes->process_pending_updates(currentTime);
-	auto e = eventTimes->peak();
-	LOG(INFO) << "event: " << *(e->priority.e) << " heap idx: " << e->idx_in_heap;
-	//	while(!eventTimes->empty()) {
-	//	LOG(INFO) << "main edge: " << *(e->priority.e) << " - "
-	//				<< " time: " << e->get_priority().time();
-	//
-	//	eventTimes->pop(); //(e->idx_in_heap);
-	//
-	//	}
-	if(currentTime <= e->priority.e->eventTime && e->priority.e->isEvent()) {
-		currentTime = e->priority.e->eventTime;
-		//		Event* event = e;
+	if(!eventTimes->empty()) {
 
-		LOG(INFO) << "TODO ... only if peak is equal to current time!";
-		HandleSingleEdgeEvent(chain,e->priority.e);
-		wasEvent = true;
+		const Event* e = eventTimes->peak()->priority.e;
+		ul edgeIdx = e->mainEdge;
 
-		//		std::vector<Event*> multiEventStack;
-		//		multiEventStack.emplace_back(event);
-		//		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
-		//			/* check for multi-events */
-		//			auto etCheck = eventTimes.begin();
-		//			event = &events[etCheck->edgeIdx];
-		//			multiEventStack.emplace_back(event);
-		//			eventTimes.erase(etCheck);
-		//			event->queuePosition = eventTimes.end();
-		//		}
-		//
-		//		if(multiEventStack.size() > 1) {
-		//			/********************************************************************************/
-		//			/* ---------------------------- MULTI EVENTS HERE ------------------------------*/
-		//			/********************************************************************************/
-		//
-		//			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
-		//			std::map<Point,ul> pointToIndex;
-		//			/* we store a list of events per point (projected on the monotonicity line)  */
-		//			std::vector<std::vector<Event*>> eventsPerPoint;
-		//			for(auto e : multiEventStack) {
-		//				Point p = data.monotonicityLine.projection(e->eventPoint);
-		//
-		//				/* build map point -> list of events */
-		//				auto it = pointToIndex.find(p);
-		//				if(it != pointToIndex.end()) {
-		//					eventsPerPoint[it->second].emplace_back(e);
-		//				} else {
-		//					pointToIndex.insert(std::pair<Point,ul>(p,eventsPerPoint.size()));
-		//					std::vector<Event*> list = {e};
-		//					eventsPerPoint.emplace_back( list );
-		//				}
-		//			}
-		//
-		//			for(auto eventList : eventsPerPoint) {
-		//				LOG(INFO) << "ME " << *event;
-		//				HandleMultiEvent(chain,eventList);
-		//			}
-		//
-		//		} else {
-		//			/********************************************************************************/
-		//			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
-		//			/********************************************************************************/
-		//			HandleSingleEdgeEvent(chain,event);
-		//		}
+		if(currentTime <= e->eventTime && e->isEvent()) {
+			currentTime = e->eventTime;
+			HandleSingleEdgeEvent(chain,e);
+			eventTimes->drop_by_tidx(edgeIdx);
+		} else if(e->eventTime == MAX) {
+			/* then we are done! */
+			return false;
+		}
 
-
+		return true;
 	}
 
-	LOG(INFO) << "idx on heap: " << e->idx_in_heap;
-	eventTimes->remove(e->idx_in_heap);
+	return false;
 
-	return wasEvent;
+	//		std::vector<Event*> multiEventStack;
+	//		multiEventStack.emplace_back(event);
+	//		while(!eventTimes.empty() && eventTime == eventTimes.begin()->time) {
+	//			/* check for multi-events */
+	//			auto etCheck = eventTimes.begin();
+	//			event = &events[etCheck->edgeIdx];
+	//			multiEventStack.emplace_back(event);
+	//			eventTimes.erase(etCheck);
+	//			event->queuePosition = eventTimes.end();
+	//		}
+	//		if(multiEventStack.size() > 1) {
+	//			/* ---------------------------- MULTI EVENTS HERE ------------------------------*/
+	//			LOG(INFO) << "HANDLE MULTIPLE EVENTS (equal TIME)!";
+	//			std::map<Point,ul> pointToIndex;
+	//			/* we store a list of events per point (projected on the monotonicity line)  */
+	//			std::vector<std::vector<Event*>> eventsPerPoint;
+	//			for(auto e : multiEventStack) {
+	//				Point p = data.monotonicityLine.projection(e->eventPoint);
+	//				/* build map point -> list of events */
+	//				auto it = pointToIndex.find(p);
+	//				if(it != pointToIndex.end()) {
+	//					eventsPerPoint[it->second].emplace_back(e);
+	//				} else {
+	//					pointToIndex.insert(std::pair<Point,ul>(p,eventsPerPoint.size()));
+	//					std::vector<Event*> list = {e};
+	//					eventsPerPoint.emplace_back( list );
+	//				}
+	//			}
+	//			for(auto eventList : eventsPerPoint) {
+	//				LOG(INFO) << "ME " << *event;
+	//				HandleMultiEvent(chain,eventList);
+	//			}
+	//		} else {
+	//			/* --------------------------- SINGLE EDGE EVENTS ------------------------------*/
+	//			HandleSingleEdgeEvent(chain,event);
+	//		}
+
 }
-
 
 
 //
-/* due to the monotonicity we should only have two scenarios:
- * (i) this amounts to exactly one point with multiple collapsing edges:
- * --> then we continue with the bisector between the first and last involved
- *     edge.
- * (ii)  otherwise a vertical bisector line is involved, then we should have
- *       exactly two points:
- * --> after adding both points (connected with a vertical segment) we apply
- *     (i) for the 'upper' (or higher) point. */
-void Wavefront::HandleMultiEvent(Chain& chain, std::vector<Event*> eventList) {
-	if(eventList.size() == 1) {
-		LOG(INFO) << "size 1 ";
-		HandleSingleEdgeEvent(chain,eventList[0]);
-	} else {
-		std::set<Point> points;
-		std::set<int,std::less<int> > eventEdges;
-		LOG(INFO) << "events:";
-		for(const auto& e : eventList) {
-			if(e->mainEdge == *(e->chainEdge))  {
-				LOG(INFO) << "event is still true!";
-			}
-
-			points.insert(e->eventPoint);
-			eventEdges.insert(e->leftEdge);
-			eventEdges.insert(e->mainEdge);
-			eventEdges.insert(e->rightEdge);
-		}
-
-		if(points.size() > 1) {
-			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE!
-			 * this scenario implies a vertical segment, i.e., perpendicular to the
-			 * monotonicity line. This means only two event points can occur on this
-			 * line, otherwise the polygon can not be monotone */
-			assert(points.size() < 3);
-			LOG(INFO) << "scenario (ii)";
-			/* ensure A is the lower point in resp. to monot. line */
-			auto it = points.begin();
-			Point A = *it; ++it;
-			Point B = *it;
-
-			for(;it!=points.end();++it) {
-				B = *it;
-				bool aAboveB = data.isAbove(A,B);
-				if( (  aAboveB  &&  isLowerChain(chain)) ||
-					( !aAboveB  && !isLowerChain(chain))) {
-					std::swap(A,B);
-				}
-			}
-			std::vector<const Event*> partEventListA, partEventListB;
-			for(auto e : eventList) {
-				if(e->eventPoint == A) {
-					partEventListA.emplace_back(e);
-				} else {
-					partEventListB.emplace_back(e);
-				}
-			}
-
-			assert(partEventListA.size() >= 1);
-
-			/* handling the 'lower' eventpoint changes the other event, thus
-			 * we only handle this lower event */
-			HandleSingleEdgeEvent(chain,partEventListA[0]);
-		} else {
-			/* scenario (i) */
-			LOG(INFO) << "scenario (i)";
-			HandleMultiEdgeEvent(chain,eventList);
-		}
-	}
-}
-
-void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList) {
-	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
-
-	auto anEvent = eventList[0];
-	auto nodeIdx = addNode(anEvent->eventPoint,anEvent->eventTime);
-	auto& node = *getNode(nodeIdx);
-
-	/* add the single node, all arcs connect to this node */
-	LOG(INFO) << "adding node: " << node;
-
-	std::set<ul> mainEdges;
-	std::set<ul> leftEdges;
-	std::set<ul> rightEdges;
-	std::set<std::pair<ul,ul>> pairs;
-	for(auto event : eventList) {
-		leftEdges.insert(event->leftEdge);
-		rightEdges.insert(event->rightEdge);
-
-		std::vector<ul> va = {event->mainEdge,event->leftEdge },
-				          vb = {event->mainEdge,event->rightEdge};
-
-		for(auto v : { va, vb } ) {
-			auto ta = std::pair<ul,ul>(v[0],v[1]);
-			pairs.insert(ta);
-		}
-	}
-
-	std::set<ul> doneNeighbour;
-
-	for(auto p : pairs) {
-		if(doneNeighbour.find(p.second) != doneNeighbour.end()) {continue;}
-
-		auto paths = pathFinder[p.first];
-		ul pIdx = MAX;
-		if(leftEdges.find(p.second) != leftEdges.end()) {
-			pIdx = paths.a;
-		}
-		if(rightEdges.find(p.second) != rightEdges.end()) {
-			pIdx = paths.b;
-		}
-		assert(pIdx != MAX);
-		addArc(pIdx,nodeIdx,p.first,p.second);
-
-		doneNeighbour.insert(p.first);
-	}
-
-	for(auto event : eventList) {
-		/* update path finder for left and right edge */
-		pathFinder[event->leftEdge ].b = nodeIdx;
-		pathFinder[event->mainEdge ].a = nodeIdx;
-		pathFinder[event->mainEdge ].b = nodeIdx;
-		pathFinder[event->rightEdge].a = nodeIdx;
-	}
-
-	auto chainIt = chain.begin();
-
-	for(auto event : eventList) {
-		/* remove this edges from the chain (wavefront) */
-		chainIt = chain.erase(event->chainEdge);
-		disableEdge(event->mainEdge);
-	}
-
-	if(chainIt != chain.begin()) {
-		--chainIt;
-
-		auto idxA = *(--chainIt);
-		auto idxB = *(++chainIt);
-		auto idxC = *(++chainIt);
-		auto idxD = *(++chainIt);
-		--chainIt;
-		--chainIt;
-		ChainRef it1 = ChainRef(chainIt);
-		ChainRef it2 = ChainRef(++chainIt);
-
-		if(idxA != idxB && idxB != idxC && idxC != idxD) {
-			/**/
-			LOG(INFO) << "TODO: only reference and add arcs if we are not before/after the chain ends!";
-
-			/* only if in current chain! */
-			pathFinder[idxB].b = nodeIdx;
-			pathFinder[idxC].a = nodeIdx;
-
-			auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
-			auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
-
-			LOG(INFO) << "indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
-			LOG(INFO) << e1;
-			LOG(INFO) << e2;
-
-			if(idxB != chain.front()) {
-				updateInsertEvent(e1);
-			}
-			if(idxC != chain.back()) {
-				updateInsertEvent(e2);
-			}
-		} else {
-			LOG(INFO) << "EQUAL indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
-		}
-	} else {
-		LOG(INFO) << "chain is at beginning with size: " << chain.size();
-	}
-}
+///* due to the monotonicity we should only have two scenarios:
+// * (i) this amounts to exactly one point with multiple collapsing edges:
+// * --> then we continue with the bisector between the first and last involved
+// *     edge.
+// * (ii)  otherwise a vertical bisector line is involved, then we should have
+// *       exactly two points:
+// * --> after adding both points (connected with a vertical segment) we apply
+// *     (i) for the 'upper' (or higher) point. */
+//void Wavefront::HandleMultiEvent(Chain& chain, std::vector<Event*> eventList) {
+//	if(eventList.size() == 1) {
+//		LOG(INFO) << "size 1 ";
+//		HandleSingleEdgeEvent(chain,eventList[0]);
+//	} else {
+//		std::set<Point> points;
+//		std::set<int,std::less<int> > eventEdges;
+//		LOG(INFO) << "events:";
+//		for(const auto& e : eventList) {
+//			if(e->mainEdge == *(e->chainEdge))  {
+//				LOG(INFO) << "event is still true!";
+//			}
+//
+//			points.insert(e->eventPoint);
+//			eventEdges.insert(e->leftEdge);
+//			eventEdges.insert(e->mainEdge);
+//			eventEdges.insert(e->rightEdge);
+//		}
+//
+//		if(points.size() > 1) {
+//			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE!
+//			 * this scenario implies a vertical segment, i.e., perpendicular to the
+//			 * monotonicity line. This means only two event points can occur on this
+//			 * line, otherwise the polygon can not be monotone */
+//			assert(points.size() < 3);
+//			LOG(INFO) << "scenario (ii)";
+//			/* ensure A is the lower point in resp. to monot. line */
+//			auto it = points.begin();
+//			Point A = *it; ++it;
+//			Point B = *it;
+//
+//			for(;it!=points.end();++it) {
+//				B = *it;
+//				bool aAboveB = data.isAbove(A,B);
+//				if( (  aAboveB  &&  isLowerChain(chain)) ||
+//					( !aAboveB  && !isLowerChain(chain))) {
+//					std::swap(A,B);
+//				}
+//			}
+//			std::vector<const Event*> partEventListA, partEventListB;
+//			for(auto e : eventList) {
+//				if(e->eventPoint == A) {
+//					partEventListA.emplace_back(e);
+//				} else {
+//					partEventListB.emplace_back(e);
+//				}
+//			}
+//
+//			assert(partEventListA.size() >= 1);
+//
+//			/* handling the 'lower' eventpoint changes the other event, thus
+//			 * we only handle this lower event */
+//			HandleSingleEdgeEvent(chain,partEventListA[0]);
+//		} else {
+//			/* scenario (i) */
+//			LOG(INFO) << "scenario (i)";
+//			HandleMultiEdgeEvent(chain,eventList);
+//		}
+//	}
+//}
+//
+//void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList) {
+//	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
+//
+//	auto anEvent = eventList[0];
+//	auto nodeIdx = addNode(anEvent->eventPoint,anEvent->eventTime);
+//	auto& node = *getNode(nodeIdx);
+//
+//	/* add the single node, all arcs connect to this node */
+//	LOG(INFO) << "adding node: " << node;
+//
+//	std::set<ul> mainEdges;
+//	std::set<ul> leftEdges;
+//	std::set<ul> rightEdges;
+//	std::set<std::pair<ul,ul>> pairs;
+//	for(auto event : eventList) {
+//		leftEdges.insert(event->leftEdge);
+//		rightEdges.insert(event->rightEdge);
+//
+//		std::vector<ul> va = {event->mainEdge,event->leftEdge },
+//				          vb = {event->mainEdge,event->rightEdge};
+//
+//		for(auto v : { va, vb } ) {
+//			auto ta = std::pair<ul,ul>(v[0],v[1]);
+//			pairs.insert(ta);
+//		}
+//	}
+//
+//	std::set<ul> doneNeighbour;
+//
+//	for(auto p : pairs) {
+//		if(doneNeighbour.find(p.second) != doneNeighbour.end()) {continue;}
+//
+//		auto paths = pathFinder[p.first];
+//		ul pIdx = MAX;
+//		if(leftEdges.find(p.second) != leftEdges.end()) {
+//			pIdx = paths.a;
+//		}
+//		if(rightEdges.find(p.second) != rightEdges.end()) {
+//			pIdx = paths.b;
+//		}
+//		assert(pIdx != MAX);
+//		addArc(pIdx,nodeIdx,p.first,p.second);
+//
+//		doneNeighbour.insert(p.first);
+//	}
+//
+//	for(auto event : eventList) {
+//		/* update path finder for left and right edge */
+//		pathFinder[event->leftEdge ].b = nodeIdx;
+//		pathFinder[event->mainEdge ].a = nodeIdx;
+//		pathFinder[event->mainEdge ].b = nodeIdx;
+//		pathFinder[event->rightEdge].a = nodeIdx;
+//	}
+//
+//	auto chainIt = chain.begin();
+//
+//	for(auto event : eventList) {
+//		/* remove this edges from the chain (wavefront) */
+//		chainIt = chain.erase(event->chainEdge);
+//		disableEdge(event->mainEdge);
+//	}
+//
+//	if(chainIt != chain.begin()) {
+//		--chainIt;
+//
+//		auto idxA = *(--chainIt);
+//		auto idxB = *(++chainIt);
+//		auto idxC = *(++chainIt);
+//		auto idxD = *(++chainIt);
+//		--chainIt;
+//		--chainIt;
+//		ChainRef it1 = ChainRef(chainIt);
+//		ChainRef it2 = ChainRef(++chainIt);
+//
+//		if(idxA != idxB && idxB != idxC && idxC != idxD) {
+//			/**/
+//			LOG(INFO) << "TODO: only reference and add arcs if we are not before/after the chain ends!";
+//
+//			/* only if in current chain! */
+//			pathFinder[idxB].b = nodeIdx;
+//			pathFinder[idxC].a = nodeIdx;
+//
+//			auto e1 = getEdgeEvent(idxA,idxB,idxC,it1);
+//			auto e2 = getEdgeEvent(idxB,idxC,idxD,it2);
+//
+//			LOG(INFO) << "indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
+//			LOG(INFO) << e1;
+//			LOG(INFO) << e2;
+//
+//			if(idxB != chain.front()) {
+//				updateInsertEvent(e1);
+//			}
+//			if(idxC != chain.back()) {
+//				updateInsertEvent(e2);
+//			}
+//		} else {
+//			LOG(INFO) << "EQUAL indices A,B,C,D: " << idxA << " " << idxB << " " << idxC << " " << idxD;
+//		}
+//	} else {
+//		LOG(INFO) << "chain is at beginning with size: " << chain.size();
+//	}
+//}
 
 void Wavefront::HandleSingleEdgeEvent(Chain& chain,  const Event* event) {
 	/* build skeleton from event */
@@ -385,7 +343,6 @@ void Wavefront::HandleSingleEdgeEvent(Chain& chain,  const Event* event) {
 
 	/* remove this edge from the chain (wavefront) */
 	chain.erase(event->chainEdge);
-//	disableEdge(event->mainEdge);
 }
 
 bool Wavefront::FinishSkeleton(Chain& chain) {
@@ -395,9 +352,6 @@ bool Wavefront::FinishSkeleton(Chain& chain) {
 	if(chain.size() < 2) {return true;}
 	Point pCheck;
 
-//	while(!eventTimes->empty()) {
-//		SingleDequeue(chain);
-//	}
 	ul aEdgeIdx, bEdgeIdx;
 	auto chainIterator = chain.begin();
 	/***********************************************************************/
@@ -441,19 +395,16 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 		--it;		edgeA = *it;
 
 		it = ChainRef(event.chainEdge); --it;
-		LOG(INFO) << "checking event for " << edgeB;
 		auto neighborEvent = getEdgeEvent(edgeA,edgeB,edgeC,it);
 		updateInsertEvent(neighborEvent);
 	}
 
 	it = ChainRef(event.chainEdge);
 	++it;
-	LOG(INFO) << "hmm...";
 	if(*it == edgeC && edgeC != chain.back()) {
 		++it;		edgeD = *it;
 
 		it = ChainRef(event.chainEdge); ++it;
-		LOG(INFO) << "checking event for " << edgeC; fflush(stdout);
 		auto neighborEvent = getEdgeEvent(edgeB,edgeC,edgeD,it);
 		updateInsertEvent(neighborEvent);
 	}
@@ -461,58 +412,16 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 
 void Wavefront::updateInsertEvent(Event& event) {
 	/* check if edge has already an event in the queue */
+	auto* currentEvent =  &events[event.mainEdge];
 
-	if(	event.mainEdge == upperChain.front() ||
-		event.mainEdge == upperChain.back()  ||
-		event.mainEdge == lowerChain.front() ||
-		event.mainEdge == lowerChain.back())
-	{
-		LOG(WARNING) << " -------------------------------> this actually occurs! ";
-		return;
+	if(event.eventTime < currentTime) {
+		event.eventTime = MAX;
+		event.eventPoint = INFPOINT;
 	}
 
-	auto* currentEvent =  &events[event.mainEdge];
-//	if(currentEvent.eventTime > 0) {
-//
-//		auto e = eventTimes.in_needs_update(currentEvent.mainEdge);
-//
-//	}
-		/* find remove timeslot from event times */
-//		if(currentEvent.queuePosition != eventTimes.end() && currentEvent.queuePosition->edgeIdx == event.mainEdge) {
-//			eventTimes.erase(currentEvent.queuePosition);
-//			currentEvent.queuePosition = eventTimes.end();
-//			currentEvent.eventTime = 0;
-//		}
-//	}
-
-//	auto e = peak();
-//	currentTime.remove(e->idx_in_heap);
-//
-//	currentTime = e->priority.t.time;
-//	Event* event = &events[e->priority.t.edgeIdx];
-//
-//	assert(event.mainEdge == *event.chainEdge);
-//
-
-	LOG(INFO) << "OK..." << *currentEvent << ", new event: " <<event; fflush(stdout);
-
-//	if(event.isEvent()) {
-		*currentEvent = event;
-	LOG(INFO) << "after update:  "<< *currentEvent;
-	LOG(INFO) << "after update:  "<< events[event.mainEdge];
-
-//		eventTimes->update_by_tidx(currentEvent.mainEdge,currentTime);
-
-		eventTimes->needs_update(&event);
-		eventTimes->process_pending_updates();
-//		auto te = TimeEdge(event.eventTime,event.mainEdge);
-//		events[event.mainEdge] = event;
-//		eventTimes.insert(te);
-//		auto pos = eventTimes.insert(te);
-//		if(pos.second) {
-//			events[event.mainEdge].queuePosition = pos.first;
-//		}
-//	}
+	*currentEvent = event;
+//	LOG(INFO) << "after update:  "<< events[event.mainEdge];
+	eventTimes->update_by_tidx(event.mainEdge);
 }
 
 Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const {
@@ -588,10 +497,7 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 	));
 	nodeA.arcs.emplace_back(arcIdx);
 	nodeB.arcs.emplace_back(arcIdx);
-#ifdef NDEBUG
-	LOG(WARNING) << "++ TEST TEST TEST: " << arcIdx;
 	LOG(INFO) << "++ adding arc: " << arcIdx;
-#endif
 	return arcIdx;
 }
 

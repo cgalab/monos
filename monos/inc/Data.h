@@ -79,23 +79,21 @@ public:
 	 * the vertices such that x-monotonicity holds for P */
 	bool ensureMonotonicity();
 	bool isAbove(const Point& a, const Point &b) const;
-	inline bool monotoneSmaller(const Point& a, const Point& b) const {
-		return Line(b,perpMonotonDir).has_on_positive_side(a);
-	}
-	inline bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-		return line.perpendicular(b).has_on_positive_side(a);
-	}
+//	inline bool monotoneSmaller(const Point& a, const Point& b) const {
+//		return a < b ; //Line(b,perpMonotonDir).has_on_positive_side(a);
+//	}
+//	inline bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
+//		return a < b; //line.perpendicular(b).has_on_positive_side(a);
+//	}
 
 	void setMonotonicity(Line line) {
 		monotonicityLine = line;
 		perpMonotonDir = monotonicityLine.direction().perpendicular(CGAL::POSITIVE);
-		isMonotone = true;
 		assignBoundingBox();
 	}
 
 	Line			monotonicityLine;
 	Direction		perpMonotonDir;
-	bool			isMonotone = false;
 
 	BBox			*bbox = nullptr;
 

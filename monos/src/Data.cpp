@@ -182,7 +182,8 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 	Point pStart  = eA(startIdx);
 	for(ul i = startIdx+1; i < input.edges().size(); ++i) {
 		auto p = eA(i);
-		if(monotoneSmaller(line,p,pStart)) {
+//		if(monotoneSmaller(line,p,pStart)) {
+		if(p < pStart) {
 			startIdx = i; pStart = p;
 		}
 	}
@@ -233,8 +234,8 @@ void Data::assignBoundingBox() {
 		if(v->id != yMin->id && v->p.y() < yMin->p.y()) {yMin = v;}
 		if(v->id != yMax->id && v->p.y() > yMax->p.y()) {yMax = v;}
 
-		if(v->id != monMin->id && monotoneSmaller(v->p,monMin->p)) {monMin = v;}
-		if(v->id != monMax->id && monotoneSmaller(monMax->p,v->p)) {monMax = v;}
+		if(v->id != monMin->id && v->p < monMin->p) {monMin = v;}
+		if(v->id != monMax->id && monMax->p < v->p) {monMax = v;}
 	}
 
 	bbox = new BBox {

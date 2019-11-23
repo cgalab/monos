@@ -3,7 +3,6 @@
 #include <stddef.h>
 
 #include "cgTypes.h"
-#include "CollapseSpec.h"
 #include "Heap.h"
 
 class HeapEvent {
@@ -53,12 +52,13 @@ private:
 	FixedVector<ElementType> tidx_to_qitem_map;
 
 	void tidx_to_qitem_map_add(const Event * t, ElementType qi);
-	void drop_by_tidx(unsigned tidx);
 	void assert_no_pending() const;
 public:
 	EventQueue(const Events& events, const Chain& chain);
 
+	void drop_by_tidx(unsigned tidx);
 	void update_by_tidx(unsigned tidx);
+
 	/* we /could/ make this const, and our heap a mutable
 	 * object attribute and the vectors also mutable.
 	 * At which point pretty much everything in here is

@@ -42,7 +42,8 @@ bool Skeleton::SingleMergeStep() {
 
 	/* correct direction if necessary */
 	const auto& Pa = bisLine.point(0);	const auto Pb = Pa + bisLine.to_vector();
-	if(!data.monotoneSmaller(Pa,Pb)) {bisLine = bisLine.opposite();}
+//	if(!data.monotoneSmaller(Pa,Pb)) {bisLine = bisLine.opposite();}
+	if(Pa > Pb) {bisLine = bisLine.opposite();}
 
 	LOG(INFO) << "Bisector-dir: " << bisLine.direction();
 
@@ -96,10 +97,13 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 		if(!doneU && !doneL) {
 			uPa = upperArc->source(); uPb = upperArc->target();
 			lPa = lowerArc->source(); lPb = lowerArc->target();
-			if(!data.monotoneSmaller(bis,uPa,uPb)) {std::swap(uPa, uPb);}
-			if(!data.monotoneSmaller(bis,lPa,lPb)) {std::swap(lPa, lPb);}
+//			if(!data.monotoneSmaller(bis,uPa,uPb)) {std::swap(uPa, uPb);}
+//			if(!data.monotoneSmaller(bis,lPa,lPb)) {std::swap(lPa, lPb);}
+			if(uPb < uPa) {std::swap(uPa, uPb);}
+			if(lPb < lPa) {std::swap(lPa, lPb);}
 
-			searchChain = (data.monotoneSmaller(bis,uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
+//			searchChain = (data.monotoneSmaller(bis,uPa,lPa)) ? ChainType::UPPER : ChainType::LOWER;
+			searchChain = (uPa < lPa) ? ChainType::UPPER : ChainType::LOWER;
 		}
 
 		if(doneU) {searchChain = ChainType::LOWER;}
@@ -154,11 +158,7 @@ void Skeleton::initPathForEdge(ChainType type) {
 	const Node& terminalNode = (ChainType::UPPER == type) ? wf.getTerminalNodeForVertex(data.e(edgeIdx).u) : wf.getTerminalNodeForVertex(data.e(edgeIdx).v);
 	auto& path        = (ChainType::UPPER == type) ? upperPath : lowerPath;
 
-	if(!EndOfChain(type)) {
-		path = terminalNode.arcs.front();
-	} else {
-		path = MAX;
-	}
+	path = (!EndOfChain(type)) ? terminalNode.arcs.front() : MAX;
 
 	LOG(INFO) << "initPathForEdge " << edgeIdx << " with arc idx: " << path;
 }
@@ -168,33 +168,33 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Line& b
 	const Point& Pu = intersectionPair.first;
 	const Point& Pl = intersectionPair.second;
 
-	Point P = INFPOINT;
+	ul edgeIdx  = upperChainIndex;
+	ul path     = upperPath;
+	Point P     = Pu;
+
 	ChainType winner;
 
 	if(Pu != INFPOINT && Pl != INFPOINT) {
-		winner = data.monotoneSmaller(bis,Pu,Pl) ? ChainType::UPPER : ChainType::LOWER;
-		P = (winner == ChainType::UPPER) ? Pu : Pl;
+		winner = (Pu < Pl) ? ChainType::UPPER : ChainType::LOWER;
 	} else if(Pu != INFPOINT) {
 		winner = ChainType::UPPER;
-		P = Pu;
 	} else {
 		assert(Pl != INFPOINT);
 		winner = ChainType::LOWER;
-		P = Pl;
 	}
 
-//	LOG(INFO) << "handleMerge Upper current arc idx " << upperPath;
-//	LOG(INFO) << "handleMerge Lower current arc idx " << lowerPath;
-
-	const auto& edgeIdx = (winner == ChainType::UPPER) ? upperChainIndex : lowerChainIndex;
-	const auto& path    = (winner == ChainType::UPPER) ? upperPath       : lowerPath;
+	if(winner == ChainType::LOWER) {
+		path = lowerPath;
+		edgeIdx = lowerChainIndex;
+		P = Pl;
+	}
 
 	assert(P != INFPOINT);
 
 	NT dist = data.normalDistance(edgeIdx,P);
 
-	const auto newNodeIdx 	= wf.addNode(P,dist);
-	const ul newArcIdx 		= wf.addArc(sourceNodeIdx,newNodeIdx,upperChainIndex,lowerChainIndex);
+	const ul newNodeIdx = wf.addNode(P,dist);
+	const ul newArcIdx 	= wf.addArc(sourceNodeIdx,newNodeIdx,upperChainIndex,lowerChainIndex);
 
 	const auto* intersArc = wf.getArc(path);
 
@@ -202,15 +202,17 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const Line& b
 	LOG(INFO) << "before update of " << path;
 	updateArcTarget(path,edgeIdx,newNodeIdx,P);
 
-	if(winner == ChainType::UPPER) {
+	if(edgeIdx == upperChainIndex) {
 		upperChainIndex = intersArc->leftEdgeIdx;
-		initPathForEdge(winner);
+//		initPathForEdge(ChainType::UPPER);
 		LOG(INFO) << "handleMerge: set upper chain to " << upperChainIndex << " arc: " << upperPath;
 	} else {
 		lowerChainIndex = intersArc->rightEdgeIdx;
-		initPathForEdge(winner);
+//		initPathForEdge(ChainType::LOWER);
 		LOG(INFO) << "handleMerge: set lower chain to " << lowerChainIndex << " arc: " << lowerPath;
 	}
+
+	initPathForEdge(winner);
 
 	return newNodeIdx;
 }
