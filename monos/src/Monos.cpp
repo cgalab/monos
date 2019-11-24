@@ -60,6 +60,7 @@ LOG(INFO) << "asdlfkjöl"; fflush(stdout);
 	if(!readInput()) {return;}
 
 	if(config.convert_to_line) {
+		data = new Data(input);
 		data->printLineFormat();
 		return;
 	}
