@@ -111,7 +111,7 @@ public:
 	/* write output & debug misc */
 	void addPolyToOBJ(const Config& cfg) const;
 	void printInput() const;
-
+	void printLineFormat();
 private:
 	void assignBoundingBox();
 
