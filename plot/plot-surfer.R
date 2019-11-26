@@ -74,6 +74,7 @@ if (opt$'csv') {
      } else {
        dbdata['value'] = csvdata[2]
      }
+     dbdata['variable'] = dbname
 
      dfs = rbind(dfs, dbdata)
    }
