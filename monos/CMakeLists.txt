@@ -2,7 +2,7 @@ project (surf VERSION "1.99" DESCRIPTION "monoslib")
 
 set_source_files_properties(easyloggingpp/src/easylogging++.cc PROPERTIES COMPILE_FLAGS "-Wno-float-equal -Wno-missing-noreturn")
 
-find_package( CGAL COMPONENTS MPFI Core )
+find_package( CGAL COMPONENTS Core )
 if ( NOT CGAL_FOUND )
   message(STATUS "CGAL notfound.")
   return()
