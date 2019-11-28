@@ -30,10 +30,6 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 			timings = true;
 			break;
 
-		case 'c':
-			convert_to_line = true;
-			break;
-
 		case 'x':
 			not_x_mon = true;
 			break;

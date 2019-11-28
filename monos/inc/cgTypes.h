@@ -80,9 +80,7 @@ public:
 	const unsigned id;
 
 	Vertex(const Point& p, unsigned id)
-	: p(p)
-	, id(id)
-	{}
+	: p(p), id(id) {}
 	friend std::ostream& operator<< (std::ostream& os, const Vertex& vertex);
 };
 
@@ -94,11 +92,7 @@ public:
 	const Line line;
 
 	Edge(unsigned u, unsigned v, unsigned id, Segment s)
-	: u(u)
-	, v(v)
-	, id(id)
-	, segment(s)
-	, line(s.supporting_line()){}
+	: u(u), v(v), id(id), segment(s), line(s.supporting_line()) {}
 
 	inline bool has(const unsigned idx) const {return u == idx || v == idx;}
 
@@ -124,7 +118,7 @@ struct MonotoneVector {
 	friend std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv);
 };
 
-/* compare functor */
+/* compare functor, for monotonicity computation */
 struct MonVectCmp {
 	bool operator()(const MonotoneVector &first, const MonotoneVector &second) const {
 		Point A = ORIGIN + first.vector;

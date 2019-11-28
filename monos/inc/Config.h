@@ -18,7 +18,6 @@ static struct option long_options[] = {
 		{ "verbose"     , no_argument      , 0, 'v'},
 		{ "xmon"        , no_argument      , 0, 'x'},
 		{ "normalize"   , no_argument      , 0, 'n'},
-		{ "gmltoline"   , no_argument      , 0, 'c'},
 		{ "timings"     , no_argument      , 0, 't'},
 		{ "out"         , required_argument, 0, 'o'},
 		{ 0, 0, 0, 0}
@@ -40,9 +39,7 @@ public:
 		fprintf(f,"           --normalize \t| --n \t\t\t write output normalized to the origin\n");
 		fprintf(f,"\n");
 		fprintf(f,"Input format is .gml/.graphml (GraphML).\n");
-		fprintf(f,"Parsing input from cin assumes graphml format.");
-		fprintf(f,"\n");
-		fprintf(f,"           --gmltoline \t| --c \t\t\t computes nothing, only converts a given gml input into Martin's 'line' format.\n");
+		fprintf(f,"Parsing input from cin assumes graphml format.\n");
 		fprintf(f,"\n");
 		exit(err);
 	}
@@ -80,7 +77,6 @@ public:
 	bool			not_x_mon = false;
 
 	bool 			gui;
-	bool			convert_to_line = false;
 
 	std::string		outputFileName;
 
