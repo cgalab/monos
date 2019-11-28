@@ -1,7 +1,7 @@
 project (monosgui VERSION "1.99" DESCRIPTION "monosgui")
 
 find_package(Qt5Widgets REQUIRED)
-find_package(CGAL COMPONENTS Qt5 Core Debug REQUIRED)
+find_package(CGAL COMPONENTS Qt5 Core REQUIRED)
 
 include(${CGAL_USE_FILE})
 
