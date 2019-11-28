@@ -56,7 +56,7 @@ bool Monos::readInput() {
 
 void Monos::run() {
 	clock_t begin, end;
-LOG(INFO) << "asdlfkjöl"; fflush(stdout);
+
 	if(!readInput()) {return;}
 
 	if(config.convert_to_line) {
