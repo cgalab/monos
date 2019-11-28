@@ -20,18 +20,6 @@
 #ifndef CGTYPES_H_
 #define CGTYPES_H_
 
-//#if !defined(NDEBUG)
-//#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
-//#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
-//#endif
-//#include <boost/multi_index_container.hpp>
-//#include <boost/multi_index/global_fun.hpp>
-//#include <boost/multi_index/mem_fun.hpp>
-//#include <boost/multi_index/ordered_index.hpp>
-//#include <boost/multi_index_container.hpp>
-//#include <boost/multi_index/hashed_index.hpp>
-//#include <boost/multi_index/member.hpp>
-
 #include <iterator>
 #include <array>
 #include <algorithm>
@@ -300,7 +288,7 @@ ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
 //template<class T, class U>
 //bool isLinesParallel(const T& a, const U& b);
-//
+
 //template<class T, class U>
 //bool isLinesParallel(const T& a, const U& b) {
 //	return CGAL::parallel(Line(a),Line(b));
