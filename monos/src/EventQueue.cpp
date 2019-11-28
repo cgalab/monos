@@ -15,7 +15,6 @@ EventQueue(const Events& events, const Chain& chain) {
 
 	/* we skip the first and last edge of each chain */
 	for (auto t = std::next(chain.begin()); t != std::prev(chain.end()); ++t) {
-//		LOG(INFO) << "add event " << events[*t];
 		auto qi = std::make_shared<EventQueueItem>(&events[*t]);
 		a.emplace_back(qi);
 		tidx_to_qitem_map_add(&events[*t], qi);
@@ -36,7 +35,6 @@ EventQueue::
 drop_by_tidx(unsigned tidx) {
 	auto qi = tidx_to_qitem_map.at(tidx);
 	assert(NULL != qi);
-//	LOG(WARNING) << "__________///////// REMOVE mainedge: " << tidx;
 	drop_element(qi);
 	tidx_to_qitem_map[tidx] = NULL;
 	tidx_in_need_dropping[tidx] = false;
@@ -45,8 +43,6 @@ drop_by_tidx(unsigned tidx) {
 void
 EventQueue::
 update_by_tidx(unsigned tidx) {
-//	LOG(WARNING) << "\\\\\\\\_________ UPDATE mainedge: " << tidx;
-//	assert(tidx_in_need_update[tidx]);
 	auto qi = tidx_to_qitem_map.at(tidx);
 	assert(NULL != qi);
 	fix_idx(qi);
@@ -70,7 +66,6 @@ process_pending_updates() {
 	}
 	need_update.clear();
 
-//	assert_no_pending();
 }
 
 void
@@ -139,27 +134,13 @@ is_valid_heap() const {
 		NT delta = peak(parent)->get_priority().time() - peak(i)->get_priority().time();
 		if (delta.Rep()->getSign() != delta.Rep()->getExactSign()) {
 			LOG(ERROR) << "Sign mismatch at heap item " << parent << " vs. " << i;
-			//      DBG(DBG_EVENTQ) << " item " << parent << ": " << peak(i)->get_priority();
-			//      DBG(DBG_EVENTQ) << " item " << i << ": " << peak(parent)->get_priority();
-			//      DBG(DBG_EVENTQ) << " delta is " << delta;
-			//      DBG(DBG_EVENTQ) << " sign is " << delta.Rep()->getSign();
-			//      DBG(DBG_EVENTQ) << " exact sign is " << delta.Rep()->getExactSign();
 			return false;
 		}
 		if (peak(parent)->get_priority() > peak(i)->get_priority()) {
 			LOG(ERROR) << "Mismatch at heap item " << parent << " vs. " << i;
-			//      DBG(DBG_EVENTQ) << " item " << parent << ": " << peak(i)->get_priority();
-			//      DBG(DBG_EVENTQ) << " item " << i << ": " << peak(parent)->get_priority();
 			return false;
 		}
 	}
 #endif
 	return Base::is_heap();
 }
-
-//std::ostream&
-//operator<<(std::ostream& os, const Event& e) {
-////  os << "Event in " << e.mainEdge << " " << CollapseSpec(e);
-//  return os;
-//}
-

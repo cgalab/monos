@@ -20,18 +20,6 @@
 #ifndef CGTYPES_H_
 #define CGTYPES_H_
 
-//#if !defined(NDEBUG)
-//#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
-//#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
-//#endif
-//#include <boost/multi_index_container.hpp>
-//#include <boost/multi_index/global_fun.hpp>
-//#include <boost/multi_index/mem_fun.hpp>
-//#include <boost/multi_index/ordered_index.hpp>
-//#include <boost/multi_index_container.hpp>
-//#include <boost/multi_index/hashed_index.hpp>
-//#include <boost/multi_index/member.hpp>
-
 #include <iterator>
 #include <array>
 #include <algorithm>
@@ -80,9 +68,7 @@ public:
 	const unsigned id;
 
 	Vertex(const Point& p, unsigned id)
-	: p(p)
-	, id(id)
-	{}
+	: p(p), id(id) {}
 	friend std::ostream& operator<< (std::ostream& os, const Vertex& vertex);
 };
 
@@ -94,11 +80,7 @@ public:
 	const Line line;
 
 	Edge(unsigned u, unsigned v, unsigned id, Segment s)
-	: u(u)
-	, v(v)
-	, id(id)
-	, segment(s)
-	, line(s.supporting_line()){}
+	: u(u), v(v), id(id), segment(s), line(s.supporting_line()) {}
 
 	inline bool has(const unsigned idx) const {return u == idx || v == idx;}
 
@@ -124,7 +106,7 @@ struct MonotoneVector {
 	friend std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv);
 };
 
-/* compare functor */
+/* compare functor, for monotonicity computation */
 struct MonVectCmp {
 	bool operator()(const MonotoneVector &first, const MonotoneVector &second) const {
 		Point A = ORIGIN + first.vector;
@@ -306,7 +288,7 @@ ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 
 //template<class T, class U>
 //bool isLinesParallel(const T& a, const U& b);
-//
+
 //template<class T, class U>
 //bool isLinesParallel(const T& a, const U& b) {
 //	return CGAL::parallel(Line(a),Line(b));

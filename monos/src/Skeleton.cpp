@@ -223,9 +223,9 @@ void Skeleton::updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& s
 		return;
 	} else {
 		wf.arcList[arcIdx] = Arc(ArcType::NORMAL, arc->firstNodeIdx, secondNodeIdx,
-				arc->leftEdgeIdx, arc->rightEdgeIdx, arc->id,
-				Segment(arc->source(),edgeEndPoint)
-				);
+								arc->leftEdgeIdx, arc->rightEdgeIdx, arc->id,
+								Segment(arc->source(),edgeEndPoint)
+							 );
 	}
 
 	newNode->arcs.push_back(arcIdx);
@@ -258,11 +258,9 @@ void Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
 
 		if(arcIdx != arcIdxIt) {
 			arc->disable();
-//			return;
 		}
 
 		LOG(INFO) << *arc;
-//		LOG(INFO) << " arc-start: " << arc->firstNodeIdx <<  " arc-endpoint: " << arc->secondNodeIdx << " ";
 
 		if(arc->type == ArcType::RAY || arc->secondNodeIdx == MAX) {return;}
 
