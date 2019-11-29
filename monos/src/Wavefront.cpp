@@ -98,7 +98,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 }
 
 bool Wavefront::SingleDequeue(Chain& chain) {
-	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
+	LOG(INFO) << std::endl << "########################### SingleDequeue ("<< eventTimes->size() << ") ##############################";
 
 	if(!eventTimes->empty()) {
 

@@ -161,7 +161,7 @@ bool Monos::init() {
 void Monos::duplicateInput() {
 	LOG(INFO) << "duplicate the input";
 	/* x-monotone, so we offset every point by the x-span of the bbox */
-	auto offset = NT(10.0) + (data->bbox->xMax.p.x() - data->bbox->xMin.p.x());
+	auto offset = CGAL::abs( NT(10.0) + (data->bbox->xMax.p.x() - data->bbox->xMin.p.x()) );
 	auto epsScale = offset/100000.0;
 
 	std::ofstream outfile (config.outputFileName,std::ofstream::binary);
@@ -181,25 +181,73 @@ void Monos::duplicateInput() {
 	}
 
 	bool lowerChain = true;
-	auto eLeftLower = data->findEdgeWithVertex(data->bbox->xMin);
-	auto it = eLeftLower;
 
+	/***********************************************************************/
+	auto eLeftLower = data->findEdgeWithVertex(data->bbox->xMin);
+	auto eLeftUpper = data->cPrev(eLeftLower);
+
+	/* decide if both segments lead downward or both upwards */
+	Line l(data->bbox->xMin.p,Vector(1,0));
+
+	Point Pl = data->v(eLeftLower->v).p;
+	Point Pu = data->v(eLeftUpper->u).p;
+
+	bool posSideL = l.has_on_positive_side(Pl);
+	bool posSideU = l.has_on_positive_side(Pu);
+
+	auto firstEdge = eLeftLower;
+	if(posSideL && posSideU) {
+		/* both go up, chose last upper as end */
+		firstEdge = eLeftUpper;
+	} else if(!posSideL && !posSideU) {
+		/* both go down, chose first lower as end */
+		firstEdge = eLeftLower;
+	}
+
+	auto eRightUpper = data->findEdgeWithVertex(data->bbox->xMax);
+	auto eRightLower = data->cPrev(eRightUpper);
+
+	/* decide if both segments lead downward or both upwards */
+	l = Line(data->bbox->xMax.p,Vector(1,0));
+
+	Pu = data->v(eRightUpper->v).p;
+	Pl = data->v(eRightLower->u).p;
+
+	posSideL = l.has_on_positive_side(Pl);
+	posSideU = l.has_on_positive_side(Pu);
+
+
+	auto lastEdge = eRightUpper;
+	if(posSideL && posSideU) {
+		/* both go up, chose last upper as end */
+		lastEdge = eRightUpper;
+	} else if(!posSideL && !posSideU) {
+		/* both go down, chose first lower as end */
+		lastEdge = eRightLower;
+	}
+
+//	LOG(INFO) << "bbox min : " << data->bbox->xMin;
+//	LOG(INFO) << "bbox max : " << data->bbox->xMax;
+//
+//	LOG(INFO) << "left : " << *eLeftLower <<  " -- " << *eLeftUpper;
+//	LOG(INFO) << "right : " << *eRightUpper <<  " -- " << *eRightLower;
+
+	/*****************************************************************************/
+
+	auto it = data->cNext(lastEdge);
 	std::vector<ul> polyList;
 
-	/* first lower chain */
-//	outfile << "f";
+	/* original chain */
 	do {
 		polyList.push_back(it->u+1);
-//		outfile << " " << it->u+1;
 		it = data->cNext(it);
-	} while(data->v(it->u).id != data->bbox->xMax.id);
+	} while(it != data->cNext(lastEdge));
 
 	/* second lower and upper chain */
-	auto itBak = it;
-	it = eLeftLower;
+	it = data->cNext(firstEdge);
 	do {
 		auto yPert = epsScale + offset/(100.0*(1+(rand())%offset));
-		auto x = pnts[it->u].x();
+		auto x = pnts[it->u].x() + offset;
 		auto y = pnts[it->u].y();
 
 		if(it->u == data->bbox->xMin.id) {lowerChain = true;}
@@ -208,22 +256,19 @@ void Monos::duplicateInput() {
 		if(lowerChain) {y -= yPert;}
 		else {y += yPert;}
 
-		pnts[it->u] = Point( x + offset , y);
-
-//		outfile << " " << it->u + (input.edges().size()) +1;
+		pnts[it->u] = Point( x , y);
 
 		polyList.push_back(it->u + (input.vertices().size()) +1);
 
 		it = data->cNext(it);
-	} while(it != eLeftLower);
+	} while(it != data->cNext(firstEdge));
 
 	/* first upper chain */
-	it = itBak;
-	do {
-		polyList.push_back(it->u+1);
-//		outfile << " " << it->u +1;
-		it  = data->cNext(it);
-	} while(it != eLeftLower);
+//	it = data->cNext(itBak);
+//	do {
+//		polyList.push_back(it->u+1);
+//		it  = data->cNext(it);
+//	} while(it != eLeftLower);
 
 
 	for(auto p : pnts) {
