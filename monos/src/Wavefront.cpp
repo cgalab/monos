@@ -431,9 +431,8 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 	auto bcBisL = data.simpleBisector(bIdx,cIdx);
 
 	auto intersectionSimple = intersectElements(abBisL, bcBisL);
-	if( b.has_on_positive_side(intersectionSimple) ) {
-		auto distance = (intersectionSimple != INFPOINT) ? normalDistance(b, intersectionSimple) : 0;
-		assert(distance > 0);
+	if( intersectionSimple != INFPOINT && b.has_on_positive_side(intersectionSimple) ) {
+		auto distance = normalDistance(b, intersectionSimple);
 		/* does collapse so we create an event
 		 * and add it to the queue
 		 **/

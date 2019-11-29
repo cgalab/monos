@@ -50,6 +50,7 @@ public:
 
 	/* only to produce big inputs */
 	void duplicateInput();
+	Point offsetPoint(Point p, NT eps) {return Point(p.x(),p.y()+ p.y()*eps);} // + eps*100.0/(1+(rand()%100)));}
 
 	const Config&   config;
 

@@ -1,5 +1,6 @@
 #include "Config.h"
 
+#include <stdlib.h>
 
 bool Config::evaluateArguments(int argc, char *argv[]) {
 	while (1) {
@@ -36,6 +37,7 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 
 		case 'd':
 			duplicate = true;
+			scale = atof(optarg);
 			break;
 
 		default:
