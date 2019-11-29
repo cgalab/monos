@@ -34,6 +34,10 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 			not_x_mon = true;
 			break;
 
+		case 'd':
+			duplicate = true;
+			break;
+
 		default:
 			std::cerr << "Invalid option " << (char)r << std::endl;
 			validConfig = false;

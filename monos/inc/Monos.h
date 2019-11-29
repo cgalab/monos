@@ -48,9 +48,8 @@ public:
 	bool init();
 	void write();
 
-	/**
-	 * enable stepping trough the computation
-	 * */
+	/* only to produce big inputs */
+	void duplicateInput();
 
 	const Config&   config;
 

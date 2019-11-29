@@ -20,6 +20,7 @@ static struct option long_options[] = {
 		{ "normalize"   , no_argument      , 0, 'n'},
 		{ "timings"     , no_argument      , 0, 't'},
 		{ "out"         , required_argument, 0, 'o'},
+		{ "duplicate"   , no_argument	   , 0, 'd'},
 		{ 0, 0, 0, 0}
 };
 
@@ -37,6 +38,7 @@ public:
 		fprintf(f,"           --xmon \t| --x \t\t\t monotone but not x-monotone (works by default in master branch)\n");
 		fprintf(f,"           --timings \t| --t \t\t\t print timings [ms]\n");
 		fprintf(f,"           --normalize \t| --n \t\t\t write output normalized to the origin\n");
+		fprintf(f,"           --duplicate\t| --d \t\t\t only duplicate input and write obj (no computation)\n");
 		fprintf(f,"\n");
 		fprintf(f,"Input format is .gml/.graphml (GraphML).\n");
 		fprintf(f,"Parsing input from cin assumes graphml format.\n");
@@ -75,6 +77,8 @@ public:
 	bool 			normalize = false;
 	bool 			timings   = false;
 	bool			not_x_mon = false;
+
+	bool			duplicate = false;
 
 	bool 			gui;
 
