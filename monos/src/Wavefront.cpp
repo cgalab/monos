@@ -555,15 +555,23 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 }
 
 ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
+	if(path >= arcList.size()) {return MAX;}
+	assert(path < arcList.size());
 	auto* arc = getArc(path);
 	if(forward && arc->isRay()) {return MAX;}
 	auto& node = (forward) ? nodes[arc->secondNodeIdx] : nodes[arc->firstNodeIdx];
 	for(auto a : node.arcs) {
 		if( a != path ) {
-			if( forward && arcList[a].firstNodeIdx == arc->secondNodeIdx ) {
+			if( forward
+					&& arcList[a].firstNodeIdx == arc->secondNodeIdx
+					&& !arcList[a].isDisable()
+					&& (arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
+			) {
 				return a;
-			} else if( !forward && arcList[a].secondNodeIdx == arc->firstNodeIdx  &&
-				(arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
+			} else if( !forward
+					&& arcList[a].secondNodeIdx == arc->firstNodeIdx
+					&& !arcList[a].isDisable()
+					&& (arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
 			) {
 				return a;
 			}

@@ -89,6 +89,9 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 		lowerArc = wf.getArc(lowerPath);
 	}
 
+	bool upperBothDir = false;
+	bool lowerBothDir = false;
+
 	do {
 		if(!doneU && !doneL) {
 			uPa = upperArc->source(); uPb = upperArc->target();
@@ -110,7 +113,13 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 			} else {
 				upperPath = wf.getNextArcIdx(upperPath,iterateForwardU,upperChainIndex);
 				if(upperPath == MAX) {
-					doneU = true;
+					if(!upperBothDir) {
+						iterateForwardU = !iterateForwardU;
+						upperBothDir = true;
+//						initPathForEdge(ChainType::UPPER);
+					} else {
+						doneU = true;
+					}
 					upperPath = upperArc->id;
 				} else {
 					upperArc = wf.getArc(upperPath);
@@ -127,7 +136,13 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 			} else {
 				lowerPath = wf.getNextArcIdx(lowerPath,iterateForwardL,lowerChainIndex);
 				if(lowerPath == MAX) {
-					doneL = true;
+					if(!lowerBothDir) {
+						iterateForwardL = !iterateForwardL;
+						lowerBothDir = true;
+//						initPathForEdge(ChainType::LOWER);
+					} else {
+						doneL = true;
+					}
 					lowerPath = lowerArc->id;
 				} else {
 					lowerArc = wf.getArc(lowerPath);
