@@ -37,7 +37,7 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 
 		case 'd':
 			duplicate = true;
-			scale = atof(optarg);
+			copies    = atoi(optarg);
 			break;
 
 		default:

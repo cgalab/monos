@@ -79,7 +79,7 @@ public:
 	bool			not_x_mon = false;
 
 	bool			duplicate = false;
-	double			scale	  = 1.0;
+	int				copies	  = 2;
 
 	bool 			gui;
 
