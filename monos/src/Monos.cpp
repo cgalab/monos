@@ -161,8 +161,8 @@ bool Monos::init() {
 void Monos::duplicateInput() {
 	LOG(INFO) << "-- make " << config.copies << " copies of the input.";
 	/* x-monotone, so we offset every point by the x-span of the bbox */
-	auto offset = CGAL::abs( NT(0.1) + (data->bbox->xMax.p.x() - data->bbox->xMin.p.x()) );
-	auto scale = NT(4.76);
+	auto offset = NT(0.4) + CGAL::abs( (data->bbox->xMax.p.x() - data->bbox->xMin.p.x()) );
+	auto scale = NT(1.01);
 
 	Vector off(offset,0);
 
@@ -181,7 +181,7 @@ void Monos::duplicateInput() {
 		it = data->cNext(it);
 	} while(it->u != data->bbox->monMax.id);
 
-	pIt = data->v(it->u).p + Vector(0,-0.001);
+	pIt = data->v(it->u).p + Vector(0.001,-0.1);
 	lowerLtoR.emplace_back(pIt);
 
 	/* store the upper chain */
@@ -191,7 +191,7 @@ void Monos::duplicateInput() {
 		it = data->cNext(it);
 	} while(it->u != data->bbox->monMin.id);
 
-	pIt = data->v(it->u).p + Vector(0,0.001);
+	pIt = data->v(it->u).p + Vector(0.001,0.1);
 	upperRtoL.emplace_back(pIt);
 	/* start end point already offset for both chains */
 
@@ -207,7 +207,7 @@ void Monos::duplicateInput() {
 	for(int i = 0; i < config.copies; ++i) {
 		auto localScale = i*scale;
 		if(i == 0) {localScale = 1;}
-		Vector off(i*(offset)*localScale,-i*0.12);
+		Vector off(i*offset,-0.001);
 
 		for(auto& p : lowerLtoR) {
 			Point pOff = p + off;
@@ -221,9 +221,9 @@ void Monos::duplicateInput() {
 	}
 
 	for(int i = config.copies-1; i >= 0; --i) {
-		auto localScale = i*scale;
+	   auto localScale = i*scale;
 		if(i == 0) {localScale = 1;}
-		Vector off(i*(offset)*localScale,i*0.1);
+		Vector off(i*offset,0.001);
 
 		for(auto& p : upperRtoL) {
 			Point pOff = p + off;
