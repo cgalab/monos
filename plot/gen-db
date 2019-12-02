@@ -1,0 +1,33 @@
+#!/bin/sh
+
+if [ "$#" != 1 ]; then
+  echo >&2 "Usage: $0 <stats.db>"
+  exit 1
+fi
+
+db="$1"
+if [ -e "$db" ]; then
+  echo >&2 "File $db already exists."
+  exit 1
+fi
+
+sqlite3 "$db" << EOF
+
+CREATE TABLE run (
+  run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  input  TEXT,
+  size INTEGER,
+  version TEXT,
+  conv_ok BOOLEAN,
+  timeout DOUBLE,
+  exit INTEGER,
+  runtime DOUBLE,
+  memuse INTEGER,
+  error TEXT,
+  data TEXT, -- json data
+
+  UNIQUE(input)
+);
+
+EOF
