@@ -1,5 +1,6 @@
 #include "Config.h"
 
+#include <stdlib.h>
 
 bool Config::evaluateArguments(int argc, char *argv[]) {
 	while (1) {
@@ -32,6 +33,11 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 
 		case 'x':
 			not_x_mon = true;
+			break;
+
+		case 'd':
+			duplicate = true;
+			copies    = atoi(optarg);
 			break;
 
 		default:
