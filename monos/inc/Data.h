@@ -79,12 +79,6 @@ public:
 	 * the vertices such that x-monotonicity holds for P */
 	bool ensureMonotonicity();
 	bool isAbove(const Point& a, const Point &b) const;
-//	inline bool monotoneSmaller(const Point& a, const Point& b) const {
-//		return a < b ; //Line(b,perpMonotonDir).has_on_positive_side(a);
-//	}
-//	inline bool monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-//		return a < b; //line.perpendicular(b).has_on_positive_side(a);
-//	}
 
 	void setMonotonicity(Line line) {
 		monotonicityLine = line;
@@ -103,7 +97,6 @@ public:
 		}
 		return getPolygon().end();
 	}
-
 
 	inline EdgeIterator cNext(EdgeIterator it) {return (std::next(it) == getPolygon().end()) ? getPolygon().begin(): std::next(it);}
 	EdgeIterator cPrev(EdgeIterator it) {return (it == getPolygon().begin()) ? std::prev(getPolygon().end()) : std::prev(it);}

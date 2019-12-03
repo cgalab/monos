@@ -221,21 +221,22 @@ Line Data::getMonotonicityLineFromVector(const Vector a, const Vector b) const {
 
 
 void Data::assignBoundingBox() {
-	auto xMin   = getVertices().begin();
-	auto xMax   = getVertices().begin();
-	auto yMin   = getVertices().begin();
-	auto yMax   = getVertices().begin();
-	auto monMin = getVertices().begin();
-	auto monMax = getVertices().begin();
+	auto *xMin   = &getVertices()[0];
+	auto *xMax   = &getVertices()[0];
+	auto *yMin   = &getVertices()[0];
+	auto *yMax   = &getVertices()[0];
+	auto *monMin = &getVertices()[0];
+	auto *monMax = &getVertices()[0];
 
-	for(auto v = getVertices().begin(); v != getVertices().end(); ++v ) {
-		if(v->id != xMin->id && v->p.x() < xMin->p.x()) {xMin = v;}
-		if(v->id != xMax->id && v->p.x() > xMax->p.x()) {xMax = v;}
-		if(v->id != yMin->id && v->p.y() < yMin->p.y()) {yMin = v;}
-		if(v->id != yMax->id && v->p.y() > yMax->p.y()) {yMax = v;}
+	for(auto e = getPolygon().begin(); e != getPolygon().end(); ++e ) {
+//	for(auto v = getVertices().begin(); v != getVertices().end(); ++v ) {
+		if(e->u != xMin->id && v(e->u).p.x() < xMin->p.x()) {xMin = &v(e->u);}
+		if(e->u != xMax->id && v(e->u).p.x() > xMax->p.x()) {xMax = &v(e->u);}
+		if(e->u != yMin->id && v(e->u).p.y() < yMin->p.y()) {yMin = &v(e->u);}
+		if(e->u != yMax->id && v(e->u).p.y() > yMax->p.y()) {yMax = &v(e->u);}
 
-		if(v->id != monMin->id && v->p < monMin->p) {monMin = v;}
-		if(v->id != monMax->id && monMax->p < v->p) {monMax = v;}
+		if(v(e->u).id != monMin->id && v(e->u).p < monMin->p) {monMin = &v(e->u);}
+		if(v(e->u).id != monMax->id && monMax->p < v(e->u).p) {monMax = &v(e->u);}
 	}
 
 	bbox = new BBox {

@@ -98,7 +98,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 }
 
 bool Wavefront::SingleDequeue(Chain& chain) {
-	LOG(INFO) << std::endl << "########################### SingleDequeue ##############################";
+	LOG(INFO) << std::endl << "########################### SingleDequeue ("<< eventTimes->size() << ") ##############################";
 
 	if(!eventTimes->empty()) {
 
@@ -431,9 +431,8 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 	auto bcBisL = data.simpleBisector(bIdx,cIdx);
 
 	auto intersectionSimple = intersectElements(abBisL, bcBisL);
-	if( b.has_on_positive_side(intersectionSimple) ) {
-		auto distance = (intersectionSimple != INFPOINT) ? normalDistance(b, intersectionSimple) : 0;
-		assert(distance > 0);
+	if( intersectionSimple != INFPOINT && b.has_on_positive_side(intersectionSimple) ) {
+		auto distance = normalDistance(b, intersectionSimple);
 		/* does collapse so we create an event
 		 * and add it to the queue
 		 **/
@@ -556,15 +555,23 @@ void Wavefront::addNewNodefromEvent(const Event& event) {
 }
 
 ul Wavefront::getNextArcIdx(const ul& path, bool forward, ul edgeIdx) {
+	if(path >= arcList.size()) {return MAX;}
+	assert(path < arcList.size());
 	auto* arc = getArc(path);
 	if(forward && arc->isRay()) {return MAX;}
 	auto& node = (forward) ? nodes[arc->secondNodeIdx] : nodes[arc->firstNodeIdx];
 	for(auto a : node.arcs) {
 		if( a != path ) {
-			if( forward && arcList[a].firstNodeIdx == arc->secondNodeIdx ) {
+			if( forward
+					&& arcList[a].firstNodeIdx == arc->secondNodeIdx
+					&& !arcList[a].isDisable()
+					&& (arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
+			) {
 				return a;
-			} else if( !forward && arcList[a].secondNodeIdx == arc->firstNodeIdx  &&
-				(arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
+			} else if( !forward
+					&& arcList[a].secondNodeIdx == arc->firstNodeIdx
+					&& !arcList[a].isDisable()
+					&& (arcList[a].leftEdgeIdx == edgeIdx || arcList[a].rightEdgeIdx ==edgeIdx)
 			) {
 				return a;
 			}
