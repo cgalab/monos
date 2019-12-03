@@ -35,11 +35,6 @@ bool Config::evaluateArguments(int argc, char *argv[]) {
 			not_x_mon = true;
 			break;
 
-		case 'd':
-			duplicate = true;
-			copies    = atoi(optarg);
-			break;
-
 		default:
 			std::cerr << "Invalid option " << (char)r << std::endl;
 			validConfig = false;

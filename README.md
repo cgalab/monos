@@ -9,21 +9,21 @@ The algorithm is based on the following scientific work: https://doi.org/10.1016
 
 # Input/Output
 
-Reads GraphML (.graphml) or  wavefront (.obj) format that describes a polygon. Writes 
+Reads GraphML (.graphml) format that describes a polygon. Writes 
 .obj format with 3D coordinates which can be imported into programs like
 Blender.
 
 # Requirements 
 - C++17 enabled complier (gcc,clang)
-- CGAL 
-- Linux or Mac OS
+- CGAL (tested with version 5.0 -- https://doc.cgal.org/5.0/Manual/packages.html) 
+- Linux or Mac OS (for Mac OS use -DWITH_GUI=off) 
 
 # Installation
 
-- git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos
+- git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos.git
 - mkdir -p monos/build && cd monos/build
 - cmake ..
-- make -j 
+- make -j 6
 
 # Usage
 
@@ -41,7 +41,6 @@ Blender.
 # Submodules
 
 - easyloggingpp -- https://github.com/muflihun/easyloggingpp
-- gml -- https://gitlab.cosy.sbg.ac.at/cg/ord/gml
 
 
 # License

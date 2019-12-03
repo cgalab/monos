@@ -41,11 +41,12 @@ bool Wavefront::ComputeSkeleton(ChainType type) {
 	printChain(chain);
 
 	currentTime = 0;
-	while(SingleDequeue(chain)) {
-//		SingleDequeue(chain);
-	}
-	LOG(INFO) << "PRINT CHAIN BEFORE FINISHING";
-	printChain(chain);
+
+	while(SingleDequeue(chain));
+
+	/* DEBUG: if needed print chain */
+	//LOG(INFO) << "PRINT CHAIN BEFORE FINISHING";
+	//	printChain(chain);
 
 	/***********************************************************************/
 	/* construct rays from remaining edges in chain, i.e,. unbounded faces */

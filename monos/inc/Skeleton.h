@@ -6,7 +6,7 @@
 
 /* we store the skeletal structure in two types: nodes and arcs
  * a node holds a vector with the incidences to the incident arcs
- * these arcs are/can be sorted CCW around a node
+ * these arcs (are)/can be sorted CCW around a node
  * an arc references its 'first' and 'second' node as well as
  * the left and right 'face' (edge, since every edge has only one face) */
 
@@ -19,7 +19,7 @@
 #include "Wavefront.h"
 
 
-/* FIRST is UpperChainIntersection / SECOND is LowerChainIntersection*/
+/* FIRST is UpperChainIntersection / SECOND is LowerChainIntersection */
 using IntersectionPair = std::pair<Point,Point>;
 
 class Skeleton {
@@ -83,17 +83,6 @@ private:
 	ul sourceNodeIdx = 0, newNodeIdx = 0;
 
 	ul upperChainIndex = 0, lowerChainIndex = 0;
-
-	/*********************************************************/
-	/* 		state variables of findNextIntersectingArc 		 */
-//	Point Pu = INFPOINT;
-//	Point Pl = INFPOINT;
-//	Point uPa, uPb, lPa, lPb;
-//	bool doneU = false, doneL = false;
-//	bool iterateForwardU = true, iterateForwardL = true;
-//	Arc* upperArc = nullptr; Arc* lowerArc = nullptr;
-//	ChainType searchChain;
-	/*********************************************************/
 };
 
 #endif /* SKELETON_H_ */
