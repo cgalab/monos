@@ -33,14 +33,21 @@
 #include "Definitions.h"
 #include "tools.h"
 
+#ifdef WITH_FP
+#include <CGAL/Cartesian.h>
+using K 			 	= CGAL::Cartesian<double>;
+#else
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
+using K 			 	= CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
+using Transformation 	= CGAL::Aff_transformation_2<K>;
+using Intersect		 	= K::Intersect_2;
+#endif
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Aff_transformation_2.h>
 #include <CGAL/aff_transformation_tags.h>
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/intersection_2.h>
 
-using K 			 	= CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
 
 using Vector         	= K::Vector_2;
 using Point          	= K::Point_2;
@@ -49,14 +56,12 @@ using Ray            	= K::Ray_2;
 using Circle         	= K::Circle_2;
 using Direction      	= K::Direction_2;
 using Segment      	 	= K::Segment_2;
-using Intersect		 	= K::Intersect_2;
-using Transformation 	= CGAL::Aff_transformation_2<K>;
 using NT 	         	= K::FT;
 
 using Chain 			= std::list<ul>;
 using ChainRef			= Chain::iterator;
 
-using PointIterator 	= std::vector<Point,std::allocator<Point>>::const_iterator;
+using PointIterator 	= std::vector<Point>::const_iterator;
 
 static Point ORIGIN = Point(0,0);
 static Point INFPOINT(std::numeric_limits<double>::max(),std::numeric_limits<double>::max());
@@ -266,7 +271,7 @@ public:
 using Nodes 		= std::vector<Node>;
 using PathFinder    = std::vector<EndNodes>;
 
-inline const NT normalDistance(const Line& l, const Point& p) {return CGAL::squared_distance(l,p);}
+inline NT normalDistance(const Line& l, const Point& p) {return CGAL::squared_distance(l,p);}
 
 template<class T, class U>
 Point intersectElements(const T& a, const U& b);

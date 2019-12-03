@@ -2,7 +2,8 @@ cmake_minimum_required (VERSION 3.10)
 project ( monos )
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-OPTION(WITH_GUI "Enable GUI requires QT" ON) # Disabled by default
+OPTION(WITH_GUI "Enable GUI requires QT" ON) # Enabled by default
+OPTION(WITH_FP "Disable exact kernel but use rational kernel" OFF) # Disabled by default
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -90,5 +91,10 @@ IF( WITH_GUI )
 ELSE()
 	subdirs (monos cc)
 ENDIF(WITH_GUI)
+
+IF( WITH_FP )
+	message("-- disable EXACT KERNEL!")
+	add_definitions(-DWITH_FP)
+ENDIF()
 
 enable_testing()

@@ -42,7 +42,11 @@ std::ostream& operator<< (std::ostream& os, const Node& node) {
 	} else {
 		os << "d ";
 	}
-	os << "time: " << node.time.doubleValue() << ", point: " << node.point.x().doubleValue() << "," << node.point.y().doubleValue();
+#ifdef WITH_FP
+	os << "time: " << CGAL::to_double(node.time) << ", point: " << node.point.x() << "," << node.point.y();
+#else
+	os << "time: " << CGAL::to_double(node.time) << ", point: " << CGAL::to_double(node.point.x()) << "," << CGAL::to_double(node.point.y());
+#endif
 	os << ", arcs " << node.arcs.size() << ": ";
 	for(auto a : node.arcs) {
 		os << a << " ";
@@ -54,13 +58,18 @@ std::ostream& operator<< (std::ostream& os, const Event& event) {
 	if(event.eventTime == MAX) {
 		os << "(MAX";
 	} else {
-		os << "(" << event.eventTime.doubleValue();
+		os << "(" << CGAL::to_double(event.eventTime);
 	}
 	if(event.eventPoint == INFPOINT) {
 		os << " : INFPNT ";
 	} else {
+#ifdef WITH_FP
+		os << " : " << event.eventPoint.x()
+			 << "," << event.eventPoint.y();
+#else
 		os << " : " << event.eventPoint.x().doubleValue()
 			 << "," << event.eventPoint.y().doubleValue();
+#endif
 	}
 	os << ")["
     		<< event.leftEdge << ","
@@ -98,11 +107,17 @@ std::ostream& operator<< (std::ostream& os, const Arc& arc) {
 }
 
 void getNormalizer(const BBox& bbox, double& xt, double& xm, double& yt, double& ym, double& zt, double& zm) {
+#ifdef WITH_FP
+	double x_span  = (1.0/OBJSCALE) * (bbox.xMax.p.x() - bbox.xMin.p.x());
+	double y_span  = (1.0/OBJSCALE) * (bbox.yMax.p.y() - bbox.yMin.p.y());
+	xt = bbox.xMin.p.x() + (0.5 * (OBJSCALE) * x_span);
+	yt = bbox.yMin.p.y() + (0.5 * (OBJSCALE) * y_span);
+#else
 	double x_span  = (1.0/OBJSCALE) * (bbox.xMax.p.x().doubleValue() - bbox.xMin.p.x().doubleValue());
 	double y_span  = (1.0/OBJSCALE) * (bbox.yMax.p.y().doubleValue() - bbox.yMin.p.y().doubleValue());
-
 	xt = bbox.xMin.p.x().doubleValue() + (0.5 * (OBJSCALE) * x_span);
 	yt = bbox.yMin.p.y().doubleValue() + (0.5 * (OBJSCALE) * y_span);
+#endif
 	zt = 0.0;
 
 	xm = (x_span + smallEPS > 0.0) ? OBJSCALE/x_span : 1;

@@ -105,7 +105,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 		if(doneL) {searchChain = ChainType::UPPER;}
 
 		if(!doneU && searchChain == ChainType::UPPER && !EndOfUpperChain()) {
-			LOG(INFO) << "upper checking " << *upperArc;
+			LOG(INFO) << "upper checking " << *upperArc << " forw: " << iterateForwardU;
 			if(isIntersecting(bis,*upperArc)) {
 				Pu = intersectElements(bis,upperArc->supporting_line());
 				doneU = true;
@@ -126,10 +126,11 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 		}
 
 		if(!doneL && searchChain == ChainType::LOWER && !EndOfLowerChain()) {
-			LOG(INFO) << "lower checking " << *lowerArc;
+			LOG(INFO) << "lower checking " << *lowerArc << " forw: " << iterateForwardL;
 
 			if(isIntersecting(bis,*lowerArc)) {
 				Pl = intersectElements(bis,lowerArc->supporting_line());
+				LOG(INFO) << "lower intersection found  " << Pl;
 				doneL = true;
 			} else {
 				lowerPath = wf.getNextArcIdx(lowerPath,iterateForwardL,lowerChainIndex);
@@ -139,6 +140,7 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 						lowerBothDir = true;
 					} else {
 						doneL = true;
+						LOG(INFO) << "lower done " << lowerPath;
 					}
 					lowerPath = lowerArc->id;
 				} else {
@@ -324,9 +326,15 @@ void Skeleton::writeOBJ(const Config& cfg) const {
 
 	/* write points/nodes into file */
 	for(auto n : wf.nodes) {
+#ifdef WITH_FP
+		double x = (n.point.x() - xt)   * xm;
+		double y = (n.point.y() - yt)   * ym;
+		double z = CGAL::to_double(CGAL::sqrt(n.time))   * zm;
+#else
 		double x = (n.point.x().doubleValue() - xt)   * xm;
 		double y = (n.point.y().doubleValue() - yt)   * ym;
 		double z = CGAL::sqrt(n.time).doubleValue()   * zm;
+#endif
 		outfile << "v " << x << " " << y << " " << z << std::endl;
 	}
 
