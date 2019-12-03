@@ -9,7 +9,7 @@ The algorithm is based on the following scientific work: https://doi.org/10.1016
 
 # Input/Output
 
-Reads GraphML (.graphml) or  wavefront (.obj) format that describes a polygon. Writes 
+Reads GraphML (.graphml) format that describes a polygon. Writes 
 .obj format with 3D coordinates which can be imported into programs like
 Blender.
 
