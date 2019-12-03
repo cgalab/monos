@@ -506,11 +506,19 @@ Segment Wavefront::restrictRay(const Ray& ray) {
 	Point Pb;
 
 	if(state == STATE::UPPER) {
-		NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMin.p.y());
-		Pb = Point(Pb_x,data.bbox->yMin.p.y());
+		if(data.bbox->yMin.p.y() > Pa.y()) {
+			Pb = Pa;
+		} else {
+			NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMin.p.y());
+			Pb = Point(Pb_x,data.bbox->yMin.p.y());
+		}
 	} else {
-		NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMax.p.y());
-		Pb = Point(Pb_x,data.bbox->yMax.p.y());
+		if(data.bbox->yMax.p.y() < Pa.y()) {
+			Pb = Pa;
+		} else {
+			NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMax.p.y());
+			Pb = Point(Pb_x,data.bbox->yMax.p.y());
+		}
 	}
 
 	return Segment(ray.source(),Pb);

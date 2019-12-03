@@ -127,7 +127,7 @@ in_needs_dropping(const Event * t) const {
 bool
 EventQueue::
 is_valid_heap() const {
-#ifndef NT_USE_DOUBLE
+#ifndef WITH_FP
 	for (int i=size()-1; i>0; --i) {
 		int parent = parent_idx(i);
 		// (v1-v2).Rep()->getExactSign()

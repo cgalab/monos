@@ -13,7 +13,11 @@ BasicInput::add_graph(const BGLGraph& graph) {
 
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		const VertexType v = *vp.first;
+#ifdef WITH_FP
+		Point p(std::stod(graph[v].x), std::stod(graph[v].y));
+#else
 		Point p(graph[v].x, graph[v].y);
+#endif
 		unsigned degree = boost::degree(v, graph);
 		add_vertex(Vertex(p, vertices_.size()));
 		assert(index_map[v] == vertices_.size()-1);
