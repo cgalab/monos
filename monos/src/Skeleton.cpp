@@ -41,7 +41,6 @@ bool Skeleton::SingleMergeStep() {
 	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
 
 	/* correct direction if necessary */
-//	const auto& Pa = bisLine.point(0);	const auto Pb = Pa + bisLine.to_vector();
 	if(ORIGIN > ORIGIN + bisLine.to_vector()) {bisLine = bisLine.opposite();}
 
 	LOG(INFO) << "Bisector-dir: " << bisLine.direction();
@@ -116,7 +115,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 					if(!upperBothDir) {
 						iterateForwardU = !iterateForwardU;
 						upperBothDir = true;
-//						initPathForEdge(ChainType::UPPER);
 					} else {
 						doneU = true;
 					}
@@ -139,7 +137,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 					if(!lowerBothDir) {
 						iterateForwardL = !iterateForwardL;
 						lowerBothDir = true;
-//						initPathForEdge(ChainType::LOWER);
 					} else {
 						doneL = true;
 					}

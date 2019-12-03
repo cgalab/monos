@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "BasicInput.h"
 
 #include "Data.h"
 #include "tools.h"
@@ -25,16 +26,6 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 	os << mv.vector << " id(" << mv.id << ")";
 	return os;
 }
-
-//bool Data::monotoneSmaller(const Line& line, const Point& a, const Point& b) const {
-//	assert(a != b);
-//	return line.perpendicular(b).has_on_positive_side(a);
-//}
-
-//bool Data::monotoneSmaller(const Point& a, const Point& b) const {
-//	assert(a != b);
-//	return Line(b,perpMonotonDir).has_on_positive_side(a);
-//}
 
 
 bool Data::ensureMonotonicity() {
@@ -182,7 +173,6 @@ bool Data::testMonotonicityLineOnPolygon(const Line line) const {
 	Point pStart  = eA(startIdx);
 	for(ul i = startIdx+1; i < input.edges().size(); ++i) {
 		auto p = eA(i);
-//		if(monotoneSmaller(line,p,pStart)) {
 		if(p < pStart) {
 			startIdx = i; pStart = p;
 		}
@@ -229,7 +219,6 @@ void Data::assignBoundingBox() {
 	auto *monMax = &getVertices()[0];
 
 	for(auto e = getPolygon().begin(); e != getPolygon().end(); ++e ) {
-//	for(auto v = getVertices().begin(); v != getVertices().end(); ++v ) {
 		if(e->u != xMin->id && v(e->u).p.x() < xMin->p.x()) {xMin = &v(e->u);}
 		if(e->u != xMax->id && v(e->u).p.x() > xMax->p.x()) {xMax = &v(e->u);}
 		if(e->u != yMin->id && v(e->u).p.y() < yMin->p.y()) {yMin = &v(e->u);}
