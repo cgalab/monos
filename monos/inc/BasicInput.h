@@ -5,8 +5,6 @@
 #include "BGLGraph.h"
 #include "tools.h"
 
-#include <map>
-#include <set>
 #include <utility>
 
 
