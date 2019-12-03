@@ -130,7 +130,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 
 			if(isIntersecting(bis,*lowerArc)) {
 				Pl = intersectElements(bis,lowerArc->supporting_line());
-				LOG(INFO) << "lower intersection found  " << Pl;
 				doneL = true;
 			} else {
 				lowerPath = wf.getNextArcIdx(lowerPath,iterateForwardL,lowerChainIndex);
@@ -140,7 +139,6 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 						lowerBothDir = true;
 					} else {
 						doneL = true;
-						LOG(INFO) << "lower done " << lowerPath;
 					}
 					lowerPath = lowerArc->id;
 				} else {

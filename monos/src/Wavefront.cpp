@@ -511,7 +511,6 @@ Segment Wavefront::restrictRay(const Ray& ray) {
 		} else {
 			NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMin.p.y());
 			Pb = Point(Pb_x,data.bbox->yMin.p.y());
-			LOG(INFO) << "state: upper! " << Pa << " --- " << Pb;
 		}
 	} else {
 		if(data.bbox->yMax.p.y() < Pa.y()) {
@@ -519,7 +518,6 @@ Segment Wavefront::restrictRay(const Ray& ray) {
 		} else {
 			NT Pb_x = ray.supporting_line().x_at_y(data.bbox->yMax.p.y());
 			Pb = Point(Pb_x,data.bbox->yMax.p.y());
-			LOG(INFO) << "state: lower! " << Pa << " --- " << Pb;
 		}
 	}
 
