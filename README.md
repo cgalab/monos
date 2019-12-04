@@ -41,17 +41,17 @@ that can be changed in order to remove the GUI (and QT requirements) or link aga
 the `CGAL::Cartesian` kernel (faster but inexact). As stated default setting with GUI
 and with exact arithmitic.  
 
-`OPTION(WITH_GUI "Enable GUI (requires QT)" 					ON)  # Enabled  by default`
-
-`OPTION(WITH_FP  "Disable exact kernel but use rational kernel" OFF) # Disabled by default`
+  OPTION(WITH_GUI "Enable GUI (requires QT)" 					ON)  # Enabled  by default
+  OPTION(WITH_FP  "Disable exact kernel but use rational kernel" OFF) # Disabled by default
 
 # Compiling
 
-- `git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos.git`
-- `mkdir -p monos/build && cd monos/build`
-- `cmake ..` OR for the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
-- `make -j 6`
+  git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos.git
+  mkdir -p monos/build && cd monos/build
+  cmake .. 
+  make -j 6
 
+Or for the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
 
 # Usage
 
