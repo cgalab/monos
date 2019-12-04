@@ -71,6 +71,17 @@ Note, the `--verbose` option is only available in the `DEBUG` version.
 
 - easyloggingpp -- https://github.com/weaselp/easyloggingpp
 
+# Code Structure
+
+Directories `cc` and `gui` produces the binaraies for the CLI and the GUI version.
+Tha main algorithm and library is in `monos` sparated in `src` and `inc` directory.
+
+|     File    | Discription   |
+| -----------:|:------------- |
+|  Wavefron   | Compute the Straight Skeleton of the two monotone chains. Holds the Nodes and Arcs that store the straight skeleton |
+|  Skeleton   | Construct the Merge |
+| BasicInput, BGLGraph|  Read the .graphml input file |
+
 
 # License
 monos is written in C++ and uses CGAL.  It computes the weighted straight
