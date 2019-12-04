@@ -55,7 +55,7 @@ For the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
 
 # Usage
 
-`monos [--verbose][--timings][--normalize] --out &lt;filename&gt; &lt;filename&gt;`
+	monos [--verbose][--timings][--normalize] --out &lt;filename&gt; &lt;filename&gt;
 
 | options       | shortform | description   |
 | -------------:|----------:|:------------- |
@@ -67,6 +67,9 @@ For the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
 | &lt;filename&gt; | | input type is either wavefront obj or GML format   |
 
 Note, the `--verbose` option is only available in the `DEBUG` version.
+
+Monos reads GraphML format. Using [format-converter](https://github.com/cgalab/format-converter) may common
+formats can be converted into GraphML.
 
 # Submodules
 
