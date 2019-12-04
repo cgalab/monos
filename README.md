@@ -41,7 +41,7 @@ that can be changed in order to remove the GUI (and QT requirements) or link aga
 the `CGAL::Cartesian` kernel (faster but inexact). As stated default setting with GUI
 and with exact arithmitic.  
 
-	OPTION(WITH_GUI "Enable GUI (requires QT)" 					ON)  # Enabled  by default
+	OPTION(WITH_GUI "Enable GUI (requires QT)" ON) # Enabled  by default
 	OPTION(WITH_FP  "Disable exact kernel but use rational kernel" OFF) # Disabled by default
 
 # Compiling
