@@ -47,10 +47,11 @@ and with exact arithmitic.
 
 # Compiling
 
-- git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos.git
-- mkdir -p monos/build && cd monos/build
-- cmake ..
-- make -j 6
+- `git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos.git`
+- `mkdir -p monos/build && cd monos/build`
+- `cmake ..` OR for the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
+- `make -j 6`
+
 
 # Usage
 
