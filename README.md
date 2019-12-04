@@ -42,6 +42,7 @@ the `CGAL::Cartesian` kernel (faster but inexact). As stated default setting wit
 and with exact arithmitic.  
 
 `OPTION(WITH_GUI "Enable GUI (requires QT)" 					ON)  # Enabled  by default`
+
 `OPTION(WITH_FP  "Disable exact kernel but use rational kernel" OFF) # Disabled by default`
 
 # Compiling
