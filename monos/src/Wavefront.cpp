@@ -1,3 +1,5 @@
+
+#include "cgTypes.h"
 #include "Wavefront.h"
 
 void Wavefront::InitializeEventsAndPathsPerEdge() {

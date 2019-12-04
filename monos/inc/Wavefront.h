@@ -88,7 +88,7 @@ public:
 	 */
 	Events 			events;
 	EventQueue 		*eventTimes = nullptr;
-	NT				currentTime;
+	NT				currentTime = 0;
 
 	/* MISC */
 	void printChain(const Chain& chain) const;
