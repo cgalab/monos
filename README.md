@@ -69,7 +69,7 @@ Note, the `--verbose` option is only available in the `DEBUG` version.
 
 # Submodules
 
-- easyloggingpp -- https://github.com/weaselp/easyloggingpp
+- easyloggingpp -- https://github.com/cgalab/easyloggingpp
 
 # Code Structure
 
