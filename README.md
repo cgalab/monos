@@ -53,15 +53,15 @@ and with exact arithmitic.
 
 # Usage
 
-<code>monos [--verbose][--timings][--normalize] [--out &lt;filename&gt;] &lt;filename&gt;</code>
+`monos [--verbose][--timings][--normalize] --out &lt;filename&gt; &lt;filename&gt;`
 
 | options       | shortform | description   |
-| -------------:|:---------:|:------------- |
+| -------------:|----------:|:------------- |
 |  --help       | --h       | print help    |
 |  --verbose    | --v       | verbose mode, shows information about the computation |
 |  --normalize  | --n       | write output normalized to the origin                 |
 |  --out        | --o       | write output in wavefront obj format (3D coordinates) |
-|  --timings    | --t       | print &lt;vertex count&gt;,&lt;time spent in computation&gt;,&lt;filename&gt;   |
+|  --timings    | --t       | print &lt;vertex count&gt;,&lt;time spent in computation&gt;,&lt;memuse&gt;,&lt;filename&gt;   |
 | &lt;filename&gt; | input type is either wavefront obj or GML format   |
 
 Note, the `--verbose` option is only available in the `DEBUG` version.
