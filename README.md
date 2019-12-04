@@ -78,9 +78,9 @@ Tha main algorithm and library is in `monos` sparated in `src` and `inc` directo
 
 |     File    | Discription   |
 | -----------:|:------------- |
-|  Wavefron   | Compute the Straight Skeleton of the two monotone chains. Holds the Nodes and Arcs that store the straight skeleton |
-|  Skeleton   | Construct the Merge |
-| BasicInput, BGLGraph|  Read the .graphml input file |
+|  Wavefron   | Compute the Straight Skeleton of the two monotone chains. Holds the Nodes and Arcs that store the straight skeleton. |
+|  Skeleton   | Construct the Merge and join the two skeletons. |
+| BasicInput, BGLGraph|  Read the .graphml input file. |
 
 
 # License
