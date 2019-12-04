@@ -89,6 +89,6 @@ Tha main algorithm and library is in `monos` sparated in `src` and `inc` directo
 
 # License
 
-Monos is licences under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
+Monos is licenced under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
 
 
