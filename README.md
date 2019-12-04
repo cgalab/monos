@@ -63,7 +63,7 @@ and with exact arithmitic.
 |  --normalize  | --n       | write output normalized to the origin                 |
 |  --out        | --o       | write output in wavefront obj format (3D coordinates) |
 |  --timings    | --t       | print &lt;vertex count&gt;,&lt;time spent in computation&gt;,&lt;memuse&gt;,&lt;filename&gt;   |
-| &lt;filename&gt; | input type is either wavefront obj or GML format   |
+| &lt;filename&gt; | | input type is either wavefront obj or GML format   |
 
 Note, the `--verbose` option is only available in the `DEBUG` version.
 
