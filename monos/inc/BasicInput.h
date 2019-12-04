@@ -1,6 +1,7 @@
-/*
- * Read Graphml Format
- * Copyright (C) 2018 - Peter Palfrader - palfrader@cs.sbg.ac.at
+/* Read Graphml Format
+ *
+ * Copyright 2018, 2019 Peter Palfrader
+ *				   2019 Günther Eder - geder@cs.sbg.ac.at
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

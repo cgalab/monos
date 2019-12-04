@@ -1,7 +1,7 @@
-/*
- * monos is written in C++.  It computes the weighted straight skeleton
+/* monos is written in C++.  It computes the weighted straight skeleton
  * of a monotone polygon in asymptotic n log n time and linear space.
- * Copyright (C) 2018 - Günther Eder - geder@cs.sbg.ac.at
+ *
+ * Copyright 2018, 2019 Günther Eder - geder@cs.sbg.ac.at
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
