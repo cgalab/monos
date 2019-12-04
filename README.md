@@ -18,7 +18,33 @@ Blender.
 - CGAL (tested with version 5.0 -- https://doc.cgal.org/5.0/Manual/packages.html) 
 - Linux or Mac OS (for Mac OS use -DWITH_GUI=off) 
 
-# Installation
+## Libraries
+
+- MPFR (6, https://www.mpfr.org)
+- GMP (10, https://www.mpfr.org)
+- BOOST (>= 1.67, with libboost_graph, libboost_regex, https://www.boost.org)
+
+## GUI Libraries
+
+- libQT5Core
+- libQT5Xml
+- libQT5Gui
+- libQT5Widgets
+- libQT5Svg
+- libQT5=openGL
+- libGLX
+
+# CMake Options
+
+In the `CMakeLists.txt` in the main directory contains the following two options 
+that can be changed in order to remove the GUI (and QT requirements) or link against
+the `CGAL::Cartesian` kernel (faster but inexact). As stated default setting with GUI
+and with exact arithmitic.  
+
+`OPTION(WITH_GUI "Enable GUI (requires QT)" 					ON)  # Enabled  by default`
+`OPTION(WITH_FP  "Disable exact kernel but use rational kernel" OFF) # Disabled by default`
+
+# Compiling
 
 - git clone --recurse-submodules https://gitlab.cosy.sbg.ac.at/cg/ord/monos.git
 - mkdir -p monos/build && cd monos/build
@@ -29,18 +55,20 @@ Blender.
 
 <code>monos [--verbose][--timings][--normalize] [--out &lt;filename&gt;] &lt;filename&gt;</code>
 
-| options       | description   |
-| -------------:|:------------- |
-|  --help       | print help    |
-|  --verbose    | verbose mode, shows information about the computation |
-|  --normalize  | write output normalized to the origin                 |
-|  --out        | write output in wavefront obj format (3D coordinates) |
-|  --timings    | print &lt;vertex count&gt;,&lt;time spent in computation&gt;,&lt;filename&gt;   |
+| options       | shortform | description   |
+| -------------:|:---------:|:------------- |
+|  --help       | --h       | print help    |
+|  --verbose    | --v       | verbose mode, shows information about the computation |
+|  --normalize  | --n       | write output normalized to the origin                 |
+|  --out        | --o       | write output in wavefront obj format (3D coordinates) |
+|  --timings    | --t       | print &lt;vertex count&gt;,&lt;time spent in computation&gt;,&lt;filename&gt;   |
 | &lt;filename&gt; | input type is either wavefront obj or GML format   |
+
+Note, the `--verbose` option is only available in the `DEBUG` version.
 
 # Submodules
 
-- easyloggingpp -- https://github.com/muflihun/easyloggingpp
+- easyloggingpp -- https://github.com/weaselp/easyloggingpp
 
 
 # License
