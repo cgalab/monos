@@ -29,8 +29,6 @@
 #include <set>
 #include <cmath>
 
-#include <boost/pool/pool_alloc.hpp>
-
 #include "Definitions.h"
 #include "tools.h"
 
@@ -101,6 +99,7 @@ class BBox {
 public:
 	Vertex xMin, xMax, yMin, yMax;
 	Vertex monMin, monMax;
+	friend std::ostream& operator<< (std::ostream& os, const BBox& box);
 };
 
 struct MonotoneVector {
@@ -289,6 +288,9 @@ Point intersectElements(const T& a, const U& b) {
 	}
 	return INFPOINT;
 }
+
+
+
 
 ul getArcsCommonNodeIdx(const Arc& arcA, const Arc& arcB);
 

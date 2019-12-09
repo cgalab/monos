@@ -71,7 +71,10 @@ public:
 		return CGAL::squared_distance(get_line(edgeIdx),p);
 	}
 
-	inline Line simpleBisector(const ul& a, const ul& b) {
+	inline Line simpleBisector(const Line& a, const Line& b) const {
+		return CGAL::bisector(a,b.opposite());
+	}
+	inline Line simpleBisector(const ul& a, const ul& b) const {
 		return CGAL::bisector(get_line(a),get_line(b).opposite());
 	}
 

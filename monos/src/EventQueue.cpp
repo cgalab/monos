@@ -25,7 +25,7 @@ HeapEvent(const Event *  p_t)
 }
 
 EventQueue::
-EventQueue(const Events& events, const Chain& chain) {
+EventQueue(const Events& setEvents, const Chain& chain):events(setEvents) {
 	ArrayType a;
 	tidx_to_qitem_map.resize(events.size(), NULL);
 	tidx_in_need_dropping.resize(events.size(), false);
@@ -51,6 +51,7 @@ tidx_to_qitem_map_add(const Event * t, ElementType qi) {
 void
 EventQueue::
 drop_by_tidx(unsigned tidx) {
+	LOG(INFO) << "___ dropping idx: " << tidx;
 	auto qi = tidx_to_qitem_map.at(tidx);
 	assert(NULL != qi);
 	drop_element(qi);
@@ -62,11 +63,27 @@ void
 EventQueue::
 update_by_tidx(unsigned tidx) {
 	auto qi = tidx_to_qitem_map.at(tidx);
-	assert(NULL != qi);
-	fix_idx(qi);
-	tidx_in_need_update[tidx] = false;
+	/* we have to remove multiple elements in case of a multi-edge event
+	 * however, we might want to update events that already where removed,
+	 * so no assertion needed here, instead we 're'-insert such an event
+	 * as this should not occur to often hopefully performance does not drop */
+	if(qi == NULL) {
+		LOG(INFO) << "|||| re-insert idx: " << tidx;
+		insert(tidx);
+	} else {
+		assert(NULL != qi);
+		fix_idx(qi);
+		tidx_in_need_update[tidx] = false;
+	}
 }
 
+void
+EventQueue::
+insert(unsigned tidx) {
+	auto qi = std::make_shared<EventQueueItem>(&events[tidx]);
+	tidx_to_qitem_map_add(&events[tidx], qi);
+	add_element(qi);
+}
 
 void
 EventQueue::

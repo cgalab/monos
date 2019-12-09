@@ -49,8 +49,8 @@ public:
 	bool FinishSkeleton(Chain& chain);
 
 	void HandleSingleEdgeEvent(Chain& chain, const Event* event);
-//	void HandleMultiEdgeEvent(Chain& chain, std::vector<Event*> eventList);
-//	void HandleMultiEvent(Chain& chain, std::vector<Event*> eventList);
+	void HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eventList);
+	void HandleMultiEvent(Chain& chain, std::vector<const Event*> eventList);
 
 	void InitializeEventsAndPathsPerEdge();
 	void InitializeNodes();
@@ -60,9 +60,13 @@ public:
 
 	Chain& getChain(ChainType type) {return (type == ChainType::UPPER) ? upperChain : lowerChain;}
 
+	inline Line getNormalBisector(const ul& aIdx, const ul& bIdx, const Line& l) const {
+		return l.perpendicular(nodes[pathFinder[aIdx].b].point);
+	}
+
 	Event getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const;
 	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
-	void updateInsertEvent(Event& event);
+	void updateInsertEvent(Event& neighbourEvent);
 
 	inline void disableEdge(ul edgeIdx) {
 		events[edgeIdx].eventPoint = INFPOINT;
@@ -108,6 +112,11 @@ public:
 	Events 			events;
 	EventQueue 		*eventTimes = nullptr;
 	NT				currentTime = 0;
+
+	template<class T, class U>
+	inline bool isCollinear(const T& a, const U& b) const {
+		return CGAL::collinear(a.point(0),a.point(1),b.point(0)+b.to_vector());
+	}
 
 	/* MISC */
 	void printChain(const Chain& chain) const;
