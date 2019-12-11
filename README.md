@@ -46,7 +46,7 @@ and with exact arithmitic.
 
 # Compiling
 
-	git clone --recurse-submodules git@github.com:cgalab/monos.git
+	git clone --recurse-submodules https://github.com/cgalab/monos
 	mkdir -p monos/build && cd monos/build
 	cmake .. 
 	make -j 6
