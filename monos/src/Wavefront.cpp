@@ -448,8 +448,8 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 		 **/
 		LOG(INFO) << "YES ofr " << aIdx << "," << bIdx << "," << cIdx << " at " << intersectionSimple << " with dist: " << distance;
 		return Event(distance,intersectionSimple,aIdx,bIdx,cIdx,it);
-	} else if( intersectionSimple != INFPOINT) {
-		LOG(INFO) << "/// some special case! " << aIdx << ", " << bIdx << ", " << cIdx;
+//	} else if( intersectionSimple != INFPOINT) {
+//		LOG(INFO) << "/// some special case! " << aIdx << ", " << bIdx << ", " << cIdx;
 	}
 
 	return Event(MAX,INFPOINT,aIdx,bIdx,cIdx,it);
