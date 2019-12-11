@@ -125,22 +125,26 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 	if(!eventTimes->empty()) {
 
 		const Event* e = eventTimes->peak()->priority.e;
-		std::vector<const Event*> eventList = {e};
 		ul edgeIdx = e->mainEdge;
 		eventTimes->drop_by_tidx(edgeIdx);
 
 		if(currentTime <= e->eventTime && e->isEvent()) {
 			currentTime = e->eventTime;
 
-			while(!eventTimes->empty() && eventTimes->peak()->priority.e->eventTime == currentTime) {
-				e = eventTimes->peak()->priority.e;
-				if(e->isEvent()) {
-					eventList.emplace_back(e);
-				}
-				eventTimes->drop_by_tidx(e->mainEdge);
-			}
+			if(eventTimes->empty() || eventTimes->peak()->priority.e->eventTime != currentTime) {
+				HandleSingleEdgeEvent(chain,e);
+			} else {
+				std::vector<const Event*> eventList = {e};
 
-			HandleMultiEvent(chain,eventList);
+				while(!eventTimes->empty() && eventTimes->peak()->priority.e->eventTime == currentTime) {
+					e = eventTimes->peak()->priority.e;
+					if(e->isEvent()) {
+						eventList.emplace_back(e);
+					}
+					eventTimes->drop_by_tidx(e->mainEdge);
+				}
+				HandleMultiEvent(chain,eventList);
+			}
 
 		} else if(e->eventTime == MAX) {
 			/* the remaining events in the queue have MAX time, thus, we are done! */
