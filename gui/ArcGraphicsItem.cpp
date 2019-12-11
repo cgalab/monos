@@ -109,7 +109,13 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 		painter->setFont(font);
 		for (auto v = nodes->begin(); v != nodes->end(); ++v) {
 			if(drawNode(*v)) {
-				const QPointF p(transform.map(convert(v->point)));
+				QPointF p(transform.map(convert(v->point)));
+
+				/* to avoid multiple overlaying labels */
+				std::srand(v->id);
+				QPointF randVect(std::rand()%20, std::rand()%20);
+				p += randVect;
+
 				std::string t = "n#"+std::to_string(v - nodes->begin());
 				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
 			}

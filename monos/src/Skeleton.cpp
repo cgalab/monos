@@ -56,8 +56,12 @@ void Skeleton::MergeUpperLowerSkeleton() {
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
 
-	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
+	//	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
 
+	Line lu = data.get_line(upperChainIndex);
+	Line ll = data.get_line(lowerChainIndex);
+
+	auto bisLine = (!wf.isCollinear(lu,ll)) ? data.simpleBisector(lu,ll) : wf.getNormalBisector(upperChainIndex,lowerChainIndex,lu);
 	/* correct direction if necessary */
 	if(ORIGIN > ORIGIN + bisLine.to_vector()) {bisLine = bisLine.opposite();}
 
@@ -188,17 +192,7 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 	ul path     = upperPath;
 	Point P     = Pu;
 
-	ChainType winner;
-
-	if(Pu != INFPOINT && Pl != INFPOINT) {
-		winner = (Pu < Pl) ? ChainType::UPPER : ChainType::LOWER;
-		winner = (winner == ChainType::LOWER && Pu == Pl) ? ChainType::BOTH : winner;
-	} else if(Pu != INFPOINT) {
-		winner = ChainType::UPPER;
-	} else {
-		assert(Pl != INFPOINT);
-		winner = ChainType::LOWER;
-	}
+	ChainType winner = chooseWinnerUpperLower(Pu,Pl);
 
 	if(winner == ChainType::LOWER) {
 		path    = lowerPath;
@@ -208,43 +202,59 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 
 	assert(P != INFPOINT);
 
-	ul newNodeIdx = MAX;
-
-	NT dist = data.normalDistance(edgeIdx,P);
+	NT dist 		= data.normalDistance(edgeIdx,P);
 	auto* intersArc = wf.getArc(path);
+	ul newNodeIdx 	= MAX;
 
 	/* check if we have intersected an existing node of a chain-skeleton */
 	auto endNode = wf.getNode(intersArc->firstNodeIdx);
 	if(dist == endNode->time
 	   && P == endNode->point
 	) {
+		LOG(INFO) << "-- we have an outgoing arc " << path;
 		newNodeIdx = endNode->id;
+		removePath(intersArc->id,edgeIdx);
+		intersArc->disable();
+		intersArc = wf.getRightmostArcEndingAtNode(*endNode,intersArc);
+		endNode->removeArc(path);
 	} else if(!intersArc->isRay()
 			&& dist == wf.getNode(intersArc->secondNodeIdx)->time
 			&& P == wf.getNode(intersArc->secondNodeIdx)->point
 	) {
-		newNodeIdx = wf.getNode(intersArc->secondNodeIdx)->id;
+		LOG(INFO) << "-- we have an incoming arc " << path;
+		endNode = wf.getNode(intersArc->secondNodeIdx);
+		newNodeIdx = endNode->id;
+		intersArc = wf.getRightmostArcEndingAtNode(*endNode,intersArc);
+		ul outArcIdx = wf.getOutgoingArc(*endNode);
+		LOG(INFO) << "--- identified outgoing arc " << outArcIdx;
+		removePath(outArcIdx,edgeIdx);
+		wf.getArc(outArcIdx)->disable();
+		endNode->removeArc(outArcIdx);
 	} else {
 		/* if not we add a new node (this path mostly) */
 		newNodeIdx = wf.addNode(P,dist);
+		/* update the targets of the relevant arcs */
+		LOG(INFO) << "before update of " << path;
+		updateArcTarget(path,edgeIdx,newNodeIdx,P);
 	}
 
 	const ul newArcIdx 	= wf.addArc(sourceNodeIdx,newNodeIdx,upperChainIndex,lowerChainIndex);
 
-	/* update the targets of the relevant arcs */
-	LOG(INFO) << "before update of " << path;
-	updateArcTarget(path,edgeIdx,newNodeIdx,P);
-
 	if(edgeIdx == upperChainIndex) {
+		wf.pathFinder[upperChainIndex].a = newNodeIdx;
 		upperChainIndex = intersArc->leftEdgeIdx;
+		wf.pathFinder[upperChainIndex].b = newNodeIdx;
 		LOG(INFO) << "handleMerge: set upper chain to " << upperChainIndex << " arc: " << upperPath;
 	} else {
+		wf.pathFinder[lowerChainIndex].b = newNodeIdx;
 		lowerChainIndex = intersArc->rightEdgeIdx;
+		wf.pathFinder[lowerChainIndex].a = newNodeIdx;
 		LOG(INFO) << "handleMerge: set lower chain to " << lowerChainIndex << " arc: " << lowerPath;
 	}
 
 	if(winner == ChainType::BOTH) {
 		LOG(INFO) << "#### both chains hit at same point!";
+		/* default in the BOTH case is the upper chain, so we have to handle the lower chain now */
 		path      = lowerPath;
 		edgeIdx   = lowerChainIndex;
 		intersArc = wf.getArc(path);
@@ -258,12 +268,14 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 		) {
 			checkArcs = &wf.getNode(intersArc->firstNodeIdx)->arcs;
 			checkIdx = intersArc->firstNodeIdx;
+			intersArc = wf.getRightmostArcEndingAtNode(*wf.getNode(intersArc->firstNodeIdx),intersArc);
 		} else if(!intersArc->isRay()
 				&& dist == wf.getNode(intersArc->secondNodeIdx)->time
 				&& P == wf.getNode(intersArc->secondNodeIdx)->point
 		) {
 			checkArcs = &wf.getNode(intersArc->secondNodeIdx)->arcs;
 			checkIdx = intersArc->secondNodeIdx;
+			intersArc = wf.getRightmostArcEndingAtNode(*wf.getNode(intersArc->secondNodeIdx),intersArc);
 		} else {
 			updateArcTarget(path,edgeIdx,newNodeIdx,P);
 		}
@@ -274,11 +286,16 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 				if(arcCheck->secondNodeIdx == checkIdx) {
 					arcCheck->secondNodeIdx = newNodeIdx;
 					newNode->arcs.push_back(arcIdx);
+				} else {
+					arcCheck->disable();
 				}
 			}
-			removePath(path,edgeIdx);
 		}
 
+		/* if winner is BOTH we already run through setting upperChainIndex, as this is the 'default' */
+		wf.pathFinder[lowerChainIndex].b = newNodeIdx;
+		lowerChainIndex = intersArc->rightEdgeIdx;
+		wf.pathFinder[lowerChainIndex].a = newNodeIdx;
 		initPathForEdge(ChainType::LOWER);
 		initPathForEdge(ChainType::UPPER);
 	} else {

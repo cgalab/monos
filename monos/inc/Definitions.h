@@ -39,7 +39,7 @@
 /*
  * OBJ files index starting at one, we read the input
  * and store the vertices starting at 0, thus we change
- * the reference from faces ot vertex by this offset
+ * the reference from faces at vertex by this offset
  **/
 #define OBJOFFSET -1
 

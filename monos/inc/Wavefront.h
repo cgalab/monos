@@ -96,6 +96,10 @@ public:
 
 	ul getNextArcIdx(const ul& path, bool forward, ul edgeIdx);
 
+	Arc* getRightmostArcEndingAtNode(const Node& node, Arc *currentArc);
+	ul getOutgoingArc(const Node& node);
+//	void removeOutgointArcsOnNode(Node& node);
+
 	inline bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 
 	/* the chain skeleton and the final skeleton is stored in nodes and arcList */

@@ -371,8 +371,6 @@ bool Wavefront::FinishSkeleton(Chain& chain) {
 			const Line& la = data.get_line(aEdgeIdx);
 			const Line& lb = data.get_line(bEdgeIdx);
 
-//			auto bisSimple = data.simpleBisector(aEdgeIdx,bEdgeIdx);
-
 			auto bisSimple = (!isCollinear(la,lb)) ? data.simpleBisector(la,lb) : getNormalBisector(aEdgeIdx,bEdgeIdx,la);
 
 			pCheck = la.point(0) + bisSimple.to_vector();
@@ -514,6 +512,46 @@ ul Wavefront::addArc(const ul& nodeAIdx, const ul& nodeBIdx, const ul& edgeLeft,
 	LOG(INFO) << "++ adding arc: " << arcIdx;
 	return arcIdx;
 }
+
+Arc* Wavefront::getRightmostArcEndingAtNode(const Node& node, Arc *currentArc) {
+	Arc *ret = currentArc;
+	NT x = currentArc->point(0).x();
+	for(auto arcIdx : node.arcs) {
+		if(arcIdx == currentArc->id) {continue;}
+		Arc* arc = getArc(arcIdx);
+		if(arc->secondNodeIdx == node.id) {
+			if(x < arc->point(0).x()) {
+				x = arc->point(0).x();
+				ret = arc;
+			}
+		}
+	}
+	return ret;
+}
+
+ul Wavefront::getOutgoingArc(const Node& node) {
+	for(ul arcIdx : node.arcs) {
+		Arc* arc = getArc(arcIdx);
+		if(arc->firstNodeIdx == node.id) {
+			return arcIdx;
+		}
+	}
+	return MAX;
+}
+
+//void Wavefront::removeOutgointArcsOnNode(Node& node) {
+//	std::vector<ul> toremove;
+//	for(auto arcIdx : node.arcs) {
+//		Arc& arc = arcList[arcIdx];
+//		if(arc.firstNodeIdx == node.id) {
+//			arc.disable();
+//			toremove.push_back(arcIdx);
+//		}
+//	}
+//	for(auto idx : toremove) {
+//		node.removeArc(idx);
+//	}
+//}
 
 Segment Wavefront::restrictRay(const Ray& ray) {
 	Point Pa = ray.source();

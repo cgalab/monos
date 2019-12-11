@@ -78,6 +78,40 @@ private:
 	bool EndOfLowerChain() const {return lowerChainIndex == lowerChain.back(); }
 	bool EndOfChain(ChainType t) { return (t == ChainType::UPPER) ? EndOfUpperChain() : EndOfLowerChain();}
 
+	inline ChainType chooseWinnerUpperLower(const Point& Pu, const Point& Pl) const {
+		ChainType winner;
+		if(Pu != INFPOINT && Pl != INFPOINT) {
+			if(Pu.x() != Pl.x()) {
+				winner = (Pu < Pl) ? ChainType::UPPER : ChainType::LOWER;
+			} else if (Pu != Pl) {
+				winner = (CGAL::squared_distance(sourceNode->point,Pu) < CGAL::squared_distance(sourceNode->point,Pl)) ? ChainType::UPPER : ChainType::LOWER;
+			} else {
+				winner = ChainType::BOTH;
+			}
+		} else if(Pu != INFPOINT) {
+			winner = ChainType::UPPER;
+		} else {
+			assert(Pl != INFPOINT);
+			winner = ChainType::LOWER;
+		}
+		return winner;
+	}
+
+//	inline ul intersectArcEndNodeOrNewNode(const Arc& arc, NT dist, const Point& P) {
+//		auto& endNode = *wf.getNode(arc.firstNodeIdx);
+//		if(dist == endNode.time
+//	   	   && P == endNode.point
+//		) {
+//			return endNode.id;
+//		} else if(!arc.isRay()
+//				&& dist == wf.getNode(arc.secondNodeIdx)->time
+//				&& P == wf.getNode(arc.secondNodeIdx)->point
+//		) {
+//			return wf.getNode(arc.secondNodeIdx)->id;
+//		}
+//		return wf.addNode(P,dist);
+//	}
+
 	void initPathForEdge(ChainType type);
 
 	inline bool isIntersecting(const Line& l, const Arc& arc) {
