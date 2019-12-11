@@ -25,17 +25,17 @@ HeapEvent(const Event *  p_t)
 }
 
 EventQueue::
-EventQueue(const Events& setEvents, const Chain& chain):events(setEvents) {
+EventQueue(const Events* setEvents, const Chain& chain):events(setEvents) {
 	ArrayType a;
-	tidx_to_qitem_map.resize(events.size(), NULL);
-	tidx_in_need_dropping.resize(events.size(), false);
-	tidx_in_need_update.resize(events.size(), false);
+	tidx_to_qitem_map.resize(events->size(), NULL);
+	tidx_in_need_dropping.resize(events->size(), false);
+	tidx_in_need_update.resize(events->size(), false);
 
 	/* we skip the first and last edge of each chain */
 	for (auto t = std::next(chain.begin()); t != std::prev(chain.end()); ++t) {
-		auto qi = std::make_shared<EventQueueItem>(&events[*t]);
+		auto qi = std::make_shared<EventQueueItem>(&(*events)[*t]);
 		a.emplace_back(qi);
-		tidx_to_qitem_map_add(&events[*t], qi);
+		tidx_to_qitem_map_add(&(*events)[*t], qi);
 	}
 	setArray(a);
 }
@@ -72,6 +72,7 @@ update_by_tidx(unsigned tidx) {
 		insert(tidx);
 	} else {
 		assert(NULL != qi);
+		LOG(INFO) << "update time of " << tidx;
 		fix_idx(qi);
 		tidx_in_need_update[tidx] = false;
 	}
@@ -80,8 +81,8 @@ update_by_tidx(unsigned tidx) {
 void
 EventQueue::
 insert(unsigned tidx) {
-	auto qi = std::make_shared<EventQueueItem>(&events[tidx]);
-	tidx_to_qitem_map_add(&events[tidx], qi);
+	auto qi = std::make_shared<EventQueueItem>(&(*events)[tidx]);
+	tidx_to_qitem_map_add(&(*events)[tidx], qi);
 	add_element(qi);
 }
 

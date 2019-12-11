@@ -112,7 +112,7 @@ bool Wavefront::InitSkeletonQueue(Chain& chain) {
 	} while(chainIterator != chain.end());
 
 	LOG(INFO) << "number of events " << events.size();
-	eventTimes = new EventQueue(events, chain);
+	eventTimes = new EventQueue(&events, chain);
 
 	currentTime = 0;
 
@@ -127,10 +127,10 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 		const Event* e = eventTimes->peak()->priority.e;
 		std::vector<const Event*> eventList = {e};
 		ul edgeIdx = e->mainEdge;
+		eventTimes->drop_by_tidx(edgeIdx);
 
 		if(currentTime <= e->eventTime && e->isEvent()) {
 			currentTime = e->eventTime;
-			eventTimes->drop_by_tidx(edgeIdx);
 
 			while(!eventTimes->empty() && eventTimes->peak()->priority.e->eventTime == currentTime) {
 				e = eventTimes->peak()->priority.e;
@@ -411,20 +411,17 @@ void Wavefront::updateNeighborEdgeEvents(const Event& event, const Chain& chain)
 	}
 }
 
-void Wavefront::updateInsertEvent(Event& neighbourEvent) {
+void Wavefront::updateInsertEvent(Event& event) {
 	/* check if edge has already an event in the queue */
-	auto* currentEvent =  &events[neighbourEvent.mainEdge];
 
-	if(neighbourEvent.eventTime < currentTime) {
-		neighbourEvent.eventTime = MAX;
-		neighbourEvent.eventPoint = INFPOINT;
-		LOG(INFO) << "we set " << neighbourEvent.mainEdge << " to MAX!";
+	if(event.eventTime < currentTime) {
+		event.eventTime = MAX;
+		event.eventPoint = INFPOINT;
+		LOG(INFO) << "!! we set " << event.mainEdge << " to MAX!";
 	}
 
-	*currentEvent = neighbourEvent;
-	if(neighbourEvent.isEvent()) {
-		eventTimes->update_by_tidx(neighbourEvent.mainEdge);
-	}
+	events[event.mainEdge] = event;
+	eventTimes->update_by_tidx(event.mainEdge);
 }
 
 Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const {
@@ -436,12 +433,10 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 
 	/* compute bisector from edges */
 	/* lets first test if this is too expexive */
-	LOG(INFO) << "\\\\\\\\\\\\ testing more expensive bisector construction for edge events!";
 	auto abBisL = (!isCollinear(a,b)) ? data.simpleBisector(a,b) : getNormalBisector(aIdx,bIdx,b);
 	auto bcBisL = (!isCollinear(b,c)) ? data.simpleBisector(b,c) : getNormalBisector(bIdx,cIdx,b);
 
-	LOG(INFO) << "AB is collinear: " << isCollinear(a,b);
-	LOG(INFO) << "BC is collinear: " << isCollinear(b,c);
+	LOG(INFO) << "AB is collinear: " << isCollinear(a,b) << " -- BC is collinear: " << isCollinear(b,c);;
 
 	auto intersectionSimple = intersectElements(abBisL, bcBisL);
 	if( intersectionSimple != INFPOINT && b.has_on_positive_side(intersectionSimple) ) {

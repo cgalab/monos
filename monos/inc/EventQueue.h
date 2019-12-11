@@ -62,7 +62,7 @@ private:
 	using Base = HeapBase <HeapEvent, EventQueueItem>;
 
 private:
-	const Events events;
+	const Events* events;
 	std::vector<const Event *> need_update;
 	std::vector<const Event *> need_dropping;
 	FixedVector<bool> tidx_in_need_dropping;
@@ -73,7 +73,7 @@ private:
 	void tidx_to_qitem_map_add(const Event * t, ElementType qi);
 	void assert_no_pending() const;
 public:
-	EventQueue(const Events& setEvents, const Chain& chain);
+	EventQueue(const Events* setEvents, const Chain& chain);
 
 	void drop_by_tidx(unsigned tidx);
 	void update_by_tidx(unsigned tidx);

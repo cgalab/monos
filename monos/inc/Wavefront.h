@@ -66,7 +66,7 @@ public:
 
 	Event getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, const ChainRef& it) const;
 	void updateNeighborEdgeEvents(const Event& event, const Chain& chain);
-	void updateInsertEvent(Event& neighbourEvent);
+	void updateInsertEvent(Event& event);
 
 	inline void disableEdge(ul edgeIdx) {
 		events[edgeIdx].eventPoint = INFPOINT;
