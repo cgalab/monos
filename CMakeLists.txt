@@ -5,12 +5,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 OPTION(WITH_GUI "Enable GUI requires QT" ON) # Enabled by default
 OPTION(WITH_FP "Disable exact kernel but use rational kernel" OFF) # Disabled by default
 
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    # Support Unix Makefiles and Ninja
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-endif()
-
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_STANDARD 17)
 
