@@ -56,7 +56,7 @@ void Skeleton::MergeUpperLowerSkeleton() {
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
 
-	//	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
+//	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
 
 	Line lu = data.get_line(upperChainIndex);
 	Line ll = data.get_line(lowerChainIndex);
