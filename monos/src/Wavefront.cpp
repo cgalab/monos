@@ -435,8 +435,8 @@ Event Wavefront::getEdgeEvent(const ul& aIdx, const ul& bIdx, const ul& cIdx, co
 
 	/* compute bisector from edges */
 	/* lets first test if this is too expexive */
-	auto abBisL = (!isCollinear(a,b)) ? data.simpleBisector(a,b) : getNormalBisector(aIdx,bIdx,b);
-	auto bcBisL = (!isCollinear(b,c)) ? data.simpleBisector(b,c) : getNormalBisector(bIdx,cIdx,b);
+	auto abBisL = (a != b) ? data.simpleBisector(a,b) : getNormalBisector(aIdx,bIdx,b);
+	auto bcBisL = (b != c) ? data.simpleBisector(b,c) : getNormalBisector(bIdx,cIdx,b);
 
 	LOG(INFO) << "AB is collinear: " << isCollinear(a,b) << " -- BC is collinear: " << isCollinear(b,c);;
 
