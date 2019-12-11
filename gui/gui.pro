@@ -28,6 +28,6 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h
 
-FORMS    += mainwindow.u
+FORMS    += mainwindow.ui
 
 INCLUDEPATH += ../monos/inc ../monos/src
