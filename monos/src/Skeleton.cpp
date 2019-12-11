@@ -56,14 +56,18 @@ void Skeleton::MergeUpperLowerSkeleton() {
 bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
 
-//	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
+	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
 
-	Line lu = data.get_line(upperChainIndex);
-	Line ll = data.get_line(lowerChainIndex);
+//	Line lu = data.get_line(upperChainIndex);
+//	Line ll = data.get_line(lowerChainIndex);
 
-	auto bisLine = (!wf.isCollinear(lu,ll)) ? data.simpleBisector(lu,ll) : wf.getNormalBisector(upperChainIndex,lowerChainIndex,lu);
+//	auto bisLine = (!wf.isCollinear(lu,ll)) ? data.simpleBisector(lu,ll) : wf.getNormalBisector(upperChainIndex,lowerChainIndex,lu);
 	/* correct direction if necessary */
 	if(ORIGIN > ORIGIN + bisLine.to_vector()) {bisLine = bisLine.opposite();}
+
+	if(data.get_line(upperChainIndex) == data.get_line(lowerChainIndex)) {
+		bisLine = wf.getNormalBisector(upperChainIndex,lowerChainIndex,bisLine);
+	}
 
 	LOG(INFO) << "Bisector-dir: " << bisLine.direction();
 
