@@ -53,7 +53,7 @@ enum class NodeType   		: ul {TERMINAL=0,NORMAL,DISABLED};
 enum class ArcType    		: ul {NORMAL=0,RAY,DISABLED};
 enum class BisType    	   	: ul {RAY,LINE};
 enum class MonotoneType    	: ul {START=0,END};
-enum class ChainType    	: ul {UPPER=0,LOWER};
+enum class ChainType    	: ul {UPPER=0,LOWER,BOTH};
 
 #define MAX std::numeric_limits<sl>::max()
 

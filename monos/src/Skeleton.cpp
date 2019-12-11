@@ -82,8 +82,7 @@ bool Skeleton::SingleMergeStep() {
 	return !EndOfBothChains();
 }
 
-/* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode'
- * in respect to the 'monotonicityLine' */
+/* finds the next arc(s) intersected by the bisector 'bis' that lie closest to 'sourceNode' */
 IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 	assert(sourceNode != nullptr);
 	Point Pu = INFPOINT; Point Pl = INFPOINT;
@@ -170,11 +169,11 @@ IntersectionPair Skeleton::findNextIntersectingArc(const Line& bis) {
 }
 
 void Skeleton::initPathForEdge(ChainType type) {
+	assert(type != ChainType::BOTH);
 	/* set the upperPath/lowerPath in 'wf' */
 	const ul& edgeIdx = (ChainType::UPPER == type) ? upperChainIndex : lowerChainIndex;
 	const Node& terminalNode = (ChainType::UPPER == type) ? wf.getTerminalNodeForVertex(data.e(edgeIdx).u) : wf.getTerminalNodeForVertex(data.e(edgeIdx).v);
 	auto& path        = (ChainType::UPPER == type) ? upperPath : lowerPath;
-
 	path = (!EndOfChain(type)) ? terminalNode.arcs.front() : MAX;
 
 	LOG(INFO) << "initPathForEdge " << edgeIdx << " with arc idx: " << path;
@@ -193,6 +192,7 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 
 	if(Pu != INFPOINT && Pl != INFPOINT) {
 		winner = (Pu < Pl) ? ChainType::UPPER : ChainType::LOWER;
+		winner = (winner == ChainType::LOWER && Pu == Pl) ? ChainType::BOTH : winner;
 	} else if(Pu != INFPOINT) {
 		winner = ChainType::UPPER;
 	} else {
@@ -201,19 +201,35 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 	}
 
 	if(winner == ChainType::LOWER) {
-		path = lowerPath;
+		path    = lowerPath;
 		edgeIdx = lowerChainIndex;
-		P = Pl;
+		P       = Pl;
 	}
 
 	assert(P != INFPOINT);
 
+	ul newNodeIdx = MAX;
+
 	NT dist = data.normalDistance(edgeIdx,P);
+	auto* intersArc = wf.getArc(path);
 
-	const ul newNodeIdx = wf.addNode(P,dist);
+	/* check if we have intersected an existing node of a chain-skeleton */
+	auto endNode = wf.getNode(intersArc->firstNodeIdx);
+	if(dist == endNode->time
+	   && P == endNode->point
+	) {
+		newNodeIdx = endNode->id;
+	} else if(!intersArc->isRay()
+			&& dist == wf.getNode(intersArc->secondNodeIdx)->time
+			&& P == wf.getNode(intersArc->secondNodeIdx)->point
+	) {
+		newNodeIdx = wf.getNode(intersArc->secondNodeIdx)->id;
+	} else {
+		/* if not we add a new node (this path mostly) */
+		newNodeIdx = wf.addNode(P,dist);
+	}
+
 	const ul newArcIdx 	= wf.addArc(sourceNodeIdx,newNodeIdx,upperChainIndex,lowerChainIndex);
-
-	const auto* intersArc = wf.getArc(path);
 
 	/* update the targets of the relevant arcs */
 	LOG(INFO) << "before update of " << path;
@@ -227,8 +243,47 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 		LOG(INFO) << "handleMerge: set lower chain to " << lowerChainIndex << " arc: " << lowerPath;
 	}
 
-	initPathForEdge(winner);
+	if(winner == ChainType::BOTH) {
+		LOG(INFO) << "#### both chains hit at same point!";
+		path      = lowerPath;
+		edgeIdx   = lowerChainIndex;
+		intersArc = wf.getArc(path);
 
+		auto newNode = wf.getNode(newNodeIdx);
+		std::vector<ul>* checkArcs = nullptr;
+		ul checkIdx = MAX;
+
+		if(dist == wf.getNode(intersArc->firstNodeIdx)->time
+		   && P == wf.getNode(intersArc->firstNodeIdx)->point
+		) {
+			checkArcs = &wf.getNode(intersArc->firstNodeIdx)->arcs;
+			checkIdx = intersArc->firstNodeIdx;
+		} else if(!intersArc->isRay()
+				&& dist == wf.getNode(intersArc->secondNodeIdx)->time
+				&& P == wf.getNode(intersArc->secondNodeIdx)->point
+		) {
+			checkArcs = &wf.getNode(intersArc->secondNodeIdx)->arcs;
+			checkIdx = intersArc->secondNodeIdx;
+		} else {
+			updateArcTarget(path,edgeIdx,newNodeIdx,P);
+		}
+
+		if(checkIdx != MAX) {
+			for(auto arcIdx : *checkArcs) {
+				auto arcCheck = wf.getArc(arcIdx);
+				if(arcCheck->secondNodeIdx == checkIdx) {
+					arcCheck->secondNodeIdx = newNodeIdx;
+					newNode->arcs.push_back(arcIdx);
+				}
+			}
+			removePath(path,edgeIdx);
+		}
+
+		initPathForEdge(ChainType::LOWER);
+		initPathForEdge(ChainType::UPPER);
+	} else {
+		initPathForEdge(winner);
+	}
 	return newNodeIdx;
 }
 

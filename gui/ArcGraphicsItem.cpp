@@ -90,6 +90,12 @@ paint(QPainter *painter, const QStyleOptionGraphicsItem * /*option*/, QWidget * 
 		for (auto e = arcs->begin(); e != arcs->end(); ++e) {
 			if(e->type != ArcType::DISABLED) {
 				QPointF p(transform.map(convert( CGAL::midpoint(e->source(), e->target()) )));
+
+				/* to avoid multiple overlaying labels */
+				std::srand(e->id);
+				QPointF randVect(std::rand()%20, std::rand()%20);
+				p += randVect;
+
 				std::string t = "a#"+std::to_string(e - arcs->begin());
 				painter->drawText(p.x()+4, p.y(), QString::fromStdString(t));
 			}
