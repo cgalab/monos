@@ -258,15 +258,16 @@ void Data::printInput() const {
 
 
 /*** true if a lies above b relative to monotonicity line */
-bool Data::isAbove(const Point& a, const Point &b) const {
-	bool aAbove = monotonicityLine.has_on_positive_side(a);
-	bool bAbove = monotonicityLine.has_on_positive_side(b);
-	auto distA = CGAL::squared_distance(monotonicityLine,a);
-	auto distB = CGAL::squared_distance(monotonicityLine,b);
-	return ( aAbove && !bAbove) ||
-		   ( aAbove &&  bAbove && distA > distB) ||
-		   (!aAbove && !bAbove && distA < distB);
-}
+//bool Data::isAbove(const Point& a, const Point &b) const {
+//	return a.y > b.y;
+////	bool aAbove = monotonicityLine.has_on_positive_side(a);
+////	bool bAbove = monotonicityLine.has_on_positive_side(b);
+////	auto distA = CGAL::squared_distance(monotonicityLine,a);
+////	auto distB = CGAL::squared_distance(monotonicityLine,b);
+////	return ( aAbove && !bAbove) ||
+////		   ( aAbove &&  bAbove && distA > distB) ||
+////		   (!aAbove && !bAbove && distA < distB);
+//}
 
 void Data::printLineFormat() {
 	for(auto e : getPolygon()) {

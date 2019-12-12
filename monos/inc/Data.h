@@ -81,7 +81,7 @@ public:
 	/* verify if the input polygon is monotone, if required we rotate
 	 * the vertices such that x-monotonicity holds for P */
 	bool ensureMonotonicity();
-	bool isAbove(const Point& a, const Point &b) const;
+	inline bool isAbove(const Point& a, const Point& b) const {return a.y() > b.y();}
 
 	void setMonotonicity(Line line) {
 		monotonicityLine = line;

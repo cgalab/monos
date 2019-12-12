@@ -160,77 +160,56 @@ bool Wavefront::SingleDequeue(Chain& chain) {
 
 
 
-/* due to the monotonicity we only have two scenarios:
- * (i) these events amounts to exactly one point with multiple collapsing edges:
- * --> then we continue with the bisector between the first and last involved
- *     edge.
- * (ii)  otherwise a vertical bisector line is involved, we have
- *       exactly two points:
- * --> after adding both points (connected with a vertical segment) we apply
- *     (i) for the 'upper' (or higher) point. */
+/* eventList holds all events with the same event time.
+ * -- on a single x-coordinate only a single event can take place, due to the
+ *    monotonicity of the chain, thus we sort for unique 'x'-coordinate
+ *    -- now for a single 'x' coordinate (at most) two events my occur, we have to
+ *       choose the one closer to the chain
+ * -- secondly we filter for real multi edge collapses, i.e., event points are equal */
 void Wavefront::HandleMultiEvent(Chain& chain, std::vector<const Event*> eventList) {
 	if(eventList.size() == 1) {
-		LOG(INFO) << "size 1 ";
 		HandleSingleEdgeEvent(chain,eventList[0]);
 	} else {
-		std::set<Point> points;
-		std::set<int,std::less<int> > eventEdges;
-		LOG(INFO) << "events:";
-		for(const auto& e : eventList) {
-			if(e->mainEdge == *(e->chainEdge))  {
-				LOG(INFO) << "event is still true!";
-			}
+		std::map<NT,const Event*> eventsPerXCoord;
+		std::map<Point,std::vector<const Event*>> multiEvents;
 
-			points.insert(e->eventPoint);
-			eventEdges.insert(e->leftEdge);
-			eventEdges.insert(e->mainEdge);
-			eventEdges.insert(e->rightEdge);
+		LOG(INFO) << "events:";
+		for(const auto* e : eventList) {
+
+			if(e->mainEdge == *(e->chainEdge))  {LOG(INFO) << "event is still true!";}
+
+			auto it = eventsPerXCoord.find(e->eventPoint.x());
+			if(it != eventsPerXCoord.end()) {
+				bool aAboveB = data.isAbove(e->eventPoint,it->second->eventPoint);
+				if(e->eventPoint == it->second->eventPoint) {
+					auto multiIt = multiEvents.find(e->eventPoint);
+					multiIt->second.emplace_back(e);
+					eventsPerXCoord.erase(it);
+				} else if( (  aAboveB  &&  !isLowerChain(chain)) ||
+						   ( !aAboveB  &&   isLowerChain(chain))) {
+					eventsPerXCoord.erase(it);
+					eventsPerXCoord.insert({e->eventPoint.x(),e});
+				}
+			} else {
+				eventsPerXCoord.insert({e->eventPoint.x(),e});
+				multiEvents.insert({e->eventPoint,{e}});
+			}
 		}
 
-		if(points.size() > 1) {
-			/* scenario (ii) : ONLY TWO POINTS SHOULD BE POSSIBLE!
-			 * this scenario implies a vertical segment, i.e., perpendicular to the
-			 * monotonicity line. This means only two event points can occur on this
-			 * line, otherwise the polygon can not be monotone */
-			assert(points.size() < 3);
-			LOG(INFO) << "scenario (ii)";
-			/* ensure A is the lower point in resp. to monot. line */
-			auto it = points.begin();
-			Point A = *it; ++it;
-			Point B = *it;
+		for(auto e : eventsPerXCoord) {
+			HandleSingleEdgeEvent(chain,e.second);
+		}
 
-			for(;it!=points.end();++it) {
-				B = *it;
-				bool aAboveB = data.isAbove(A,B);
-				if( (  aAboveB  &&  isLowerChain(chain)) ||
-					( !aAboveB  && !isLowerChain(chain))) {
-					std::swap(A,B);
-				}
+		for(auto l : multiEvents) {
+			if(l.second.size() > 1) {
+				HandleMultiEdgeEvent(chain,l.second);
 			}
-			std::vector<const Event*> partEventListA, partEventListB;
-			for(auto e : eventList) {
-				if(e->eventPoint == A) {
-					partEventListA.emplace_back(e);
-				} else {
-					partEventListB.emplace_back(e);
-				}
-			}
-
-			assert(partEventListA.size() >= 1);
-
-			/* handling the 'lower' eventpoint changes the other event, thus
-			 * we only handle this lower event */
-			HandleSingleEdgeEvent(chain,partEventListA[0]);
-		} else {
-			/* scenario (i) */
-			LOG(INFO) << "scenario (i)";
-			HandleMultiEdgeEvent(chain,eventList);
 		}
 	}
 }
 
 void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eventList) {
-	LOG(INFO) << "HandleMultiEdgeEvent! (one point, multiple edge collapses)";
+	LOG(INFO) << "ME: HandleMultiEdgeEvent! (one point, multiple edge collapses)";
 
 	auto anEvent = eventList[0];
 	auto nodeIdx = addNode(anEvent->eventPoint,anEvent->eventTime);
@@ -312,6 +291,7 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eve
 }
 
 void Wavefront::HandleSingleEdgeEvent(Chain& chain,  const Event* event) {
+	LOG(INFO) << "SE: " << *event;
 	/* build skeleton from event */
 	addNewNodefromEvent(*event);
 
