@@ -52,6 +52,9 @@ and with exact arithmitic.
 	make -j 6
 
 For the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
+In case the repository is already checked out without the submodules enter use:
+
+	git submodule update --init --recursive
 
 # Usage
 
