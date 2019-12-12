@@ -234,46 +234,24 @@ void Wavefront::HandleMultiEdgeEvent(Chain& chain, std::vector<const Event*> eve
 
 	auto anEvent = eventList[0];
 	auto nodeIdx = addNode(anEvent->eventPoint,anEvent->eventTime);
-	auto& node = *getNode(nodeIdx);
+	auto& node   = *getNode(nodeIdx);
 
 	/* add the single node, all arcs connect to this node */
 	LOG(INFO) << "adding node: " << node;
 
-	std::set<ul> mainEdges;
-	std::set<ul> leftEdges;
-	std::set<ul> rightEdges;
 	std::set<std::pair<ul,ul>> pairs;
 	for(auto event : eventList) {
-//		leftEdges.insert(event->leftEdge);
-//		rightEdges.insert(event->rightEdge);
-
-//		std::vector<ul> va = {event->mainEdge,event->leftEdge },
 		std::vector<ul> va = {event->leftEdge,event->mainEdge },
 				        vb = {event->mainEdge,event->rightEdge};
 
 		for(auto v : { va, vb } ) {
-			auto ta = std::pair<ul,ul>(v[0],v[1]);
-			pairs.insert(ta);
+			pairs.insert({v[0],v[1]});
 		}
 	}
 
-//	std::set<ul> doneNeighbour;
-
 	for(auto p : pairs) {
-//		if(doneNeighbour.find(p.second) != doneNeighbour.end()) {continue;}
-
-		auto paths = pathFinder[p.first];
-		ul pIdx = paths.b;
-//		if(leftEdges.find(p.second) != leftEdges.end()) {
-//			pIdx = paths.a;
-//		}
-//		if(rightEdges.find(p.second) != rightEdges.end()) {
-//			pIdx = paths.b;
-//		}
-		assert(pIdx != MAX);
+		ul pIdx = pathFinder[p.first].b;
 		addArc(pIdx,nodeIdx,p.first,p.second);
-
-//		doneNeighbour.insert(p.first);
 	}
 
 	for(auto event : eventList) {

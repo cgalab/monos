@@ -325,25 +325,35 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, bool possible
 		lowerChainIndex = intersArcL->rightEdgeIdx;
 
 		if(!possibleGhostArcToRepair) {
+			LOG(INFO) << "////// arcs " << *intersArc << " --- " << *intersArcL;
+			const Line& lUpperRight = data.get_line(intersArc->rightEdgeIdx);
+			const Line& lUpperLeft  = data.get_line(intersArc->leftEdgeIdx);
+
 			/* some collinearity checks to catch 'ghost' arcs */
-			if(data.get_line(intersArc->rightEdgeIdx) == data.get_line(intersArcL->leftEdgeIdx)) {
-				upperChainIndex = intersArc->rightEdgeIdx;
-				lowerChainIndex = intersArcL->leftEdgeIdx;
-				LOG(INFO) << "Special Case: collinear input edges";
-			} else if(data.get_line(intersArc->rightEdgeIdx) == data.get_line(intersArcL->rightEdgeIdx)) {
-				upperChainIndex = intersArc->rightEdgeIdx;
-				lowerChainIndex = intersArcL->rightEdgeIdx;
-				LOG(INFO) << "Special Case: collinear input edges";
-			} else if(data.get_line(intersArc->leftEdgeIdx) == data.get_line(intersArcL->leftEdgeIdx)) {
-				upperChainIndex = intersArc->leftEdgeIdx;
-				lowerChainIndex = intersArcL->leftEdgeIdx;
-				LOG(INFO) << "Special Case: collinear input edges";
-			} else if(data.get_line(intersArc->leftEdgeIdx) == data.get_line(intersArcL->rightEdgeIdx)) {
-				upperChainIndex = intersArc->leftEdgeIdx;
-				lowerChainIndex = intersArcL->rightEdgeIdx;
-				LOG(INFO) << "Special Case: collinear input edges";
+			if(lUpperRight.is_vertical() && lUpperRight.to_vector().y() > 0) {
+				if(lUpperRight == data.get_line(intersArcL->leftEdgeIdx)) {
+					upperChainIndex = intersArc->rightEdgeIdx;
+					lowerChainIndex = intersArcL->leftEdgeIdx;
+					LOG(INFO) << "Special Case: collinear input edges with left interior";
+				} else if(lUpperRight == data.get_line(intersArcL->rightEdgeIdx)) {
+					upperChainIndex = intersArc->rightEdgeIdx;
+					lowerChainIndex = intersArcL->rightEdgeIdx;
+					LOG(INFO) << "Special Case: collinear input edges with left interior";
+				}
+			} else if(lUpperLeft.is_vertical() && lUpperLeft.to_vector().y() > 0) {
+				if(lUpperLeft == data.get_line(intersArcL->leftEdgeIdx)) {
+					upperChainIndex = intersArc->leftEdgeIdx;
+					lowerChainIndex = intersArcL->leftEdgeIdx;
+					LOG(INFO) << "Special Case: collinear input edges with left interior";
+				} else if(lUpperLeft == data.get_line(intersArcL->rightEdgeIdx)) {
+					upperChainIndex = intersArc->leftEdgeIdx;
+					lowerChainIndex = intersArcL->rightEdgeIdx;
+					LOG(INFO) << "Special Case: collinear input edges with left interior";
+				}
+
 			}
 		}
+
 		wf.pathFinder[lowerChainIndex].a = newNodeIdx;
 
 		initPathForEdge(ChainType::LOWER);
