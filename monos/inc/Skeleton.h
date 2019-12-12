@@ -70,7 +70,7 @@ private:
 
 	void removePath(const ul& arcIdx, const ul& edgeIdx);
 
-	ul handleMerge(const IntersectionPair& intersectionPair, const bool possibleGhostArcToRepair);
+	ul handleMerge(const IntersectionPair& intersectionPair, bool possibleGhostArcToRepair);
 	void updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain();  }

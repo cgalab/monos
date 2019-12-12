@@ -189,19 +189,30 @@ void Skeleton::initPathForEdge(ChainType type) {
 }
 
 
-ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const bool possibleGhostArcToRepair) {
+ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, bool possibleGhostArcToRepair) {
 	Point Pu = intersectionPair.first;
 	Point Pl = intersectionPair.second;
 
 	if(possibleGhostArcToRepair) {
 		LOG(INFO) << "---(ghost hunt) checking possible ghost arc to the left";
 		if(checkForPossibleReverseGhostArc(Pu,Pl)) {
-			/* now we know and have to repair the 'sourceNode'
-			 * as it should be horizontal to the left of Pl, Pu */
-			removePath(upperPath,upperChainIndex);
-			removePath(lowerPath,lowerChainIndex);
+			if(Pu != sourceNode->point) {
+				/* now we know and have to repair the 'sourceNode'
+				 * as it should be horizontal to the left of Pl, Pu */
+				removePath(upperPath,upperChainIndex);
+				removePath(lowerPath,lowerChainIndex);
 
-			findAndRepairGhostArroundSource(Pu);
+				findAndRepairGhostArroundSource(Pu);
+			} else {
+				LOG(INFO) << "---(ghost hunt) sourceNode equals new intersection..." << upperPath << ", " << lowerPath;
+				/* we missed a step, as we set to the vertical lines before */
+				/* this was not necessary, let us reset the chain indices and return  */
+				upperChainIndex = wf.getArc(upperPath)->leftEdgeIdx;
+				lowerChainIndex = wf.getArc(lowerPath)->rightEdgeIdx;
+				initPathForEdge(ChainType::UPPER);
+				initPathForEdge(ChainType::LOWER);
+				return sourceNodeIdx;
+			}
 		}
 	}
 
@@ -448,7 +459,7 @@ bool Skeleton::checkForPossibleReverseGhostArc(Point& Pu, Point& Pl) {
 }
 
 void Skeleton::findAndRepairGhostArroundSource(const Point& P) {
-	auto arc = wf.findRightmostArcFromNodeWithY(*sourceNode, P.y());
+	auto arc = (sourceNode->point.y() != P.y()) ? wf.findRightmostArcFromNodeWithY(*sourceNode, P.y()) : nullptr;
 	/* subdivide arc and place a new sourceNode */
 	if(arc != nullptr) {
 		/* seems we have found a place to put a new 'sourceNode' */
