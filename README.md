@@ -55,7 +55,7 @@ For the `RELEASE` version use `cmake -D CMAKE_BUILD_TYPE=Release ..`
 
 # Usage
 
-	monos [--verbose][--timings][--normalize] --out &lt;filename&gt; &lt;filename&gt;
+	monos [--verbose][--timings][--normalize] --out <filename> <filename>
 
 | options       | shortform | description   |
 | -------------:|----------:|:------------- |
@@ -86,6 +86,9 @@ Tha main algorithm and library is in `monos` sparated in `src` and `inc` directo
 |  Skeleton   | Construct the Merge and joins the two skeletons. |
 | BasicInput, BGLGraph|  Read the .graphml input file. |
 
+# Test-Data
+
+In the `test-data` directory are a few examples to test with monos.
 
 # License
 
