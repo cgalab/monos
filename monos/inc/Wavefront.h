@@ -98,7 +98,8 @@ public:
 
 	Arc* getRightmostArcEndingAtNode(const Node& node, Arc *currentArc);
 	ul getOutgoingArc(const Node& node);
-//	void removeOutgointArcsOnNode(Node& node);
+
+	Arc* findRightmostArcFromNodeWithY(const Node& node, const NT& y);
 
 	inline bool isLowerChain(const Chain& chain) const { return &chain == &lowerChain; }
 

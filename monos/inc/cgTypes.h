@@ -198,6 +198,11 @@ public:
 		return P == source() || P == target();
 	}
 
+	bool has_on_y(const NT& y) {
+		return (point(0).y() < y && point(1).y() > y)
+			|| (point(0).y() > y && point(1).y() < y);
+	}
+
 	ArcType type;
 	ul firstNodeIdx, secondNodeIdx;
 	ul leftEdgeIdx,  rightEdgeIdx;

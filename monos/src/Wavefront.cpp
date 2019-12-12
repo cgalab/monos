@@ -527,6 +527,45 @@ Arc* Wavefront::getRightmostArcEndingAtNode(const Node& node, Arc *currentArc) {
 	return ret;
 }
 
+Arc* Wavefront::findRightmostArcFromNodeWithY(const Node& node, const NT& y) {
+	Node nodeIt = node;
+	bool searchUpwards = (node.point.y() < y);
+	LOG(INFO) << "---(ghost hunt) search up: " << searchUpwards;
+	while(true) {
+		ul nodeIdxIt = nodeIt.id;
+		nodeIt = nodes[nodeIdxIt];
+		const Point& NP = nodeIt.point;
+
+		ul arcIdxIt  = MAX;
+		NT x = -MAX;
+
+		LOG(INFO) << "looking at node " << nodeIt;
+
+		for(auto arcIdx : nodeIt.arcs) {
+			auto arc = getArc(arcIdx);
+			const Point& P = (arc->point(0) == NP) ? arc->point(1) : arc->point(0);
+			if((x < P.x())
+				&&
+				( (searchUpwards && P.y() > NP.y()) || (!searchUpwards && P.y() < NP.y()) )
+			) {
+				x = P.x();
+				arcIdxIt = arcIdx;
+				nodeIdxIt = (arc->firstNodeIdx != nodeIt.id) ? arc->firstNodeIdx :  arc->secondNodeIdx;
+			}
+		}
+
+		auto currentArc = getArc(arcIdxIt);
+		if(currentArc->has_on_y(y)) {
+			return currentArc;
+		} else {
+			if(currentArc->isRay() || nodeIt.arcs.size() == 1) {
+				break;
+			}
+		}
+	}
+	return nullptr;
+}
+
 ul Wavefront::getOutgoingArc(const Node& node) {
 	for(ul arcIdx : node.arcs) {
 		Arc* arc = getArc(arcIdx);
@@ -537,19 +576,6 @@ ul Wavefront::getOutgoingArc(const Node& node) {
 	return MAX;
 }
 
-//void Wavefront::removeOutgointArcsOnNode(Node& node) {
-//	std::vector<ul> toremove;
-//	for(auto arcIdx : node.arcs) {
-//		Arc& arc = arcList[arcIdx];
-//		if(arc.firstNodeIdx == node.id) {
-//			arc.disable();
-//			toremove.push_back(arcIdx);
-//		}
-//	}
-//	for(auto idx : toremove) {
-//		node.removeArc(idx);
-//	}
-//}
 
 Segment Wavefront::restrictRay(const Ray& ray) {
 	Point Pa = ray.source();

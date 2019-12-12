@@ -57,9 +57,14 @@ bool Skeleton::SingleMergeStep() {
 	LOG(INFO) << "################################### START SINGLE MERGE STEP " << upperChainIndex << "/" << lowerChainIndex << " ######################";
 
 	auto bisLine = data.simpleBisector(upperChainIndex,lowerChainIndex);
+	bool possibleGhostArcToRepair = false;
 
 	if(data.get_line(upperChainIndex) == data.get_line(lowerChainIndex)) {
 		bisLine = wf.getNormalBisector(upperChainIndex,lowerChainIndex,bisLine);
+		if(ORIGIN > ORIGIN + bisLine.to_vector()) {
+			possibleGhostArcToRepair = true;
+			LOG(INFO) << "---G--- possible ghost arc to repair";
+		}
 	}
 
 	/* correct direction if necessary */
@@ -71,7 +76,7 @@ bool Skeleton::SingleMergeStep() {
 	/* obtain the arcIdx and newPoint for the next bis arc intersection */
 	IntersectionPair intersectionPair = findNextIntersectingArc(bisLine);
 
-	newNodeIdx = handleMerge(intersectionPair);
+	newNodeIdx = handleMerge(intersectionPair,possibleGhostArcToRepair);
 
 
 	/* we iterate the sourcenode to the newly added node and go on merging */
@@ -184,9 +189,21 @@ void Skeleton::initPathForEdge(ChainType type) {
 }
 
 
-ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
-	const Point& Pu = intersectionPair.first;
-	const Point& Pl = intersectionPair.second;
+ul Skeleton::handleMerge(const IntersectionPair& intersectionPair, const bool possibleGhostArcToRepair) {
+	Point Pu = intersectionPair.first;
+	Point Pl = intersectionPair.second;
+
+	if(possibleGhostArcToRepair) {
+		LOG(INFO) << "---(ghost hunt) checking possible ghost arc to the left";
+		if(checkForPossibleReverseGhostArc(Pu,Pl)) {
+			/* now we know and have to repair the 'sourceNode'
+			 * as it should be horizontal to the left of Pl, Pu */
+			removePath(upperPath,upperChainIndex);
+			removePath(lowerPath,lowerChainIndex);
+
+			findAndRepairGhostArroundSource(Pu);
+		}
+	}
 
 	ul edgeIdx  = upperChainIndex;
 	ul path     = upperPath;
@@ -257,25 +274,25 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 		/* default in the BOTH case is the upper chain, so we have to handle the lower chain now */
 		path      = lowerPath;
 		edgeIdx   = lowerChainIndex;
-		intersArc = wf.getArc(path);
+		auto intersArcL = wf.getArc(path);
 
 		auto newNode = wf.getNode(newNodeIdx);
 		std::vector<ul>* checkArcs = nullptr;
 		ul checkIdx = MAX;
 
-		if(dist == wf.getNode(intersArc->firstNodeIdx)->time
-		   && P == wf.getNode(intersArc->firstNodeIdx)->point
+		if(dist == wf.getNode(intersArcL->firstNodeIdx)->time
+		   && P == wf.getNode(intersArcL->firstNodeIdx)->point
 		) {
-			checkArcs = &wf.getNode(intersArc->firstNodeIdx)->arcs;
-			checkIdx = intersArc->firstNodeIdx;
-			intersArc = wf.getRightmostArcEndingAtNode(*wf.getNode(intersArc->firstNodeIdx),intersArc);
-		} else if(!intersArc->isRay()
-				&& dist == wf.getNode(intersArc->secondNodeIdx)->time
-				&& P == wf.getNode(intersArc->secondNodeIdx)->point
+			checkArcs = &wf.getNode(intersArcL->firstNodeIdx)->arcs;
+			checkIdx = intersArcL->firstNodeIdx;
+			intersArcL = wf.getRightmostArcEndingAtNode(*wf.getNode(intersArcL->firstNodeIdx),intersArcL);
+		} else if(!intersArcL->isRay()
+				&& dist == wf.getNode(intersArcL->secondNodeIdx)->time
+				&& P == wf.getNode(intersArcL->secondNodeIdx)->point
 		) {
-			checkArcs = &wf.getNode(intersArc->secondNodeIdx)->arcs;
-			checkIdx = intersArc->secondNodeIdx;
-			intersArc = wf.getRightmostArcEndingAtNode(*wf.getNode(intersArc->secondNodeIdx),intersArc);
+			checkArcs = &wf.getNode(intersArcL->secondNodeIdx)->arcs;
+			checkIdx = intersArcL->secondNodeIdx;
+			intersArcL = wf.getRightmostArcEndingAtNode(*wf.getNode(intersArcL->secondNodeIdx),intersArcL);
 		} else {
 			updateArcTarget(path,edgeIdx,newNodeIdx,P);
 		}
@@ -294,8 +311,30 @@ ul Skeleton::handleMerge(const IntersectionPair& intersectionPair) {
 
 		/* if winner is BOTH we already run through setting upperChainIndex, as this is the 'default' */
 		wf.pathFinder[lowerChainIndex].b = newNodeIdx;
-		lowerChainIndex = intersArc->rightEdgeIdx;
+		lowerChainIndex = intersArcL->rightEdgeIdx;
+
+		if(!possibleGhostArcToRepair) {
+			/* some collinearity checks to catch 'ghost' arcs */
+			if(data.get_line(intersArc->rightEdgeIdx) == data.get_line(intersArcL->leftEdgeIdx)) {
+				upperChainIndex = intersArc->rightEdgeIdx;
+				lowerChainIndex = intersArcL->leftEdgeIdx;
+				LOG(INFO) << "Special Case: collinear input edges";
+			} else if(data.get_line(intersArc->rightEdgeIdx) == data.get_line(intersArcL->rightEdgeIdx)) {
+				upperChainIndex = intersArc->rightEdgeIdx;
+				lowerChainIndex = intersArcL->rightEdgeIdx;
+				LOG(INFO) << "Special Case: collinear input edges";
+			} else if(data.get_line(intersArc->leftEdgeIdx) == data.get_line(intersArcL->leftEdgeIdx)) {
+				upperChainIndex = intersArc->leftEdgeIdx;
+				lowerChainIndex = intersArcL->leftEdgeIdx;
+				LOG(INFO) << "Special Case: collinear input edges";
+			} else if(data.get_line(intersArc->leftEdgeIdx) == data.get_line(intersArcL->rightEdgeIdx)) {
+				upperChainIndex = intersArc->leftEdgeIdx;
+				lowerChainIndex = intersArcL->rightEdgeIdx;
+				LOG(INFO) << "Special Case: collinear input edges";
+			}
+		}
 		wf.pathFinder[lowerChainIndex].a = newNodeIdx;
+
 		initPathForEdge(ChainType::LOWER);
 		initPathForEdge(ChainType::UPPER);
 	} else {
@@ -391,7 +430,54 @@ void Skeleton::removePath(const ul& arcIdx, const ul& edgeIdx)  {
 	}
 }
 
+/*******************************************************************************************/
+/*                                  'GHOST' ARC STUFF                                      */
+/*******************************************************************************************/
+bool Skeleton::checkForPossibleReverseGhostArc(Point& Pu, Point& Pl) {
+	/* very basic check */
+	auto arc_u = wf.getArc(upperPath);
+	auto arc_l = wf.getArc(lowerPath);
+	if(CGAL::do_intersect(*arc_u,*arc_l)) {
+		Point P = intersectElements(*arc_u,*arc_l);
+		Pu = P;
+		Pl = P;
+		LOG(INFO) << "---(ghost hunt) intersection between arcs found!";
+		return true;
+	}
+	return false;
+}
 
+void Skeleton::findAndRepairGhostArroundSource(const Point& P) {
+	auto arc = wf.findRightmostArcFromNodeWithY(*sourceNode, P.y());
+	/* subdivide arc and place a new sourceNode */
+	if(arc != nullptr) {
+		/* seems we have found a place to put a new 'sourceNode' */
+		if(P != arc->point(0) && P != arc->point(1)) {
+			/* not node incident at P, so lets split arc up */
+			NT x = arc->supporting_line().x_at_y(P.y());
+			Point PInt(x,P.y());
+			ul newNodeIdx = wf.addNode(PInt,normalDistance(data.get_line(upperChainIndex),PInt));
+			ul newArcIdx = MAX;
+			if(P.y() > sourceNode->point.y()) {
+				newArcIdx = wf.addArc(newNodeIdx,arc->secondNodeIdx,lowerChainIndex,arc->rightEdgeIdx);
+			} else {
+				newArcIdx = wf.addArc(newNodeIdx,arc->secondNodeIdx,arc->leftEdgeIdx,upperChainIndex);
+			}
+
+			sourceNode->removeArc(arc->id);
+			arc->secondNodeIdx = newNodeIdx;
+
+			sourceNodeIdx = newNodeIdx;
+			sourceNode = wf.getNode(sourceNodeIdx);
+			sourceNode->arcs.push_back(arc->id);
+			LOG(INFO) << "---(ghost hunt) successful!";
+		}
+	}
+}
+
+/*******************************************************************************************/
+/*                                  WRITE OUTPUT                                           */
+/*******************************************************************************************/
 void Skeleton::writeOBJ(const Config& cfg) const {
 	double xt = 0.0, yt = 0.0, zt = 0.0, xm = 1.0, ym = 1.0, zm = 1.0;
 	if(cfg.normalize) {

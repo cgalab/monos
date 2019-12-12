@@ -70,7 +70,7 @@ private:
 
 	void removePath(const ul& arcIdx, const ul& edgeIdx);
 
-	ul handleMerge(const IntersectionPair& intersectionPair);
+	ul handleMerge(const IntersectionPair& intersectionPair, const bool possibleGhostArcToRepair);
 	void updateArcTarget(const ul& arcIdx, const ul& edgeIdx, const int& secondNodeIdx, const Point& edgeEndPoint);
 
 	bool EndOfBothChains() const {return EndOfUpperChain() && EndOfLowerChain();  }
@@ -78,9 +78,13 @@ private:
 	bool EndOfLowerChain() const {return lowerChainIndex == lowerChain.back(); }
 	bool EndOfChain(ChainType t) { return (t == ChainType::UPPER) ? EndOfUpperChain() : EndOfLowerChain();}
 
+	bool checkForPossibleReverseGhostArc(Point& Pu, Point& Pl);
+	void findAndRepairGhostArroundSource(const Point& P);
+
 	inline ChainType chooseWinnerUpperLower(const Point& Pu, const Point& Pl) const {
 		ChainType winner;
 		if(Pu != INFPOINT && Pl != INFPOINT) {
+			LOG(INFO) << "Pl and Pu are not INF";
 			if(Pu.x() != Pl.x()) {
 				winner = (Pu < Pl) ? ChainType::UPPER : ChainType::LOWER;
 			} else if (Pu != Pl) {
@@ -96,21 +100,6 @@ private:
 		}
 		return winner;
 	}
-
-//	inline ul intersectArcEndNodeOrNewNode(const Arc& arc, NT dist, const Point& P) {
-//		auto& endNode = *wf.getNode(arc.firstNodeIdx);
-//		if(dist == endNode.time
-//	   	   && P == endNode.point
-//		) {
-//			return endNode.id;
-//		} else if(!arc.isRay()
-//				&& dist == wf.getNode(arc.secondNodeIdx)->time
-//				&& P == wf.getNode(arc.secondNodeIdx)->point
-//		) {
-//			return wf.getNode(arc.secondNodeIdx)->id;
-//		}
-//		return wf.addNode(P,dist);
-//	}
 
 	void initPathForEdge(ChainType type);
 
