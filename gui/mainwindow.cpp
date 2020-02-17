@@ -73,7 +73,6 @@ MainWindow::MainWindow(const std::string& title, Monos& _monos) :
 
 	time_changed();
 	on_actionResize_triggered();
-	on_actionResize_triggered();
 }
 
 MainWindow::~MainWindow() {}
@@ -277,5 +276,4 @@ void MainWindow::simulation_has_finished() {
 	if (state == STATE::FINISHED) return;
 	updateVisibilities();
 }
-
 

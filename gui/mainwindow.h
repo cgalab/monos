@@ -44,12 +44,6 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
     ~MainWindow();
   private:
     int merge_counter = 0;
-//    bool first_show_event = true;
-//    bool did_finish = false;
-//
-//    bool onLowerChain = true;
-//    bool firstStart = true, lowerChainDone = false, upperChainDone = false, bothChainsDone = false;
-//    bool mergeDone = false;
 
     STATE state = STATE::STARTLOWER;
 

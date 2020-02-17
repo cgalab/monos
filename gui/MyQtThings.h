@@ -68,10 +68,14 @@ public:
 			return true;
 		}
 
+		if (event->type() == QEvent::FocusIn) {
+			std::cout << "focus in !" << std::endl;
+			return true;
+		}
+
 		if (event->type() != QEvent::Wheel) {
 			return Base::eventFilter(obj, event);
 		}
-
 
 		// std::cout << "MyGraphicsViewNavigation::eventFilter - QEvent::Wheel" << std::endl;
 		QGraphicsView* v = qobject_cast<QGraphicsView*>(obj);
