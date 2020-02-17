@@ -31,6 +31,8 @@ std::ostream& operator<< (std::ostream& os, const MonotoneVector& mv) {
 bool Data::ensureMonotonicity() {
 	assert(input.edges().size() > 2);
 
+	LOG(INFO) << "checking for monotonicity";
+
 	auto edgeIt = input.edges().begin();
 	auto edgeB  = edgeIt;
 	auto edgeA  = edgeB;
@@ -141,7 +143,8 @@ bool Data::ensureMonotonicity() {
 				Vector b = it->vector;
 				Line line = getMonotonicityLineFromVector(a,b);
 
-				LOG(INFO) << "monotonicity Line " << line << " dir: " << line.direction().to_vector() << " found ... testing.";
+				LOG(INFO) << "monotonicity Line " << line << " dir: "
+						  << line.direction().to_vector() << " found ... testing.";
 
 				if(testMonotonicityLineOnPolygon(line)) {
 					setMonotonicity(line);
@@ -169,24 +172,27 @@ bool Data::ensureMonotonicity() {
 
 /* test if given line is a line where the input polygon is monotone to */
 bool Data::testMonotonicityLineOnPolygon(const Line line) const {
+	auto dir = line.direction().perpendicular(CGAL::POSITIVE);
+
 	ul startIdx = 0;
 	Point pStart  = eA(startIdx);
+	auto testLine = Line(pStart,-dir);
 	for(ul i = startIdx+1; i < input.edges().size(); ++i) {
 		auto p = eA(i);
-		if(p < pStart) {
+		if(!testLine.has_on_positive_side(p)) {
 			startIdx = i; pStart = p;
+			testLine = Line(pStart,-dir);
 		}
 	}
 
 	/* startIdx is 'leftmost' edge, start walking 'rightwards' until we violate the monotonicity */
 	bool monotone  = true, rightward = true;
-	auto dir = line.direction().perpendicular(CGAL::POSITIVE);
 	auto idxIt = startIdx;
 	do {
-		auto testLine = Line(eA(idxIt),-dir);
-		if(rightward && testLine.has_on_negative_side(eB(idxIt))) {
+		testLine = Line(eA(idxIt),-dir);
+		if(rightward && !testLine.has_on_positive_side(eB(idxIt))) {
 			rightward = false;
-		} else if(!rightward && testLine.has_on_positive_side(eB(idxIt))) {
+		} else if(!rightward && !testLine.has_on_negative_side(eB(idxIt))) {
 			monotone = false;
 		}
 

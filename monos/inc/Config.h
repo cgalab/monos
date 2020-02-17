@@ -36,7 +36,7 @@
 static struct option long_options[] = {
 		{ "help"        , no_argument      , 0, 'h'},
 		{ "verbose"     , no_argument      , 0, 'v'},
-		{ "xmon"        , no_argument      , 0, 'x'},
+		{ "mon"         , no_argument      , 0, 'x'},
 		{ "normalize"   , no_argument      , 0, 'n'},
 		{ "timings"     , no_argument      , 0, 't'},
 		{ "out"         , required_argument, 0, 'o'},
